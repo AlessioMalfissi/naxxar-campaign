@@ -2,8 +2,10 @@ import { Dialog } from '@angular/cdk/dialog';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
+import { EntryVisibility } from '@core/models';
 import { ConfirmModalComponent } from './confirm-modal.component';
-import { IConfirmModalData, IPromptModalData } from './i-modal';
+import { CreateEntryModalComponent } from './create-entry-modal.component';
+import { IConfirmModalData, ICreateEntryModalData, ICreateEntryResult, IPromptModalData } from './i-modal';
 import { ModalService } from './modal.service';
 import { PromptModalComponent } from './prompt-modal.component';
 
@@ -82,6 +84,54 @@ describe('ModalService', () => {
 
         // Act
         service.prompt({}).subscribe((result) => (value = result));
+
+        // Assert
+        expect(value === null).toBe(true);
+    });
+
+    it('should open the create entry modal with the supplied statuses and fields', () => {
+        // Arrange
+        dialog.open.mockReturnValue({ closed: of(null) });
+
+        // Act
+        service
+            .createEntry({ title: 'New entry in NPCs', statuses: ['Alive', 'Dead'], fields: [] })
+            .subscribe();
+
+        // Assert
+        const [component, config] = dialog.open.mock.calls[0] as [unknown, { data: ICreateEntryModalData }];
+        expect(component === CreateEntryModalComponent).toBe(true);
+        expect(config.data.title).toBe('New entry in NPCs');
+        expect(config.data.statuses).toEqual(['Alive', 'Dead']);
+        expect(config.data.confirmLabel).toBe('Create entry');
+    });
+
+    it('should report the create entry result', () => {
+        // Arrange
+        const created: ICreateEntryResult = {
+            title: 'Grum the Broker',
+            status: 'Alive',
+            tags: ['merchant'],
+            visibility: EntryVisibility.Dm,
+            fields: {}
+        };
+        dialog.open.mockReturnValue({ closed: of(created) });
+        let value: ICreateEntryResult | null = null;
+
+        // Act
+        service.createEntry({}).subscribe((result) => (value = result));
+
+        // Assert
+        expect(value!).toEqual(created);
+    });
+
+    it('should report a dismissed create entry modal as null', () => {
+        // Arrange
+        dialog.open.mockReturnValue({ closed: of(undefined) });
+        let value: ICreateEntryResult | null = { title: 'unset' } as ICreateEntryResult;
+
+        // Act
+        service.createEntry({}).subscribe((result) => (value = result));
 
         // Assert
         expect(value === null).toBe(true);

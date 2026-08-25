@@ -43,7 +43,15 @@ export class CodexApiService {
         }
     }
 
-    createEntry(section: CodexSection, slug: string, title: string, status: string): Observable<ICodexEntry> {
+    createEntry(
+        section: CodexSection,
+        slug: string,
+        title: string,
+        status: string,
+        tags: string[] = [],
+        visibility: EntryVisibility = EntryVisibility.Dm,
+        fields: Record<string, string> = {}
+    ): Observable<ICodexEntry> {
         const id = buildEntryId(section, slug);
 
         return this.loadIndex().pipe(
@@ -59,12 +67,12 @@ export class CodexApiService {
                     path: `assets/codex/${section}/${slug}.md`,
                     title,
                     status,
-                    tags: [],
+                    tags,
                     favourite: false,
-                    visibility: EntryVisibility.Dm,
+                    visibility,
                     author: 'DM',
                     updatedAt: new Date().toISOString(),
-                    fields: {},
+                    fields,
                     excerpt: '',
                     body: `# ${title}\n\n`
                 };

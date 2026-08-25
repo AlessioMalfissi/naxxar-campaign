@@ -1,9 +1,12 @@
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
+import { MatChipInputEvent } from '@angular/material/chips';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
+import { EntryVisibility } from '@core/models';
 import { ConfirmModalComponent } from './confirm-modal.component';
-import { IConfirmModalData, IPromptModalData } from './i-modal';
+import { CreateEntryModalComponent } from './create-entry-modal.component';
+import { IConfirmModalData, ICreateEntryModalData, ICreateEntryResult, IPromptModalData } from './i-modal';
 import { PromptModalComponent } from './prompt-modal.component';
 
 const CONFIRM_DATA: IConfirmModalData = {
@@ -18,6 +21,13 @@ const PROMPT_DATA: IPromptModalData = {
     title: 'New entry in NPCs',
     label: 'Title',
     placeholder: 'Vaelith Corrun',
+    confirmLabel: 'Create entry'
+};
+
+const CREATE_ENTRY_DATA: ICreateEntryModalData = {
+    title: 'New entry in NPCs',
+    statuses: ['Alive', 'Dead'],
+    fields: [{ key: 'race', label: 'Race', kind: 'text' }],
     confirmLabel: 'Create entry'
 };
 
@@ -125,6 +135,108 @@ describe('PromptModalComponent', () => {
 
         // Act
         buttons[0].click();
+
+        // Assert
+        expect(dialogRef.close).toHaveBeenCalledWith(null);
+    });
+});
+
+describe('CreateEntryModalComponent', () => {
+    let fixture: ComponentFixture<CreateEntryModalComponent>;
+    let component: CreateEntryModalComponent;
+    let dialogRef: { close: jest.Mock };
+
+    beforeEach(async () => {
+        // Arrange
+        dialogRef = { close: jest.fn() };
+        await TestBed.configureTestingModule({
+            imports: [CreateEntryModalComponent, NoopAnimationsModule],
+            providers: [
+                { provide: DIALOG_DATA, useValue: CREATE_ENTRY_DATA },
+                { provide: DialogRef, useValue: dialogRef }
+            ]
+        }).compileComponents();
+        fixture = TestBed.createComponent(CreateEntryModalComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+    });
+
+    it('should default the status to the first option', () => {
+        // Assert
+        expect(component['statusControl'].value).toBe('Alive');
+    });
+
+    it('should add and remove tags', () => {
+        // Arrange
+        const inputEvent = { value: 'merchant', chipInput: { clear: jest.fn() } } as unknown as MatChipInputEvent;
+
+        // Act
+        component['addTag'](inputEvent);
+
+        // Assert
+        expect(component['tags']()).toEqual(['merchant']);
+
+        // Act
+        component['removeTag']('merchant');
+
+        // Assert
+        expect(component['tags']()).toEqual([]);
+    });
+
+    it('should ignore blank or duplicate tags', () => {
+        // Arrange
+        const blank = { value: '   ', chipInput: { clear: jest.fn() } } as unknown as MatChipInputEvent;
+        const merchant = { value: 'merchant', chipInput: { clear: jest.fn() } } as unknown as MatChipInputEvent;
+
+        // Act
+        component['addTag'](blank);
+        component['addTag'](merchant);
+        component['addTag'](merchant);
+
+        // Assert
+        expect(component['tags']()).toEqual(['merchant']);
+    });
+
+    it('should close with the entered title, status, tags, visibility and fields', () => {
+        // Arrange
+        component['titleControl'].setValue('Grum the Broker');
+        component['statusControl'].setValue('Dead');
+        component['visibilityControl'].setValue(EntryVisibility.Revealed);
+        component['fieldsGroup'].controls['race'].setValue('Dwarf');
+        component['addTag']({ value: 'merchant', chipInput: { clear: jest.fn() } } as unknown as MatChipInputEvent);
+        fixture.detectChanges();
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        const expected: ICreateEntryResult = {
+            title: 'Grum the Broker',
+            status: 'Dead',
+            tags: ['merchant'],
+            visibility: EntryVisibility.Revealed,
+            fields: { race: 'Dwarf' }
+        };
+        expect(dialogRef.close).toHaveBeenCalledWith(expected);
+    });
+
+    it('should keep the modal open and show the error when the title is too short', () => {
+        // Arrange
+        component['titleControl'].setValue('G');
+        fixture.detectChanges();
+
+        // Act
+        component['confirm']();
+        fixture.detectChanges();
+
+        // Assert
+        expect(dialogRef.close).not.toHaveBeenCalled();
+        expect(component['titleControl'].touched).toBe(true);
+    });
+
+    it('should close with null when cancelled', () => {
+        // Act
+        component['cancel']();
 
         // Assert
         expect(dialogRef.close).toHaveBeenCalledWith(null);

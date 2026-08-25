@@ -8,6 +8,7 @@ import { Store } from '@ngrx/store';
 import { filter } from 'rxjs';
 
 import { CodexSection, findSectionDefinition, ICodexEntrySummary, SECTION_DEFINITIONS } from '@core/models';
+import { ICreateEntryResult } from '@shared/modal/i-modal';
 import { ModalService } from '@shared/modal/modal.service';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
@@ -56,19 +57,26 @@ export class CodexSidebarComponent {
         const definition = findSectionDefinition(section);
 
         this.modalService
-            .prompt({
+            .createEntry({
                 title: `New entry in ${definition.label}`,
-                label: 'Title',
-                placeholder: 'Vaelith Corrun',
+                statuses: definition.statuses,
+                fields: definition.fields,
                 confirmLabel: 'Create entry'
             })
             .pipe(
-                filter((title): title is string => title !== null),
+                filter((result): result is ICreateEntryResult => result !== null),
                 takeUntilDestroyed(this.destroyRef)
             )
-            .subscribe((title) => {
+            .subscribe((result) => {
                 this.store.dispatch(
-                    CodexActions.createEntry.request({ section, title, status: definition.statuses[0] })
+                    CodexActions.createEntry.request({
+                        section,
+                        title: result.title,
+                        status: result.status,
+                        tags: result.tags,
+                        visibility: result.visibility,
+                        fields: result.fields
+                    })
                 );
             });
     }

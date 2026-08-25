@@ -1,6 +1,6 @@
 import { createAction, props } from '@ngrx/store';
 
-import { CodexSection, ICodexEntry, ICodexEntrySummary } from '@core/models';
+import { CodexSection, EntryVisibility, ICodexEntry, ICodexEntrySummary } from '@core/models';
 import { createApiAction } from '../create-api-action';
 
 const SOURCE = 'Codex';
@@ -12,7 +12,14 @@ export const loadEntry = createApiAction<{ id: string }, { entry: ICodexEntry }>
 export const saveEntry = createApiAction<{ entry: ICodexEntry }, { entry: ICodexEntry }>(SOURCE, 'save entry');
 
 export const createEntry = createApiAction<
-    { section: CodexSection; title: string; status: string },
+    {
+        section: CodexSection;
+        title: string;
+        status: string;
+        tags: string[];
+        visibility: EntryVisibility;
+        fields: Record<string, string>;
+    },
     { entry: ICodexEntry }
 >(SOURCE, 'create entry');
 

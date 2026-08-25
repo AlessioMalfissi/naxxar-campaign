@@ -1,0 +1,64 @@
+<div class="cdx-modal cdx-modal-wide">
+    <h2 class="cdx-modal-title">{{ data.title }}</h2>
+
+    <mat-form-field appearance="outline" class="cdx-modal-field">
+        <mat-label>Title</mat-label>
+        <input matInput [formControl]="titleControl" placeholder="Vaelith Corrun" />
+        @if (titleControl.touched && titleControl.invalid) {
+            <mat-error>Enter at least two characters</mat-error>
+        }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="cdx-modal-field">
+        <mat-label>Status</mat-label>
+        <mat-select [formControl]="statusControl">
+            @for (status of data.statuses; track status) {
+                <mat-option [value]="status">{{ status }}</mat-option>
+            }
+        </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="cdx-modal-field">
+        <mat-label>Tags</mat-label>
+        <mat-chip-grid #chipGrid aria-label="Tags">
+            @for (tag of tags(); track tag) {
+                <mat-chip-row (removed)="removeTag(tag)">
+                    {{ tag }}
+                    <button matChipRemove type="button" aria-label="Remove tag">
+                        <mat-icon>cancel</mat-icon>
+                    </button>
+                </mat-chip-row>
+            }
+        </mat-chip-grid>
+        <input
+            placeholder="Add a tag…"
+            [matChipInputFor]="chipGrid"
+            [matChipInputSeparatorKeyCodes]="separatorKeys"
+            (matChipInputTokenEnd)="addTag($event)"
+        />
+    </mat-form-field>
+
+    <div class="cdx-modal-field cdx-modal-visibility">
+        <span class="cdx-modal-visibility-label">Visibility</span>
+        <mat-radio-group [formControl]="visibilityControl">
+            <mat-radio-button [value]="visibilities.Dm">DM only</mat-radio-button>
+            <mat-radio-button [value]="visibilities.Revealed">Visible to players</mat-radio-button>
+        </mat-radio-group>
+    </div>
+
+    @if (data.fields.length > 0) {
+        <div class="cdx-modal-fields" [formGroup]="fieldsGroup">
+            @for (field of data.fields; track field.key) {
+                <mat-form-field appearance="outline" class="cdx-modal-field">
+                    <mat-label>{{ field.label }}</mat-label>
+                    <input matInput [formControlName]="field.key" [type]="field.kind === 'date' ? 'date' : 'text'" />
+                </mat-form-field>
+            }
+        </div>
+    }
+
+    <div class="cdx-modal-actions">
+        <button mat-button type="button" (click)="cancel()">Cancel</button>
+        <button mat-flat-button type="button" (click)="confirm()">{{ data.confirmLabel }}</button>
+    </div>
+</div>

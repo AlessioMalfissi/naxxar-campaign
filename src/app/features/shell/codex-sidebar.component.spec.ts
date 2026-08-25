@@ -4,7 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of } from 'rxjs';
 
-import { CodexSection } from '@core/models';
+import { CodexSection, EntryVisibility } from '@core/models';
 import { ModalService } from '@shared/modal/modal.service';
 import { buildSummary } from '@testing/entry.fixtures';
 import * as CodexActions from '@store/codex/codex.actions';
@@ -20,11 +20,22 @@ describe('CodexSidebarComponent', () => {
     let fixture: ComponentFixture<CodexSidebarComponent>;
     let component: CodexSidebarComponent;
     let store: MockStore;
-    let modalService: { prompt: jest.Mock; confirm: jest.Mock };
+    let modalService: { createEntry: jest.Mock; confirm: jest.Mock };
 
     beforeEach(async () => {
         // Arrange
-        modalService = { prompt: jest.fn().mockReturnValue(of('Grum the Broker')), confirm: jest.fn() };
+        modalService = {
+            createEntry: jest.fn().mockReturnValue(
+                of({
+                    title: 'Grum the Broker',
+                    status: 'Alive',
+                    tags: ['merchant'],
+                    visibility: EntryVisibility.Dm,
+                    fields: {}
+                })
+            ),
+            confirm: jest.fn()
+        };
 
         await TestBed.configureTestingModule({
             imports: [CodexSidebarComponent, NoopAnimationsModule],
@@ -106,7 +117,7 @@ describe('CodexSidebarComponent', () => {
         expect(fixture.nativeElement.querySelector('[aria-label="New entry"]') !== null).toBe(true);
     });
 
-    it('should dispatch a create request with the first status of the section', () => {
+    it('should dispatch a create request with the details entered in the modal', () => {
         // Arrange
         const dispatchSpy = jest.spyOn(store, 'dispatch');
         const newEntryButton = fixture.nativeElement.querySelector('.cdx-sidebar-new') as HTMLButtonElement;
@@ -119,14 +130,17 @@ describe('CodexSidebarComponent', () => {
             CodexActions.createEntry.request({
                 section: CodexSection.Npcs,
                 title: 'Grum the Broker',
-                status: 'Alive'
+                status: 'Alive',
+                tags: ['merchant'],
+                visibility: EntryVisibility.Dm,
+                fields: {}
             })
         );
     });
 
-    it('should not dispatch when the prompt is dismissed', () => {
+    it('should not dispatch when the modal is dismissed', () => {
         // Arrange
-        modalService.prompt.mockReturnValue(of(null));
+        modalService.createEntry.mockReturnValue(of(null));
         const dispatchSpy = jest.spyOn(store, 'dispatch');
 
         // Act
