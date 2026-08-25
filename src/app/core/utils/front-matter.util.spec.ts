@@ -1,6 +1,6 @@
 import { CodexSection, EntryVisibility } from '@core/models';
 import { buildEntry } from '@testing/entry.fixtures';
-import { parseFrontMatter, serializeFrontMatter, stripFrontMatter, toEntrySummary } from './front-matter.util';
+import { parseFrontMatter, serializeFrontMatter, stripFrontMatter, toEntry, toEntrySummary } from './front-matter.util';
 
 const SOURCE = [
     '---',
@@ -143,5 +143,28 @@ describe('frontMatterUtil', () => {
         expect(summary.visibility).toBe(EntryVisibility.Revealed);
         expect(summary.tags.length).toBe(0);
         expect(summary.author).toBe('DM');
+    });
+
+    it('should map a raw entry record onto a summary plus body', () => {
+        // Arrange
+        const raw = { id: 'npcs:vaelith-corrun', title: 'Vaelith Corrun', body: '# Who he is' };
+
+        // Act
+        const entry = toEntry(raw);
+
+        // Assert
+        expect(entry.id).toBe('npcs:vaelith-corrun');
+        expect(entry.body).toBe('# Who he is');
+    });
+
+    it('should default the body to an empty string when missing', () => {
+        // Arrange
+        const raw: Record<string, unknown> = {};
+
+        // Act
+        const entry = toEntry(raw);
+
+        // Assert
+        expect(entry.body).toBe('');
     });
 });

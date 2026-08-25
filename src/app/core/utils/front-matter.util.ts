@@ -103,3 +103,8 @@ export const toEntrySummary = (raw: Record<string, unknown>): ICodexEntrySummary
     fields: (raw['fields'] ?? {}) as Record<string, string>,
     excerpt: String(raw['excerpt'] ?? '')
 });
+
+export const toEntry = (raw: Record<string, unknown>): ICodexEntry => ({
+    ...toEntrySummary(raw),
+    body: String(raw['body'] ?? '')
+});

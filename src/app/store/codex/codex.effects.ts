@@ -4,7 +4,6 @@ import { Store } from '@ngrx/store';
 import { catchError, map, of, switchMap, withLatestFrom } from 'rxjs';
 
 import { CodexApiService } from '@core/services/codex-api.service';
-import { slugify } from '@core/utils/entry-id.util';
 import * as CodexActions from './codex.actions';
 import { selectCodexState } from './codex.selectors';
 
@@ -64,7 +63,7 @@ export class CodexEffects {
         this.actions$.pipe(
             ofType(CodexActions.createEntry.request),
             switchMap(({ section, title, status, tags, visibility, fields }) =>
-                this.codexApi.createEntry(section, slugify(title), title, status, tags, visibility, fields).pipe(
+                this.codexApi.createEntry(section, title, status, tags, visibility, fields).pipe(
                     map((entry) => CodexActions.createEntry.success({ entry })),
                     catchError((error: Error) => of(CodexActions.createEntry.failure({ error: error.message })))
                 )
