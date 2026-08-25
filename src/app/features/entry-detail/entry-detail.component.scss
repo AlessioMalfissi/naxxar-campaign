@@ -43,6 +43,36 @@
     --mdc-chip-label-text-color: var(--cdx-primary-text);
 }
 
+.cdx-entry-status-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 32px;
+    padding: 0 8px 0 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--cdx-primary-tint);
+    color: var(--cdx-primary-text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+        background: rgb(151 196 89 / 22%);
+    }
+}
+
+.cdx-entry-status-caret {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+}
+
+.cdx-entry-status-option-active {
+    color: var(--cdx-primary);
+}
+
 .cdx-entry-fields {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));

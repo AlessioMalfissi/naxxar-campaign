@@ -29,7 +29,32 @@
         </div>
 
         <mat-chip-set class="cdx-entry-chips" aria-label="Entry tags">
-            <mat-chip class="cdx-entry-chip-status">{{ openEntry.status }}</mat-chip>
+            @if (playerMode()) {
+                <mat-chip class="cdx-entry-chip-status">{{ openEntry.status }}</mat-chip>
+            } @else {
+                <button
+                    type="button"
+                    class="cdx-entry-chip-status cdx-entry-status-trigger"
+                    aria-label="Change status"
+                    matTooltip="Change status"
+                    [matMenuTriggerFor]="statusMenu"
+                >
+                    {{ openEntry.status }}
+                    <mat-icon class="cdx-entry-status-caret" aria-hidden="true">arrow_drop_down</mat-icon>
+                </button>
+                <mat-menu #statusMenu="matMenu">
+                    @for (status of statusOptions(); track status) {
+                        <button
+                            mat-menu-item
+                            type="button"
+                            [class.cdx-entry-status-option-active]="status === openEntry.status"
+                            (click)="onStatusChanged(status)"
+                        >
+                            {{ status }}
+                        </button>
+                    }
+                </mat-menu>
+            }
             @for (tag of openEntry.tags; let i = $index; track i) {
                 <mat-chip>{{ tag }}</mat-chip>
             }

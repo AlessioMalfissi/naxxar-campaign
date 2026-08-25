@@ -346,6 +346,53 @@ describe('EntryDetailComponent', () => {
         );
     });
 
+    it('should save the entry with the newly picked status', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['onStatusChanged']('Dead');
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CodexActions.saveEntry.request({
+                entry: {
+                    ...buildEntry({
+                        fields: { race: 'Half-elf', role: 'Broker', affiliation: 'organizations:silver-ledger' }
+                    }),
+                    status: 'Dead',
+                    body: '# Who he is\n\nBroker of debts.'
+                }
+            })
+        );
+    });
+
+    it('should ignore picking the status the entry already has', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['onStatusChanged']('Alive');
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should render the status as read-only in player mode', () => {
+        // Arrange
+        store.overrideSelector(selectPlayerMode, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('.cdx-entry-status-trigger') === null).toBe(true);
+        expect(fixture.nativeElement.querySelector('.cdx-entry-chip-status').textContent.trim()).toBe('Alive');
+    });
+
     it('should export the entry with the current draft body', () => {
         // Arrange
         fixture.detectChanges();
