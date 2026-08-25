@@ -1,4 +1,4 @@
-# Ashfall codex
+# Naxxar campaign
 
 Dungeons & Dragons campaign dashboard: lore split across five sections, each entry stored as a markdown
 file and edited in place with a formatting toolbar. Dark theme, green primary, light-gray secondary.
