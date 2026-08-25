@@ -9,9 +9,7 @@
         <mat-icon>menu</mat-icon>
     </button>
 
-    <button mat-button type="button" class="cdx-header-campaign" [matMenuTriggerFor]="campaignMenu">
-        {{ campaignName() }}
-    </button>
+    <span class="cdx-header-campaign">{{ campaignName() }}</span>
     <span class="cdx-header-session">{{ sessionLabel() }}</span>
 
     <span class="cdx-header-spacer"></span>
@@ -47,15 +45,9 @@
     </button>
 </header>
 
-<mat-menu #campaignMenu="matMenu">
-    <button mat-menu-item type="button">Ashfall chronicles</button>
-    <button mat-menu-item type="button">Switch campaign</button>
-</mat-menu>
-
 <mat-menu #accountMenu="matMenu">
     <button mat-menu-item type="button" (click)="togglePlayerMode()">
         {{ playerMode() ? 'Switch to DM view' : 'Switch to player view' }}
     </button>
-    <button mat-menu-item type="button">Campaign settings</button>
     <button mat-menu-item type="button">Sign out</button>
 </mat-menu>
