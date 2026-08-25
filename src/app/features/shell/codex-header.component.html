@@ -1,0 +1,61 @@
+<header class="cdx-header">
+    <button
+        mat-icon-button
+        type="button"
+        aria-label="Toggle sidebar"
+        matTooltip="Toggle sidebar"
+        (click)="toggleSidebar()"
+    >
+        <mat-icon>menu</mat-icon>
+    </button>
+
+    <button mat-button type="button" class="cdx-header-campaign" [matMenuTriggerFor]="campaignMenu">
+        {{ campaignName() }}
+    </button>
+    <span class="cdx-header-session">{{ sessionLabel() }}</span>
+
+    <span class="cdx-header-spacer"></span>
+
+    <mat-form-field appearance="outline" class="cdx-header-search" subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+            matInput
+            type="search"
+            placeholder="Search lore"
+            aria-label="Search lore"
+            [formControl]="searchControl"
+            [matAutocomplete]="auto"
+        />
+    </mat-form-field>
+    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayEmpty">
+        @for (result of results(); track result.id) {
+            <mat-option [value]="result.id" (onSelectionChange)="openResult(result)">
+                <span class="cdx-header-result-title">{{ result.title }}</span>
+                <span class="cdx-header-result-section">{{ result.section }}</span>
+            </mat-option>
+        }
+    </mat-autocomplete>
+
+    <button
+        mat-icon-button
+        type="button"
+        aria-label="Account menu"
+        [matMenuTriggerFor]="accountMenu"
+        class="cdx-header-avatar"
+    >
+        <span>DM</span>
+    </button>
+</header>
+
+<mat-menu #campaignMenu="matMenu">
+    <button mat-menu-item type="button">Ashfall chronicles</button>
+    <button mat-menu-item type="button">Switch campaign</button>
+</mat-menu>
+
+<mat-menu #accountMenu="matMenu">
+    <button mat-menu-item type="button" (click)="togglePlayerMode()">
+        {{ playerMode() ? 'Switch to DM view' : 'Switch to player view' }}
+    </button>
+    <button mat-menu-item type="button">Campaign settings</button>
+    <button mat-menu-item type="button">Sign out</button>
+</mat-menu>

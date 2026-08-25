@@ -1,0 +1,32 @@
+.cdx-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--cdx-surface-0);
+}
+
+.cdx-tab-bar {
+    flex: none;
+    padding: 0 8px;
+    background: var(--cdx-surface-2);
+    border-bottom: 1px solid var(--cdx-border);
+}
+
+.cdx-shell-body {
+    display: flex;
+    align-items: stretch;
+    height: calc(100vh - 90px);
+}
+
+.cdx-shell-content {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 16px 20px 32px;
+}
+
+@media (width <= 1023px) {
+    .cdx-shell-body {
+        position: relative;
+    }
+}

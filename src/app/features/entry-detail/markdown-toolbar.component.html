@@ -1,0 +1,79 @@
+<div class="cdx-toolbar" role="toolbar" aria-label="Formatting">
+    @for (button of inlineButtons; track button.command) {
+        <button
+            mat-icon-button
+            type="button"
+            [class.cdx-toolbar-active]="isActive(button.command)"
+            [attr.aria-label]="button.label"
+            [attr.aria-pressed]="isActive(button.command)"
+            [matTooltip]="tooltipFor(button)"
+            (click)="requestCommand(button.command)"
+        >
+            <mat-icon>{{ button.icon }}</mat-icon>
+        </button>
+    }
+
+    <span class="cdx-toolbar-divider"></span>
+
+    <button
+        mat-icon-button
+        type="button"
+        aria-label="Heading"
+        matTooltip="Heading (Ctrl+Alt+1-3)"
+        [matMenuTriggerFor]="headingMenu"
+    >
+        <mat-icon>title</mat-icon>
+    </button>
+
+    @for (button of blockButtons; track button.command) {
+        <button
+            mat-icon-button
+            type="button"
+            [attr.aria-label]="button.label"
+            [matTooltip]="tooltipFor(button)"
+            (click)="requestCommand(button.command)"
+        >
+            <mat-icon>{{ button.icon }}</mat-icon>
+        </button>
+    }
+
+    <span class="cdx-toolbar-divider"></span>
+
+    @for (button of insertButtons; track button.command) {
+        <button
+            mat-icon-button
+            type="button"
+            [attr.aria-label]="button.label"
+            [matTooltip]="tooltipFor(button)"
+            (click)="requestCommand(button.command)"
+        >
+            <mat-icon>{{ button.icon }}</mat-icon>
+        </button>
+    }
+
+    <span class="cdx-toolbar-spacer"></span>
+    <span class="cdx-toolbar-hint">Markdown</span>
+
+    <button
+        mat-icon-button
+        type="button"
+        aria-label="Toggle preview"
+        matTooltip="Preview (Ctrl+Shift+P)"
+        [class.cdx-toolbar-active]="viewMode() !== viewModeOptions.Edit"
+        [matMenuTriggerFor]="viewMenu"
+    >
+        <mat-icon>visibility</mat-icon>
+    </button>
+</div>
+
+<mat-menu #headingMenu="matMenu">
+    <button mat-menu-item type="button" (click)="requestCommand('heading1')">Heading 1</button>
+    <button mat-menu-item type="button" (click)="requestCommand('heading2')">Heading 2</button>
+    <button mat-menu-item type="button" (click)="requestCommand('heading3')">Heading 3</button>
+</mat-menu>
+
+<mat-menu #viewMenu="matMenu">
+    <button mat-menu-item type="button" (click)="requestViewMode(viewModeOptions.Edit)">Edit</button>
+    <button mat-menu-item type="button" (click)="requestViewMode(viewModeOptions.Split)">Split</button>
+    <button mat-menu-item type="button" (click)="requestViewMode(viewModeOptions.Preview)">Preview</button>
+</mat-menu>

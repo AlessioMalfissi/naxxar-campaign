@@ -1,0 +1,38 @@
+<table class="cdx-data-table">
+    <thead>
+        <tr>
+            @for (column of columns(); track column.key) {
+                <th [style.width]="column.width">{{ column.label }}</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @for (row of rows(); track row.id) {
+            <tr
+                class="cdx-data-table-row"
+                [class.cdx-data-table-row-selected]="row.id === selectedId()"
+                tabindex="0"
+                (click)="onRowActivated(row.id)"
+                (keydown.enter)="onRowActivated(row.id)"
+            >
+                @for (column of columns(); track column.key) {
+                    <td>
+                        @if (column.key === 'status' && row.chip) {
+                            <span class="cdx-data-table-chip">{{ row.chip }}</span>
+                        } @else if (column.key === 'tags' && row.tags) {
+                            @for (tag of row.tags; track tag) {
+                                <span class="cdx-data-table-tag">{{ tag }}</span>
+                            }
+                        } @else {
+                            {{ row.cells[column.key] }}
+                        }
+                    </td>
+                }
+            </tr>
+        } @empty {
+            <tr>
+                <td class="cdx-data-table-empty" [attr.colspan]="columns().length">{{ emptyMessage() }}</td>
+            </tr>
+        }
+    </tbody>
+</table>

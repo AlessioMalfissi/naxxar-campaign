@@ -1,0 +1,20 @@
+<div class="cdx-editor-panes" [class.cdx-editor-split]="showEditor() && showPreview()">
+    @if (showEditor()) {
+        <textarea
+            #editor
+            class="cdx-editor-input"
+            aria-label="Entry markdown"
+            spellcheck="true"
+            [readOnly]="readOnly()"
+            [value]="value()"
+            (input)="onInput($event)"
+            (keyup)="onCaretMoved()"
+            (click)="onCaretMoved()"
+            (select)="onCaretMoved()"
+        ></textarea>
+    }
+
+    @if (showPreview()) {
+        <div class="cdx-editor-preview" [innerHTML]="safeHtml()" (click)="onPreviewClick($event)"></div>
+    }
+</div>

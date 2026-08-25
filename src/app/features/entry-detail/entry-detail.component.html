@@ -1,0 +1,112 @@
+<div class="cdx-entry" [class.pane-is-loading]="loading()">
+    @if (entry(); as openEntry) {
+        <p class="cdx-entry-breadcrumb">{{ sectionLabel() }} / {{ openEntry.title }}</p>
+
+        <div class="cdx-entry-title-row">
+            <h1 class="cdx-entry-title">{{ openEntry.title }}</h1>
+            <button
+                mat-icon-button
+                type="button"
+                aria-label="Toggle favourite"
+                matTooltip="Favourite"
+                [class.cdx-entry-favourite]="openEntry.favourite"
+                (click)="toggleFavourite()"
+            >
+                <mat-icon>star</mat-icon>
+            </button>
+            <span class="cdx-entry-spacer"></span>
+            @if (isDmOnly()) {
+                <span class="cdx-entry-dm-badge">DM only</span>
+            }
+            <button
+                mat-icon-button
+                type="button"
+                aria-label="Entry actions"
+                [matMenuTriggerFor]="entryMenu"
+            >
+                <mat-icon>more_vert</mat-icon>
+            </button>
+        </div>
+
+        <mat-chip-set class="cdx-entry-chips" aria-label="Entry tags">
+            <mat-chip class="cdx-entry-chip-status">{{ openEntry.status }}</mat-chip>
+            @for (tag of openEntry.tags; track tag) {
+                <mat-chip>{{ tag }}</mat-chip>
+            }
+        </mat-chip-set>
+
+        @if (fields().length > 0) {
+            <dl class="cdx-entry-fields">
+                @for (field of fields(); track field.label) {
+                    <div class="cdx-entry-field">
+                        <dt>{{ field.label }}</dt>
+                        <dd>{{ field.value }}</dd>
+                    </div>
+                }
+            </dl>
+        }
+
+        @if (!playerMode()) {
+            <cdx-markdown-toolbar
+                [activeCommands]="activeCommands()"
+                [viewMode]="viewMode()"
+                (commandRequested)="onCommand($event)"
+                (viewModeRequested)="onViewMode($event)"
+            />
+        }
+
+        <cdx-markdown-editor
+            [value]="draftBody()"
+            [html]="renderedHtml()"
+            [showEditor]="showEditor() && !playerMode()"
+            [showPreview]="showPreview() || playerMode()"
+            [readOnly]="playerMode()"
+            (valueChanged)="onBodyChanged($event)"
+            (entryLinkActivated)="onEntryLink($event)"
+            (activeCommandsChanged)="onActiveCommands($event)"
+        />
+
+        @if (!playerMode()) {
+            <div class="cdx-entry-status-row">
+                @switch (saveStatus()) {
+                    @case (saveStatuses.Saving) {
+                        <span class="cdx-entry-status">Saving…</span>
+                    }
+                    @case (saveStatuses.Dirty) {
+                        <span class="cdx-entry-status cdx-entry-status-warning">Unsaved changes</span>
+                    }
+                    @case (saveStatuses.Failed) {
+                        <span class="cdx-entry-status cdx-entry-status-danger">Couldn't save. Retry</span>
+                    }
+                    @default {
+                        <span class="cdx-entry-status" aria-live="polite">
+                            <mat-icon class="cdx-entry-status-icon">check</mat-icon>
+                            {{ savedLabel() }}
+                        </span>
+                    }
+                }
+                <span class="cdx-entry-spacer"></span>
+                <button mat-button type="button" [disabled]="!isDirty()" (click)="cancel()">Cancel</button>
+                <button mat-flat-button type="button" class="cdx-entry-save" (click)="save()">Save entry</button>
+            </div>
+        }
+
+        @if (referencingEntries().length > 0) {
+            <section class="cdx-entry-references">
+                <h2 class="cdx-entry-references-title">Referenced by</h2>
+                @for (reference of referencingEntries(); track reference.id) {
+                    <button mat-button type="button" (click)="onEntryLink(reference.id)">
+                        {{ reference.title }}
+                    </button>
+                }
+            </section>
+        }
+
+        <mat-menu #entryMenu="matMenu">
+            <button mat-menu-item type="button" (click)="exportMarkdown()">Export markdown</button>
+            <button mat-menu-item type="button" (click)="deleteEntry()">Delete entry</button>
+        </mat-menu>
+    } @else if (!loading()) {
+        <p class="cdx-entry-missing">That entry couldn't be found. Pick another from the sidebar.</p>
+    }
+</div>

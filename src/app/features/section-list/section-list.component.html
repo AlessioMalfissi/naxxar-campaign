@@ -1,0 +1,76 @@
+<div class="cdx-section" [class.pane-is-loading]="loading()">
+    <div class="cdx-section-head">
+        <h1 class="cdx-section-title">{{ definition().label }}</h1>
+        <span class="cdx-section-count">{{ entries().length }} entries</span>
+        <span class="cdx-section-spacer"></span>
+        <button
+            mat-icon-button
+            type="button"
+            aria-label="Table view"
+            matTooltip="Table view"
+            [class.cdx-view-active]="view() === 'table'"
+            (click)="setView('table')"
+        >
+            <mat-icon>table_rows</mat-icon>
+        </button>
+        <button
+            mat-icon-button
+            type="button"
+            aria-label="Card view"
+            matTooltip="Card view"
+            [class.cdx-view-active]="view() === 'cards'"
+            (click)="setView('cards')"
+        >
+            <mat-icon>grid_view</mat-icon>
+        </button>
+    </div>
+
+    <div class="cdx-section-filters">
+        <mat-chip-listbox aria-label="Filter by status">
+            @for (status of definition().statuses; track status) {
+                <mat-chip-option
+                    [selected]="filters().status === status"
+                    (click)="toggleStatus(status)"
+                >
+                    {{ status }}
+                </mat-chip-option>
+            }
+        </mat-chip-listbox>
+
+        @if (tags().length > 0) {
+            <mat-chip-listbox aria-label="Filter by tag" multiple>
+                @for (tag of tags(); track tag) {
+                    <mat-chip-option [selected]="filters().tags.includes(tag)" (click)="toggleTag(tag)">
+                        {{ tag }}
+                    </mat-chip-option>
+                }
+            </mat-chip-listbox>
+        }
+    </div>
+
+    @if (view() === 'table') {
+        <cdx-data-table
+            [columns]="columns()"
+            [rows]="rows()"
+            [emptyMessage]="'Start your first entry in ' + definition().label"
+            (rowActivated)="openEntry($event)"
+        />
+    } @else {
+        <div class="cdx-card-grid">
+            @for (entry of entries(); track entry.id) {
+                <article class="cdx-card" tabindex="0" (click)="openSummary(entry)" (keydown.enter)="openSummary(entry)">
+                    <h2 class="cdx-card-title">{{ entry.title }}</h2>
+                    <span class="cdx-card-status">{{ entry.status }}</span>
+                    <p class="cdx-card-excerpt">{{ entry.excerpt }}</p>
+                    <div class="cdx-card-tags">
+                        @for (tag of entry.tags; track tag) {
+                            <span class="cdx-card-tag">{{ tag }}</span>
+                        }
+                    </div>
+                </article>
+            } @empty {
+                <p class="cdx-section-empty">Start your first entry in {{ definition().label }}.</p>
+            }
+        </div>
+    }
+</div>

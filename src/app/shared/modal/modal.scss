@@ -1,0 +1,36 @@
+.cdx-modal {
+    min-width: 320px;
+    max-width: 420px;
+    padding: 20px;
+    border-radius: 12px;
+    background: var(--cdx-surface-3);
+    color: var(--cdx-text-primary);
+}
+
+.cdx-modal-title {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.cdx-modal-message {
+    margin: 0 0 20px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--cdx-text-secondary);
+}
+
+.cdx-modal-field {
+    width: 100%;
+}
+
+.cdx-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.cdx-modal-danger {
+    background: var(--cdx-danger);
+    color: var(--cdx-on-danger);
+}

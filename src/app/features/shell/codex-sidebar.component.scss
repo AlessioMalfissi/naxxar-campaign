@@ -1,0 +1,113 @@
+:host {
+    display: block;
+    flex: none;
+}
+
+.cdx-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    height: 100%;
+    padding: 12px 8px;
+    background: var(--cdx-surface-1);
+    border-right: 1px solid var(--cdx-border);
+    overflow-y: auto;
+}
+
+.cdx-sidebar-narrow {
+    width: 64px;
+    align-items: center;
+}
+
+.cdx-sidebar-new {
+    width: 100%;
+    margin-bottom: 12px;
+    background: var(--cdx-primary);
+    color: var(--cdx-on-primary);
+}
+
+.cdx-sidebar-new-icon {
+    margin-bottom: 12px;
+    background: var(--cdx-primary);
+    color: var(--cdx-on-primary);
+}
+
+.cdx-sidebar-caption {
+    margin: 0 0 4px;
+    padding: 0 8px;
+    font-size: 11px;
+    color: var(--cdx-text-muted);
+}
+
+.cdx-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cdx-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 6px;
+    color: var(--cdx-text-secondary);
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+
+    mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+    }
+
+    &:hover {
+        background: rgb(255 255 255 / 4%);
+        color: var(--cdx-text-primary);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 2px;
+    }
+}
+
+.cdx-sidebar-item-active {
+    background: var(--cdx-primary-tint);
+    color: var(--cdx-primary-text);
+}
+
+.cdx-sidebar-label {
+    flex: 1;
+}
+
+.cdx-sidebar-count {
+    color: var(--cdx-text-muted);
+}
+
+.cdx-sidebar-divider {
+    height: 1px;
+    margin: 12px 4px;
+    background: var(--cdx-border);
+}
+
+.cdx-sidebar-recent {
+    display: block;
+    padding: 6px 8px;
+    color: var(--cdx-text-secondary);
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+        color: var(--cdx-text-primary);
+    }
+}
+
+.cdx-sidebar-recent-active {
+    background: rgb(255 255 255 / 5%);
+    border-left: 2px solid var(--cdx-primary);
+    border-radius: 0;
+    color: var(--cdx-text-primary);
+}

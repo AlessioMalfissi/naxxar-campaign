@@ -1,0 +1,55 @@
+<aside class="cdx-sidebar" [class.cdx-sidebar-narrow]="collapsed()">
+    @if (collapsed()) {
+        <button
+            mat-icon-button
+            type="button"
+            aria-label="New entry"
+            matTooltip="New entry"
+            class="cdx-sidebar-new-icon"
+            (click)="createEntry()"
+        >
+            <mat-icon>add</mat-icon>
+        </button>
+    } @else {
+        <button mat-flat-button type="button" class="cdx-sidebar-new" (click)="createEntry()">
+            <mat-icon>add</mat-icon>
+            New entry
+        </button>
+    }
+
+    <nav class="cdx-sidebar-nav" aria-label="Codex sections">
+        @if (!collapsed()) {
+            <p class="cdx-sidebar-caption">Sections</p>
+        }
+        @for (section of sections; track section.section) {
+            <a
+                class="cdx-sidebar-item"
+                [class.cdx-sidebar-item-active]="section.section === activeSection()"
+                [routerLink]="['/campaign', section.section]"
+                [matTooltip]="collapsed() ? section.label : ''"
+            >
+                <mat-icon>{{ section.icon }}</mat-icon>
+                @if (!collapsed()) {
+                    <span class="cdx-sidebar-label">{{ section.label }}</span>
+                    @if (section.section !== 'story') {
+                        <span class="cdx-sidebar-count">{{ countFor(section.section) }}</span>
+                    }
+                }
+            </a>
+        }
+    </nav>
+
+    @if (!collapsed() && recentEntries().length > 0) {
+        <div class="cdx-sidebar-divider"></div>
+        <p class="cdx-sidebar-caption">{{ activeSectionLabel() }} · recent</p>
+        @for (entry of recentEntries(); track entry.id) {
+            <a
+                class="cdx-sidebar-recent"
+                [class.cdx-sidebar-recent-active]="isActiveEntry(entry)"
+                [routerLink]="['/campaign', entry.section, entry.slug]"
+            >
+                {{ entry.title }}
+            </a>
+        }
+    }
+</aside>

@@ -1,0 +1,120 @@
+.cdx-entry-breadcrumb {
+    margin: 0 0 6px;
+    font-size: 11px;
+    color: var(--cdx-text-muted);
+}
+
+.cdx-entry-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.cdx-entry-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--cdx-text-primary);
+}
+
+.cdx-entry-favourite {
+    color: var(--cdx-primary);
+}
+
+.cdx-entry-spacer {
+    flex: 1;
+}
+
+.cdx-entry-dm-badge {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgb(239 159 39 / 18%);
+    color: var(--cdx-warning);
+    font-size: 11px;
+}
+
+.cdx-entry-chips {
+    margin-bottom: 12px;
+}
+
+.cdx-entry-chip-status {
+    --mdc-chip-elevated-container-color: var(--cdx-primary-tint);
+    --mdc-chip-label-text-color: var(--cdx-primary-text);
+}
+
+.cdx-entry-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px 16px;
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--cdx-surface-1);
+}
+
+.cdx-entry-field {
+    dt {
+        font-size: 11px;
+        color: var(--cdx-text-muted);
+    }
+
+    dd {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: var(--cdx-text-primary);
+    }
+}
+
+.cdx-entry-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.cdx-entry-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--cdx-text-muted);
+}
+
+.cdx-entry-status-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: var(--cdx-primary);
+}
+
+.cdx-entry-status-warning {
+    color: var(--cdx-warning);
+}
+
+.cdx-entry-status-danger {
+    color: var(--cdx-danger);
+}
+
+.cdx-entry-save {
+    background: var(--cdx-primary);
+    color: var(--cdx-on-primary);
+}
+
+.cdx-entry-references {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid var(--cdx-border);
+}
+
+.cdx-entry-references-title {
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--cdx-text-muted);
+}
+
+.cdx-entry-missing {
+    color: var(--cdx-text-muted);
+    font-size: 13px;
+}

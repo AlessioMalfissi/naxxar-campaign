@@ -1,0 +1,50 @@
+.cdx-editor-panes {
+    display: block;
+    min-height: 320px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 0 0 6px 6px;
+    background: var(--cdx-surface-2);
+
+    &:focus-within {
+        border-color: rgb(151 196 89 / 55%);
+    }
+}
+
+.cdx-editor-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.cdx-editor-input {
+    display: block;
+    width: 100%;
+    min-height: 320px;
+    padding: 12px 14px;
+    border: none;
+    background: transparent;
+    color: var(--cdx-text-primary);
+    font-family: var(--cdx-font-sans);
+    font-size: 13px;
+    line-height: 1.7;
+    resize: vertical;
+
+    &:focus {
+        outline: none;
+    }
+
+    &::selection {
+        background: rgb(151 196 89 / 30%);
+    }
+}
+
+.cdx-editor-preview {
+    padding: 12px 14px;
+    color: var(--cdx-text-primary);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 80ch;
+}
+
+.cdx-editor-split .cdx-editor-preview {
+    border-left: 1px solid var(--cdx-border);
+}

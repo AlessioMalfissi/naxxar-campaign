@@ -1,0 +1,43 @@
+.cdx-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 6px;
+    background: var(--cdx-surface-2);
+    border: 1px solid var(--cdx-border);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    overflow-x: auto;
+
+    mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: var(--cdx-text-secondary);
+    }
+}
+
+.cdx-toolbar-active {
+    background: var(--cdx-primary-tint);
+
+    mat-icon {
+        color: var(--cdx-text-primary);
+    }
+}
+
+.cdx-toolbar-divider {
+    width: 1px;
+    height: 16px;
+    margin: 0 4px;
+    background: var(--cdx-border-strong);
+}
+
+.cdx-toolbar-spacer {
+    flex: 1;
+}
+
+.cdx-toolbar-hint {
+    padding-right: 4px;
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+}

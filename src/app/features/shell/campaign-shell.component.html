@@ -1,0 +1,25 @@
+<div class="cdx-shell">
+    <cdx-codex-header />
+
+    <nav mat-tab-nav-bar class="cdx-tab-bar" [tabPanel]="tabPanel" aria-label="Codex sections">
+        @for (section of sections; track section.section) {
+            <a
+                mat-tab-link
+                [routerLink]="['/campaign', section.section]"
+                routerLinkActive
+                #link="routerLinkActive"
+                [active]="link.isActive"
+            >
+                {{ section.label }}
+            </a>
+        }
+    </nav>
+    <mat-tab-nav-panel #tabPanel>
+        <div class="cdx-shell-body">
+            <cdx-codex-sidebar [class.cdx-sidebar-collapsed]="sidebarCollapsed()" />
+            <main class="cdx-shell-content">
+                <router-outlet />
+            </main>
+        </div>
+    </mat-tab-nav-panel>
+</div>
