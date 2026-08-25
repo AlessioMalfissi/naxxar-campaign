@@ -25,11 +25,11 @@ MongoDB. Both live in this repo as a pnpm workspace.
 pn install                         # installs both the app and server/
 cp server/.env.example server/.env # then fill in MONGODB_URI
 pn run server:seed                 # loads the sample codex entries into Mongo
-pn run dev                         # runs the API (:3000) and `ng serve` (:4200) together
+pn run dev                         # runs the API (:8000) and `ng serve` (:8001) together
 ```
 
-`ng serve` proxies `/api/*` to `http://localhost:3000` (see `proxy.conf.json`), so the app at
-`http://localhost:4200` talks to the local API transparently. To run them separately instead of
+`ng serve` proxies `/api/*` to `http://localhost:8000` (see `proxy.conf.json`), so the app at
+`http://localhost:8001` talks to the local API transparently. To run them separately instead of
 `pn run dev`: `pn run server` (or `pn run server:dev` to restart on file changes) in one terminal, `pn start`
 in another.
 
@@ -46,12 +46,13 @@ MongoDB (local or Atlas) in production, including serving the built Angular app 
 ## Where the lore lives
 
 Entries live in MongoDB, one document per entry, shaped like `ICodexEntry` in
-`src/app/core/models/i-codex-entry.ts`. The eleven sample entries used to seed a fresh database are still
-kept as markdown files under `src/assets/codex/<section>/<slug>.md`, one folder per section - `pn run
-server:seed` reads them and upserts them into the `entries` collection:
+`src/app/core/models/i-codex-entry.ts`. The eleven sample entries used to seed a fresh database are kept
+as markdown files under `server/seed-data/codex/<section>/<slug>.md`, one folder per section - `pn run
+server:seed` reads them and upserts them into the `entries` collection. They're backend seed data, not an
+Angular asset, so they live under `server/` and are never shipped in the Angular build:
 
 ```
-src/assets/codex/
+server/seed-data/codex/
 ├── npcs/vaelith-corrun.md
 ├── players/tessaly-oakhand.md
 ├── places/ashfall-city.md
@@ -124,7 +125,8 @@ src/app/
 
 server/
 ├── src/                   Express app, MongoDB access, routes (see server/README.md)
-├── scripts/seed.mjs       loads src/assets/codex/**/*.md into MongoDB
+├── seed-data/codex/       sample entries as markdown, seeded into MongoDB
+├── scripts/seed.mjs       loads seed-data/codex/**/*.md into MongoDB
 └── test/                  route specs, run against an in-memory fake collection
 ```
 

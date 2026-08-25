@@ -26,13 +26,7 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "src/assets",
-                "output": "assets"
-              }
-            ],
+            "assets": [],
             "styles": [
               "src/styles.scss"
             ],
@@ -72,6 +66,7 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
+            "port": 8001,
             "proxyConfig": "proxy.conf.json"
           },
           "configurations": {

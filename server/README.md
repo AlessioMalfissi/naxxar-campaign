@@ -26,7 +26,7 @@ pnpm run server:test    # from the repo root, or `npm test` from here
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `PORT` | `3000` | Port the API listens on. |
+| `PORT` | `8000` | Port the API listens on. |
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017` | Connection string. |
 | `MONGODB_DB` | `naxxar_campaign` | Database name. |
 | `STATIC_DIR` | unset | If set, also serves this directory as the Angular app (SPA fallback to `index.html` for any non-`/api` route). Point it at `../dist/naxxar-campaign/browser` after `pn run build` to run the whole app from one process. |
@@ -57,13 +57,13 @@ Query params, all optional and combinable:
 | `query` | `broker` | Case-insensitive substring match against `title` or `excerpt`. |
 
 ```bash
-curl "http://localhost:3000/api/entries?section=npcs&status=Alive&tags=ally&query=broker"
+curl "http://localhost:8000/api/entries?section=npcs&status=Alive&tags=ally&query=broker"
 ```
 
 ### Creating an entry
 
 ```bash
-curl -X POST http://localhost:3000/api/entries \
+curl -X POST http://localhost:8000/api/entries \
   -H 'Content-Type: application/json' \
   -d '{
     "section": "places",
@@ -91,7 +91,8 @@ server/
 │   ├── index.js           entry point: connect, then listen
 │   ├── query.js           builds the MongoDB filter for GET /api/entries
 │   └── sections.js        the five valid section ids
-├── scripts/seed.mjs      parses ../src/assets/codex/**/*.md and upserts them into Mongo
+├── seed-data/codex/      sample entries as markdown, one folder per section
+├── scripts/seed.mjs      parses seed-data/codex/**/*.md and upserts them into Mongo
 ├── test/                 route + query-builder specs (node:test)
 └── test-utils/           the in-memory fake collection used by the tests above
 ```
