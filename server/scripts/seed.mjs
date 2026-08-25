@@ -8,7 +8,7 @@ import { loadConfig } from '../src/config.js';
 import { connectToMongo } from '../src/db.js';
 import { SECTIONS } from '../src/sections.js';
 
-const CODEX_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'assets', 'codex');
+const CODEX_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', 'seed-data', 'codex');
 
 const parseScalar = (raw) => {
     const value = raw.trim().replace(/^["']|["']$/g, '');
