@@ -20,7 +20,7 @@
                         @if (column.key === 'status' && row.chip) {
                             <span class="cdx-data-table-chip">{{ row.chip }}</span>
                         } @else if (column.key === 'tags' && row.tags) {
-                            @for (tag of row.tags; track tag) {
+                            @for (tag of row.tags; let i = $index; track i) {
                                 <span class="cdx-data-table-tag">{{ tag }}</span>
                             }
                         } @else {

@@ -21,7 +21,7 @@
         @if (!collapsed()) {
             <p class="cdx-sidebar-caption">Sections</p>
         }
-        @for (section of sections; track section.section) {
+        @for (section of sections; let i = $index; track i) {
             <a
                 class="cdx-sidebar-item"
                 [class.cdx-sidebar-item-active]="section.section === activeSection()"

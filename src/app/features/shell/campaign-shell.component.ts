@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngrx/store';
 
@@ -13,7 +13,7 @@ import { CodexSidebarComponent } from './codex-sidebar.component';
 @Component({
     selector: 'cdx-campaign-shell',
     standalone: true,
-    imports: [RouterOutlet, RouterLink, RouterLinkActive, MatTabsModule, CodexHeaderComponent, CodexSidebarComponent],
+    imports: [RouterOutlet, MatTabsModule, CodexHeaderComponent, CodexSidebarComponent],
     templateUrl: './campaign-shell.component.html',
     styleUrl: './campaign-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

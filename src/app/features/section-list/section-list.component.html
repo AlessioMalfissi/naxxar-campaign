@@ -27,7 +27,7 @@
 
     <div class="cdx-section-filters">
         <mat-chip-listbox aria-label="Filter by status">
-            @for (status of definition().statuses; track status) {
+            @for (status of definition().statuses; let i = $index; track i) {
                 <mat-chip-option
                     [selected]="filters().status === status"
                     (click)="toggleStatus(status)"
@@ -39,7 +39,7 @@
 
         @if (tags().length > 0) {
             <mat-chip-listbox aria-label="Filter by tag" multiple>
-                @for (tag of tags(); track tag) {
+                @for (tag of tags(); let i = $index; track i) {
                     <mat-chip-option [selected]="filters().tags.includes(tag)" (click)="toggleTag(tag)">
                         {{ tag }}
                     </mat-chip-option>
@@ -63,7 +63,7 @@
                     <span class="cdx-card-status">{{ entry.status }}</span>
                     <p class="cdx-card-excerpt">{{ entry.excerpt }}</p>
                     <div class="cdx-card-tags">
-                        @for (tag of entry.tags; track tag) {
+                        @for (tag of entry.tags; let i = $index; track i) {
                             <span class="cdx-card-tag">{{ tag }}</span>
                         }
                     </div>
