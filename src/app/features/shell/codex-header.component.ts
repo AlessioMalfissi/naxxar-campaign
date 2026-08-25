@@ -42,7 +42,6 @@ export class CodexHeaderComponent {
     private readonly router = inject(Router);
 
     protected readonly campaignName = signal<string>('Naxxar campaign');
-    protected readonly sessionLabel = signal<string>('Session 14');
     protected readonly searchControl = new FormControl<string>('', { nonNullable: true });
     protected readonly playerMode = toSignal(this.store.select(selectPlayerMode), { initialValue: false });
 
