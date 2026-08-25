@@ -21,13 +21,16 @@ export interface ICodexEntry extends ICodexEntrySummary {
     body: string;
 }
 
-export interface ICodexIndex {
-    generatedAt: string;
-    entries: ICodexEntrySummary[];
-}
-
 export interface ICodexReference {
     section: CodexSection;
     slug: string;
     id: string;
+}
+
+export interface ICodexEntryFilter {
+    section?: CodexSection;
+    status?: string;
+    tags?: string[];
+    query?: string;
+    visibility?: EntryVisibility;
 }

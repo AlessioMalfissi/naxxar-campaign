@@ -14,27 +14,44 @@ Built to the specification in `naxxar-campaign-dashboard-spec.pdf`.
 | NgRx store / effects | 19.2.1 |
 | TypeScript | 5.7 |
 | Jest + jest-preset-angular | 29 / 14.5 |
+| Express + MongoDB driver (`server/`) | 4.21 / 6.10 |
 
 ## Running it
 
+The app is a static Angular front end talking to a small Node/Express API in `server/`, backed by
+MongoDB. Both live in this repo as a pnpm workspace.
+
 ```bash
-pn install
-pn start          # regenerates the codex index, then serves on http://localhost:4200
-pn run build      # production bundle in dist/naxxar-campaign
-pn test           # 198 specs
-pn run test:coverage
+pn install                         # installs both the app and server/
+cp server/.env.example server/.env # then fill in MONGODB_URI
+pn run server:seed                 # loads the sample codex entries into Mongo
+pn run dev                         # runs the API (:3000) and `ng serve` (:4200) together
 ```
 
-`pn start` and `pn run build` both run `scripts/build-codex-index.mjs` first. Add or edit a markdown
-file and restart, or run `pn run codex:index` on its own.
+`ng serve` proxies `/api/*` to `http://localhost:3000` (see `proxy.conf.json`), so the app at
+`http://localhost:4200` talks to the local API transparently. To run them separately instead of
+`pn run dev`: `pn run server` (or `pn run server:dev` to restart on file changes) in one terminal, `pn start`
+in another.
+
+```bash
+pn run build       # production Angular bundle in dist/naxxar-campaign/browser
+pn test            # Angular specs
+pn run test:coverage
+pn run server:test # API specs (no live MongoDB needed - routes are tested against an in-memory fake)
+```
+
+See `server/README.md` for the API's endpoints, environment variables, and how to point it at a real
+MongoDB (local or Atlas) in production, including serving the built Angular app from the same process.
 
 ## Where the lore lives
 
-Entries are plain markdown files under `src/assets/codex/<section>/<slug>.md`, one folder per section:
+Entries live in MongoDB, one document per entry, shaped like `ICodexEntry` in
+`src/app/core/models/i-codex-entry.ts`. The eleven sample entries used to seed a fresh database are still
+kept as markdown files under `src/assets/codex/<section>/<slug>.md`, one folder per section - `pn run
+server:seed` reads them and upserts them into the `entries` collection:
 
 ```
 src/assets/codex/
-├── index.json                 generated - do not edit by hand
 ├── npcs/vaelith-corrun.md
 ├── players/tessaly-oakhand.md
 ├── places/ashfall-city.md
@@ -79,13 +96,11 @@ tables, images, external links, plus two additions:
 
 Raw HTML in the source is escaped, never rendered.
 
-### Saving, for now
+### Saving
 
-There is no backend yet. Saves are written to local storage under `naxxar-campaign:entry:<id>` and overlaid
-on top of the files at load, so edits survive a refresh but do not touch the `.md` files. The overflow menu
-on any entry exports the current state back to markdown, front matter included — drop that file into the
-right folder to promote a draft into the repository. Swapping in a real backend means replacing
-`CodexApiService`; nothing else reaches for storage.
+Saves go through `CodexApiService` to the Express API in `server/`, which persists to MongoDB - nothing
+else in the app reaches for storage. The overflow menu on any entry additionally exports its current state
+to a markdown file, front matter included, for archiving or diffing outside the app.
 
 ## Layout
 
@@ -93,11 +108,11 @@ right folder to promote a draft into the repository. Swapping in a real backend 
 src/app/
 ├── core/
 │   ├── models/            enums, I-prefixed interfaces, section definitions
-│   ├── services/          codex api, draft storage, markdown render / command / export
+│   ├── services/          codex api, markdown render / command / export
 │   └── utils/             front matter parsing, entry ids, slugs
 ├── shared/
 │   ├── datatable/         DataTableComponent - read-only tables
-│   └── modal/             ModalService over the CDK Dialog, confirm and prompt modals
+│   └── modal/             ModalService over the CDK Dialog, confirm/prompt/create-entry modals
 ├── store/
 │   ├── create-api-action.ts
 │   ├── codex/             entries, index, filters, active section, player mode
@@ -106,6 +121,11 @@ src/app/
     ├── shell/             campaign shell, header, tab bar, sidebar
     ├── section-list/      table and card views with status and tag filters
     └── entry-detail/      entry header, markdown toolbar, markdown editor
+
+server/
+├── src/                   Express app, MongoDB access, routes (see server/README.md)
+├── scripts/seed.mjs       loads src/assets/codex/**/*.md into MongoDB
+└── test/                  route specs, run against an in-memory fake collection
 ```
 
 Routes are lazy: `/campaign/:section` for a list, `/campaign/:section/:slug` for an entry. Both are

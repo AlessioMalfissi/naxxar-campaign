@@ -4,13 +4,17 @@
   "description": "Dungeons & Dragons campaign dashboard - lore codex with markdown entries",
   "scripts": {
     "ng": "ng",
-    "start": "pn run codex:index && ng serve",
-    "build": "pn run codex:index && ng build",
+    "start": "ng serve",
+    "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "lint": "ng lint",
-    "codex:index": "node scripts/build-codex-index.mjs"
+    "server": "pnpm --filter naxxar-campaign-server start",
+    "server:dev": "pnpm --filter naxxar-campaign-server dev",
+    "server:seed": "pnpm --filter naxxar-campaign-server seed",
+    "server:test": "pnpm --filter naxxar-campaign-server test",
+    "dev": "concurrently -n server,app -c green,cyan \"pnpm run server:dev\" \"pnpm run start\""
   },
   "private": true,
   "dependencies": {
@@ -36,6 +40,7 @@
     "@angular/cli": "19.2.25",
     "@angular/compiler-cli": "19.2.25",
     "@types/jest": "^29.5.14",
+    "concurrently": "^9.1.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jest-preset-angular": "^14.5.5",

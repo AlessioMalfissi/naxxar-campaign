@@ -5,138 +5,126 @@ import { TestBed } from '@angular/core/testing';
 import { CodexSection, EntryVisibility, ICodexEntry } from '@core/models';
 import { buildEntry, buildSummary } from '@testing/entry.fixtures';
 import { CodexApiService } from './codex-api.service';
-import { DraftStorageService } from './draft-storage.service';
 
 describe('CodexApiService', () => {
     let service: CodexApiService;
     let httpMock: HttpTestingController;
-    let draftStorage: DraftStorageService;
 
     beforeEach(() => {
         // Arrange
-        localStorage.clear();
         TestBed.configureTestingModule({
             providers: [provideHttpClient(), provideHttpClientTesting()]
         });
         service = TestBed.inject(CodexApiService);
         httpMock = TestBed.inject(HttpTestingController);
-        draftStorage = TestBed.inject(DraftStorageService);
     });
 
     afterEach(() => {
         httpMock.verify();
-        localStorage.clear();
     });
 
-    it('should map the index payload onto summaries', () => {
+    it('should map the entries payload onto summaries', () => {
         // Arrange
         let entries: ReturnType<typeof buildSummary>[] = [];
         service.loadIndex().subscribe((result) => (entries = result));
 
         // Act
-        httpMock
-            .expectOne('assets/codex/index.json')
-            .flush({ generatedAt: '2026-08-25T00:00:00.000Z', entries: [buildSummary()] });
+        httpMock.expectOne('/api/entries').flush([buildSummary()]);
 
         // Assert
         expect(entries.length).toBe(1);
         expect(entries[0].id).toBe('npcs:vaelith-corrun');
     });
 
-    it('should overlay stored drafts onto the index', () => {
+    it('should send section, status, tags, query and visibility as query params', () => {
         // Arrange
-        draftStorage.write(buildEntry({ status: 'Dead' }));
-        let entries: ReturnType<typeof buildSummary>[] = [];
-        service.loadIndex().subscribe((result) => (entries = result));
+        service
+            .loadIndex({
+                section: CodexSection.Npcs,
+                status: 'Alive',
+                tags: ['ally', 'silver-ledger'],
+                query: ' broker ',
+                visibility: EntryVisibility.Revealed
+            })
+            .subscribe();
 
         // Act
-        httpMock
-            .expectOne('assets/codex/index.json')
-            .flush({ generatedAt: '2026-08-25T00:00:00.000Z', entries: [buildSummary()] });
+        const request = httpMock.expectOne(
+            (req) => req.url === '/api/entries' && req.method === 'GET'
+        );
 
         // Assert
-        expect(entries[0].status).toBe('Dead');
+        expect(request.request.params.get('section')).toBe('npcs');
+        expect(request.request.params.get('status')).toBe('Alive');
+        expect(request.request.params.get('tags')).toBe('ally,silver-ledger');
+        expect(request.request.params.get('query')).toBe('broker');
+        expect(request.request.params.get('visibility')).toBe('revealed');
+        request.flush([]);
     });
 
-    it('should fetch the markdown file and strip its front matter', () => {
+    it('should fetch a single entry by section and slug', () => {
         // Arrange
         const summary = buildSummary();
         let entry: ICodexEntry | null = null;
         service.loadEntry(summary).subscribe((result) => (entry = result));
 
         // Act
-        httpMock
-            .expectOne(summary.path)
-            .flush(['---', 'title: Vaelith Corrun', '---', '# Who he is', '', 'Counts twice.'].join('\n'));
+        httpMock.expectOne('/api/entries/npcs/vaelith-corrun').flush(buildEntry());
 
         // Assert
-        expect(entry!.body.startsWith('# Who he is')).toBe(true);
+        expect(entry!.body).toBe('# Who he is\n\nBroker of debts.');
     });
 
-    it('should read from the draft instead of the network when one exists', () => {
-        // Arrange
-        draftStorage.write(buildEntry({ body: '# Edited locally' }));
-        const summary = buildSummary();
-        let entry: ICodexEntry | null = null;
-
-        // Act
-        service.loadEntry(summary).subscribe((result) => (entry = result));
-
-        // Assert
-        expect(entry!.body).toBe('# Edited locally');
-        httpMock.expectNone(summary.path);
-    });
-
-    it('should stamp the save time and persist the entry', () => {
+    it('should PUT the entry and stamp the returned save time', () => {
         // Arrange
         const entry = buildEntry();
-        let saved: ICodexEntry | null = null;
+        const saved = { ...entry, updatedAt: '2026-08-25T10:00:00.000Z' };
+        let result: ICodexEntry | null = null;
 
         // Act
-        service.saveEntry(entry).subscribe((result) => (saved = result));
+        service.saveEntry(entry).subscribe((response) => (result = response));
+        const request = httpMock.expectOne('/api/entries/npcs/vaelith-corrun');
+        expect(request.request.method).toBe('PUT');
+        request.flush(saved);
 
         // Assert
-        expect(saved!.updatedAt === entry.updatedAt).toBe(false);
-        expect(draftStorage.read(entry.id)?.body).toBe(entry.body);
+        expect(result!.updatedAt).toBe('2026-08-25T10:00:00.000Z');
     });
 
-    it('should surface a failure when persistence throws', () => {
+    it('should surface the server error message when saving fails', () => {
         // Arrange
-        jest.spyOn(draftStorage, 'write').mockImplementation(() => {
-            throw new Error('quota exceeded');
-        });
         let error: Error | null = null;
 
         // Act
         service.saveEntry(buildEntry()).subscribe({ error: (thrown: Error) => (error = thrown) });
+        httpMock
+            .expectOne('/api/entries/npcs/vaelith-corrun')
+            .flush({ error: 'Entry not found.' }, { status: 404, statusText: 'Not Found' });
 
         // Assert
-        expect(error!.message).toBe("Couldn't save the entry to local storage.");
+        expect(error!.message).toBe('Entry not found.');
     });
 
-    it('should create an entry with a seeded body', () => {
+    it('should fall back to a generic message when saving fails without a server message', () => {
         // Arrange
-        let created: ICodexEntry | null = null;
-        service.createEntry(CodexSection.Places, 'emberfall-road', 'Emberfall road', 'Visited')
-            .subscribe((result) => (created = result));
+        let error: Error | null = null;
 
         // Act
-        httpMock
-            .expectOne('assets/codex/index.json')
-            .flush({ generatedAt: '2026-08-25T00:00:00.000Z', entries: [] });
+        service.saveEntry(buildEntry()).subscribe({ error: (thrown: Error) => (error = thrown) });
+        httpMock.expectOne('/api/entries/npcs/vaelith-corrun').flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert
-        expect(created!.id).toBe('places:emberfall-road');
-        expect(created!.body).toBe('# Emberfall road\n\n');
+        expect(error!.message).toBe("Couldn't save the entry. Retry.");
     });
 
-    it('should create an entry with the supplied tags, visibility and fields', () => {
+    it('should POST a new entry with the supplied tags, visibility and fields', () => {
         // Arrange
         let created: ICodexEntry | null = null;
+
+        // Act
         service
             .createEntry(
                 CodexSection.Npcs,
-                'grum-the-broker',
                 'Grum the Broker',
                 'Alive',
                 ['merchant', 'ally'],
@@ -145,43 +133,78 @@ describe('CodexApiService', () => {
             )
             .subscribe((result) => (created = result));
 
-        // Act
-        httpMock
-            .expectOne('assets/codex/index.json')
-            .flush({ generatedAt: '2026-08-25T00:00:00.000Z', entries: [] });
+        const request = httpMock.expectOne('/api/entries');
+        expect(request.request.method).toBe('POST');
+        expect(request.request.body).toEqual({
+            section: CodexSection.Npcs,
+            title: 'Grum the Broker',
+            status: 'Alive',
+            tags: ['merchant', 'ally'],
+            visibility: EntryVisibility.Revealed,
+            fields: { race: 'Dwarf' }
+        });
+        request.flush({
+            id: 'npcs:grum-the-broker',
+            section: 'npcs',
+            slug: 'grum-the-broker',
+            path: 'assets/codex/npcs/grum-the-broker.md',
+            title: 'Grum the Broker',
+            status: 'Alive',
+            tags: ['merchant', 'ally'],
+            favourite: false,
+            visibility: 'revealed',
+            author: 'DM',
+            updatedAt: '2026-08-25T00:00:00.000Z',
+            fields: { race: 'Dwarf' },
+            excerpt: '',
+            body: '# Grum the Broker\n\n'
+        });
 
         // Assert
+        expect(created!.id).toBe('npcs:grum-the-broker');
         expect(created!.tags).toEqual(['merchant', 'ally']);
         expect(created!.visibility).toBe(EntryVisibility.Revealed);
         expect(created!.fields).toEqual({ race: 'Dwarf' });
     });
 
-    it('should reject a duplicate slug in the same section', () => {
+    it('should surface the duplicate-name error from the server', () => {
         // Arrange
         let error: Error | null = null;
-        service.createEntry(CodexSection.Npcs, 'vaelith-corrun', 'Vaelith Corrun', 'Alive')
-            .subscribe({ error: (thrown: Error) => (error = thrown) });
 
         // Act
+        service
+            .createEntry(CodexSection.Npcs, 'Vaelith Corrun', 'Alive')
+            .subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
-            .expectOne('assets/codex/index.json')
-            .flush({ generatedAt: '2026-08-25T00:00:00.000Z', entries: [buildSummary()] });
+            .expectOne('/api/entries')
+            .flush({ error: 'That name is already taken in this section.' }, { status: 409, statusText: 'Conflict' });
 
         // Assert
         expect(error!.message).toBe('That name is already taken in this section.');
     });
 
-    it('should drop the stored draft when an entry is deleted', () => {
+    it('should DELETE the entry by section and slug', () => {
         // Arrange
-        const entry = buildEntry();
-        draftStorage.write(entry);
         let deletedId = '';
 
         // Act
-        service.deleteEntry(entry.id).subscribe((result) => (deletedId = result));
+        service.deleteEntry('npcs:vaelith-corrun').subscribe((result) => (deletedId = result));
+        const request = httpMock.expectOne('/api/entries/npcs/vaelith-corrun');
+        expect(request.request.method).toBe('DELETE');
+        request.flush(null);
 
         // Assert
-        expect(deletedId).toBe(entry.id);
-        expect(draftStorage.read(entry.id) === null).toBe(true);
+        expect(deletedId).toBe('npcs:vaelith-corrun');
+    });
+
+    it('should fail fast for a malformed entry id', () => {
+        // Arrange
+        let error: Error | null = null;
+
+        // Act
+        service.deleteEntry('not-a-valid-id').subscribe({ error: (thrown: Error) => (error = thrown) });
+
+        // Assert
+        expect(error!.message).toBe('Invalid entry id.');
     });
 });
