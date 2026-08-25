@@ -18,15 +18,15 @@ Built to the specification in `naxxar-campaign-dashboard-spec.pdf`.
 ## Running it
 
 ```bash
-npm install
-npm start          # regenerates the codex index, then serves on http://localhost:4200
-npm run build      # production bundle in dist/naxxar-campaign
-npm test           # 198 specs
-npm run test:coverage
+pn install
+pn start          # regenerates the codex index, then serves on http://localhost:4200
+pn run build      # production bundle in dist/naxxar-campaign
+pn test           # 198 specs
+pn run test:coverage
 ```
 
-`npm start` and `npm run build` both run `scripts/build-codex-index.mjs` first. Add or edit a markdown
-file and restart, or run `npm run codex:index` on its own.
+`pn start` and `pn run build` both run `scripts/build-codex-index.mjs` first. Add or edit a markdown
+file and restart, or run `pn run codex:index` on its own.
 
 ## Where the lore lives
 

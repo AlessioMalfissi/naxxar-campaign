@@ -4,8 +4,8 @@
   "description": "Dungeons & Dragons campaign dashboard - lore codex with markdown entries",
   "scripts": {
     "ng": "ng",
-    "start": "npm run codex:index && ng serve",
-    "build": "npm run codex:index && ng build",
+    "start": "pn run codex:index && ng serve",
+    "build": "pn run codex:index && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "jest",
     "test:coverage": "jest --coverage",
