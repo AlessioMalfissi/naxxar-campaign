@@ -14,9 +14,9 @@
 }
 
 .cdx-header-campaign {
-    --mdc-text-button-label-text-color: var(--cdx-text-primary);
-
+    color: var(--cdx-text-primary);
     font-size: 15px;
+    font-weight: 500;
 }
 
 .cdx-header-session {
