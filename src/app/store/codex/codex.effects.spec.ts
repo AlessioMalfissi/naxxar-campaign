@@ -132,7 +132,7 @@ describe('CodexEffects', () => {
         expect(result).toEqual(CodexActions.saveEntry.failure({ error: 'storage full' }));
     });
 
-    it('should slugify the title when creating an entry', async () => {
+    it('should request an entry to be created with the full payload', async () => {
         // Arrange
         const entry = buildEntry();
         codexApi.createEntry.mockReturnValue(of(entry));
@@ -153,7 +153,6 @@ describe('CodexEffects', () => {
         // Assert
         expect(codexApi.createEntry).toHaveBeenCalledWith(
             CodexSection.Npcs,
-            'vaelith-corrun',
             'Vaelith Corrun',
             'Alive',
             ['merchant'],
