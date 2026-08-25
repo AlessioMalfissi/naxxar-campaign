@@ -1,6 +1,6 @@
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
@@ -49,6 +49,7 @@ export class CreateEntryModalComponent {
 
     protected readonly tags = signal<string[]>([]);
 
+    private readonly tagInput = viewChild<ElementRef<HTMLInputElement>>('tagInput');
     private readonly dialogRef = inject<DialogRef<ICreateEntryResult | null>>(DialogRef);
 
     protected addTag(event: MatChipInputEvent): void {
@@ -69,6 +70,8 @@ export class CreateEntryModalComponent {
             return;
         }
 
+        this.flushPendingTag();
+
         this.dialogRef.close({
             title: this.titleControl.value.trim(),
             status: this.statusControl.value,
@@ -76,6 +79,17 @@ export class CreateEntryModalComponent {
             visibility: this.visibilityControl.value,
             fields: this.fieldsGroup.getRawValue()
         });
+    }
+
+    private flushPendingTag(): void {
+        const input = this.tagInput()?.nativeElement;
+        const value = input?.value.trim() ?? '';
+        if (value !== '' && !this.tags().includes(value)) {
+            this.tags.update((tags) => [...tags, value]);
+        }
+        if (input !== undefined) {
+            input.value = '';
+        }
     }
 
     protected cancel(): void {

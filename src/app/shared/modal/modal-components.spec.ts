@@ -197,6 +197,38 @@ describe('CreateEntryModalComponent', () => {
         expect(component['tags']()).toEqual(['merchant']);
     });
 
+    it('should include a pending tag left in the input when confirming', () => {
+        // Arrange
+        component['titleControl'].setValue('Grum the Broker');
+        component['addTag']({ value: 'merchant', chipInput: { clear: jest.fn() } } as unknown as MatChipInputEvent);
+        const tagInput = fixture.nativeElement.querySelector('input[placeholder="Add a tag…"]') as HTMLInputElement;
+        tagInput.value = 'ally';
+        fixture.detectChanges();
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        expect(dialogRef.close).toHaveBeenCalledWith(
+            expect.objectContaining({ tags: ['merchant', 'ally'] })
+        );
+    });
+
+    it('should ignore a blank or duplicate pending tag when confirming', () => {
+        // Arrange
+        component['titleControl'].setValue('Grum the Broker');
+        component['addTag']({ value: 'merchant', chipInput: { clear: jest.fn() } } as unknown as MatChipInputEvent);
+        const tagInput = fixture.nativeElement.querySelector('input[placeholder="Add a tag…"]') as HTMLInputElement;
+        tagInput.value = 'merchant';
+        fixture.detectChanges();
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        expect(dialogRef.close).toHaveBeenCalledWith(expect.objectContaining({ tags: ['merchant'] }));
+    });
+
     it('should close with the entered title, status, tags, visibility and fields', () => {
         // Arrange
         component['titleControl'].setValue('Grum the Broker');
