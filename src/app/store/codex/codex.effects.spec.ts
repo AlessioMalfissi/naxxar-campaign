@@ -4,7 +4,7 @@ import { Action } from '@ngrx/store';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Observable, of, ReplaySubject, throwError } from 'rxjs';
 
-import { CodexSection } from '@core/models';
+import { CodexSection, EntryVisibility } from '@core/models';
 import { CodexApiService } from '@core/services/codex-api.service';
 import { buildEntry, buildSummary } from '@testing/entry.fixtures';
 import * as CodexActions from './codex.actions';
@@ -140,7 +140,10 @@ describe('CodexEffects', () => {
             CodexActions.createEntry.request({
                 section: CodexSection.Npcs,
                 title: 'Vaelith Corrun',
-                status: 'Alive'
+                status: 'Alive',
+                tags: ['merchant'],
+                visibility: EntryVisibility.Dm,
+                fields: { race: 'Elf' }
             })
         );
 
@@ -152,7 +155,10 @@ describe('CodexEffects', () => {
             CodexSection.Npcs,
             'vaelith-corrun',
             'Vaelith Corrun',
-            'Alive'
+            'Alive',
+            ['merchant'],
+            EntryVisibility.Dm,
+            { race: 'Elf' }
         );
         expect(result).toEqual(CodexActions.createEntry.success({ entry }));
     });
@@ -161,7 +167,14 @@ describe('CodexEffects', () => {
         // Arrange
         codexApi.createEntry.mockReturnValue(throwError(() => new Error('taken')));
         actions$.next(
-            CodexActions.createEntry.request({ section: CodexSection.Npcs, title: 'Vaelith', status: 'Alive' })
+            CodexActions.createEntry.request({
+                section: CodexSection.Npcs,
+                title: 'Vaelith',
+                status: 'Alive',
+                tags: [],
+                visibility: EntryVisibility.Dm,
+                fields: {}
+            })
         );
 
         // Act

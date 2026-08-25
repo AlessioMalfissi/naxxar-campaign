@@ -3,7 +3,8 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
 import { ConfirmModalComponent } from './confirm-modal.component';
-import { IConfirmModalData, IPromptModalData } from './i-modal';
+import { CreateEntryModalComponent } from './create-entry-modal.component';
+import { IConfirmModalData, ICreateEntryModalData, ICreateEntryResult, IPromptModalData } from './i-modal';
 import { PromptModalComponent } from './prompt-modal.component';
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +34,22 @@ export class ModalService {
                     label: data.label ?? 'Name',
                     placeholder: data.placeholder ?? '',
                     confirmLabel: data.confirmLabel ?? 'Create'
+                }
+            }
+        );
+
+        return reference.closed.pipe(map((result) => result ?? null));
+    }
+
+    createEntry(data: Partial<ICreateEntryModalData>): Observable<ICreateEntryResult | null> {
+        const reference = this.dialog.open<ICreateEntryResult | null, ICreateEntryModalData, CreateEntryModalComponent>(
+            CreateEntryModalComponent,
+            {
+                data: {
+                    title: data.title ?? 'New entry',
+                    statuses: data.statuses ?? [],
+                    fields: data.fields ?? [],
+                    confirmLabel: data.confirmLabel ?? 'Create entry'
                 }
             }
         );

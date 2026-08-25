@@ -63,8 +63,8 @@ export class CodexEffects {
     readonly createEntry$ = createEffect(() =>
         this.actions$.pipe(
             ofType(CodexActions.createEntry.request),
-            switchMap(({ section, title, status }) =>
-                this.codexApi.createEntry(section, slugify(title), title, status).pipe(
+            switchMap(({ section, title, status, tags, visibility, fields }) =>
+                this.codexApi.createEntry(section, slugify(title), title, status, tags, visibility, fields).pipe(
                     map((entry) => CodexActions.createEntry.success({ entry })),
                     catchError((error: Error) => of(CodexActions.createEntry.failure({ error: error.message })))
                 )

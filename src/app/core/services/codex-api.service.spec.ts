@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CodexSection, ICodexEntry } from '@core/models';
+import { CodexSection, EntryVisibility, ICodexEntry } from '@core/models';
 import { buildEntry, buildSummary } from '@testing/entry.fixtures';
 import { CodexApiService } from './codex-api.service';
 import { DraftStorageService } from './draft-storage.service';
@@ -128,6 +128,32 @@ describe('CodexApiService', () => {
         // Assert
         expect(created!.id).toBe('places:emberfall-road');
         expect(created!.body).toBe('# Emberfall road\n\n');
+    });
+
+    it('should create an entry with the supplied tags, visibility and fields', () => {
+        // Arrange
+        let created: ICodexEntry | null = null;
+        service
+            .createEntry(
+                CodexSection.Npcs,
+                'grum-the-broker',
+                'Grum the Broker',
+                'Alive',
+                ['merchant', 'ally'],
+                EntryVisibility.Revealed,
+                { race: 'Dwarf' }
+            )
+            .subscribe((result) => (created = result));
+
+        // Act
+        httpMock
+            .expectOne('assets/codex/index.json')
+            .flush({ generatedAt: '2026-08-25T00:00:00.000Z', entries: [] });
+
+        // Assert
+        expect(created!.tags).toEqual(['merchant', 'ally']);
+        expect(created!.visibility).toBe(EntryVisibility.Revealed);
+        expect(created!.fields).toEqual({ race: 'Dwarf' });
     });
 
     it('should reject a duplicate slug in the same section', () => {
