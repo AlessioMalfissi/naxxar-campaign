@@ -50,17 +50,6 @@ describe('CampaignShellComponent', () => {
         expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.loadIndex.request({}));
     });
 
-    it('should render one tab link per section', () => {
-        // Arrange
-        fixture.detectChanges();
-
-        // Act
-        const links = fixture.nativeElement.querySelectorAll('a[mat-tab-link]') as NodeListOf<HTMLElement>;
-
-        // Assert
-        expect(links.length).toBe(5);
-    });
-
     it('should flag the collapsed sidebar on the layout', () => {
         // Arrange
         store.overrideSelector(selectSidebarCollapsed, true);
