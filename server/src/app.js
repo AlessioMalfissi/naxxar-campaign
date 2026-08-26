@@ -1,6 +1,6 @@
 import cors from 'cors';
 import express from 'express';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { createAuthRouter, requireAuth } from './auth.js';
 import { createEntriesRouter } from './entries.js';
@@ -22,9 +22,10 @@ export const createApp = (collection, { staticDir = null, appPassword, sessionSe
     app.use('/api/entries', requireAuth(secret), createEntriesRouter(collection));
 
     if (staticDir !== null) {
-        app.use(express.static(staticDir));
+        const absoluteStaticDir = resolve(staticDir);
+        app.use(express.static(absoluteStaticDir));
         app.get(/^(?!\/api\/).*/, (req, res) => {
-            res.sendFile(join(staticDir, 'index.html'));
+            res.sendFile(join(absoluteStaticDir, 'index.html'));
         });
     }
 
