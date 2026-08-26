@@ -66,7 +66,7 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "port": 8001,
+            "port": 57571,
             "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
