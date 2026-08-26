@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 
 import { buildSummary } from '@testing/entry.fixtures';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as CodexActions from '@store/codex/codex.actions';
 import { selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
 import { CodexHeaderComponent } from './codex-header.component';
@@ -118,6 +119,17 @@ describe('CodexHeaderComponent', () => {
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.playerModeToggled());
+    });
+
+    it('should dispatch a logout request on sign out', () => {
+        // Arrange
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['signOut']();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(AuthActions.logout.request({}));
     });
 
     it('should keep the autocomplete field blank when a result is picked', () => {

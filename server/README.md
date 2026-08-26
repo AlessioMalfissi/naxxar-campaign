@@ -30,11 +30,25 @@ pnpm run server:test    # from the repo root, or `npm test` from here
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017` | Connection string. |
 | `MONGODB_DB` | `naxxar_campaign` | Database name. |
 | `STATIC_DIR` | unset | If set, also serves this directory as the Angular app (SPA fallback to `index.html` for any non-`/api` route). Point it at `../dist/naxxar-campaign/browser` after `pn run build` to run the whole app from one process. |
+| `APP_PASSWORD` | none - required | The shared password the whole table logs in with. The server refuses to start without it. |
+| `SESSION_SECRET` | `APP_PASSWORD` | Secret used to sign the login session cookie. Defaults to `APP_PASSWORD`; set it separately so rotating the login password doesn't also log everyone out. |
+
+## Authentication
+
+There are no individual accounts - one shared password (`APP_PASSWORD`) gates the whole app. `POST
+/api/auth/login` checks the password and sets an httpOnly, signed session cookie; every `/api/entries`
+route requires that cookie and responds `401` without it. `/api/auth/*` itself is unauthenticated.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/auth/login` | Body `{ "password": "..." }`. Sets the session cookie on success, `401` on a wrong password. |
+| `POST` | `/api/auth/logout` | Clears the session cookie. Always `200`. |
+| `GET` | `/api/auth/me` | Returns `{ "authenticated": true \| false }` based on the current cookie. |
 
 ## Endpoints
 
 All responses are JSON. Entries are addressed by `section` + `slug` (matching the app's `section:slug`
-entry id), not a Mongo ObjectId.
+entry id), not a Mongo ObjectId. Every route below requires a valid session cookie (see Authentication).
 
 | Method | Path | Description |
 | --- | --- | --- |
@@ -84,7 +98,8 @@ least two characters after trimming; anything else fails with `400`.
 server/
 ├── src/
 │   ├── app.js          Express app factory - takes a Mongo collection as a dependency
-│   ├── config.js        reads PORT / MONGODB_URI / MONGODB_DB / STATIC_DIR from the environment
+│   ├── auth.js           the /api/auth router and the requireAuth middleware
+│   ├── config.js        reads PORT / MONGODB_URI / MONGODB_DB / STATIC_DIR / APP_PASSWORD / SESSION_SECRET
 │   ├── db.js             connects to MongoDB, ensures indexes
 │   ├── entries.js        the /api/entries router
 │   ├── http-error.js     HttpError(status, message) used for 4xx responses
