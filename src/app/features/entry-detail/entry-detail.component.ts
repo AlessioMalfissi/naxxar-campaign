@@ -100,6 +100,11 @@ export class EntryDetailComponent {
         return entry === null ? '' : findSectionDefinition(entry.section).label;
     });
 
+    protected readonly statusOptions = computed<string[]>(() => {
+        const entry = this.entry();
+        return entry === null ? [] : findSectionDefinition(entry.section).statuses;
+    });
+
     protected readonly fields = computed(() => {
         const entry = this.entry();
         if (entry === null) {
@@ -183,6 +188,15 @@ export class EntryDetailComponent {
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe(() => this.store.dispatch(EditorActions.changesDiscarded()));
+    }
+
+    protected onStatusChanged(status: string): void {
+        const entry = this.entry();
+        if (entry === null || status === entry.status) {
+            return;
+        }
+
+        this.store.dispatch(CodexActions.saveEntry.request({ entry: { ...entry, status, body: this.draftBody() } }));
     }
 
     protected toggleFavourite(): void {
