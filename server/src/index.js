@@ -6,9 +6,18 @@ import { connectToMongo } from './db.js';
 
 const config = loadConfig();
 
+if (config.appPassword === null) {
+    console.error('APP_PASSWORD must be set - see server/.env.example.');
+    process.exit(1);
+}
+
 const start = async () => {
     const { collection } = await connectToMongo({ uri: config.mongoUri, dbName: config.mongoDb });
-    const app = createApp(collection, { staticDir: config.staticDir });
+    const app = createApp(collection, {
+        staticDir: config.staticDir,
+        appPassword: config.appPassword,
+        sessionSecret: config.sessionSecret
+    });
 
     app.listen(config.port, () => {
         console.log(`naxxar-campaign API listening on http://localhost:${config.port}`);

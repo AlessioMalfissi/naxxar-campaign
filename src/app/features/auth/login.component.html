@@ -1,0 +1,29 @@
+<div class="cdx-login">
+    <div class="cdx-login-card">
+        <h1 class="cdx-login-title">Naxxar campaign</h1>
+        <p class="cdx-login-subtitle">Enter the campaign password to continue.</p>
+
+        <mat-form-field appearance="outline" class="cdx-login-field" subscriptSizing="dynamic">
+            <mat-label>Password</mat-label>
+            <input
+                matInput
+                type="password"
+                autocomplete="current-password"
+                [formControl]="passwordControl"
+                aria-label="Password"
+                (keydown.enter)="submit()"
+            />
+            @if (passwordControl.touched && passwordControl.invalid) {
+                <mat-error>Password is required</mat-error>
+            }
+        </mat-form-field>
+
+        @if (error(); as message) {
+            <p class="cdx-login-error" role="alert">{{ message }}</p>
+        }
+
+        <button mat-flat-button type="button" class="cdx-login-submit" [disabled]="pending()" (click)="submit()">
+            {{ pending() ? 'Signing in…' : 'Sign in' }}
+        </button>
+    </div>
+</div>

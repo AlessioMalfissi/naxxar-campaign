@@ -13,6 +13,7 @@ import { Store } from '@ngrx/store';
 import { debounceTime, map, startWith } from 'rxjs';
 
 import { ICodexEntrySummary } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as CodexActions from '@store/codex/codex.actions';
 import { selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
 
@@ -77,6 +78,10 @@ export class CodexHeaderComponent {
 
     protected togglePlayerMode(): void {
         this.store.dispatch(CodexActions.playerModeToggled());
+    }
+
+    protected signOut(): void {
+        this.store.dispatch(AuthActions.logout.request({}));
     }
 
     protected openResult(entry: ICodexEntrySummary): void {

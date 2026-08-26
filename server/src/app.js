@@ -2,16 +2,24 @@ import cors from 'cors';
 import express from 'express';
 import { join } from 'node:path';
 
+import { createAuthRouter, requireAuth } from './auth.js';
 import { createEntriesRouter } from './entries.js';
 import { HttpError } from './http-error.js';
 
-export const createApp = (collection, { staticDir = null } = {}) => {
+export const createApp = (collection, { staticDir = null, appPassword, sessionSecret } = {}) => {
+    if (typeof appPassword !== 'string' || appPassword === '') {
+        throw new Error('createApp requires a non-empty appPassword.');
+    }
+
+    const secret = typeof sessionSecret === 'string' && sessionSecret !== '' ? sessionSecret : appPassword;
+
     const app = express();
 
     app.use(cors());
     app.use(express.json());
 
-    app.use('/api/entries', createEntriesRouter(collection));
+    app.use('/api/auth', createAuthRouter({ appPassword, sessionSecret: secret }));
+    app.use('/api/entries', requireAuth(secret), createEntriesRouter(collection));
 
     if (staticDir !== null) {
         app.use(express.static(staticDir));

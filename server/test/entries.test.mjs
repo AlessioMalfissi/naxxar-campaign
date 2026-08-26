@@ -5,6 +5,19 @@ import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { createFakeCollection } from '../test-utils/fake-collection.mjs';
 
+const PASSWORD = 'campaign-test-password';
+
+const buildApp = (docs = []) =>
+    createApp(createFakeCollection(docs), { appPassword: PASSWORD, sessionSecret: 'test-secret' });
+
+// Returns a supertest agent that already carries a valid session cookie, so route tests below
+// only need to exercise /api/entries, not the login flow itself (covered in auth.test.mjs).
+const authedAgent = async (app) => {
+    const agent = request.agent(app);
+    await agent.post('/api/auth/login').send({ password: PASSWORD });
+    return agent;
+};
+
 const sampleEntry = (overrides = {}) => ({
     _id: 'npcs:vaelith-corrun',
     section: 'npcs',
@@ -24,8 +37,9 @@ const sampleEntry = (overrides = {}) => ({
 });
 
 test('GET /api/entries lists summaries without the body', async () => {
-    const app = createApp(createFakeCollection([sampleEntry()]));
-    const response = await request(app).get('/api/entries');
+    const app = buildApp([sampleEntry()]);
+    const agent = await authedAgent(app);
+    const response = await agent.get('/api/entries');
 
     assert.equal(response.status, 200);
     assert.equal(response.body.length, 1);
@@ -34,55 +48,56 @@ test('GET /api/entries lists summaries without the body', async () => {
 });
 
 test('GET /api/entries filters by status', async () => {
-    const app = createApp(
-        createFakeCollection([
-            sampleEntry(),
-            sampleEntry({ _id: 'npcs:grum', slug: 'grum', title: 'Grum', status: 'Dead', tags: ['merchant'] })
-        ])
-    );
+    const app = buildApp([
+        sampleEntry(),
+        sampleEntry({ _id: 'npcs:grum', slug: 'grum', title: 'Grum', status: 'Dead', tags: ['merchant'] })
+    ]);
+    const agent = await authedAgent(app);
 
-    const response = await request(app).get('/api/entries').query({ status: 'Alive' });
+    const response = await agent.get('/api/entries').query({ status: 'Alive' });
 
     assert.equal(response.body.length, 1);
     assert.equal(response.body[0].id, 'npcs:vaelith-corrun');
 });
 
 test('GET /api/entries filters by comma-separated tags and free-text query', async () => {
-    const app = createApp(
-        createFakeCollection([
-            sampleEntry(),
-            sampleEntry({ _id: 'npcs:grum', slug: 'grum', title: 'Grum', tags: ['merchant'], excerpt: 'A shady dealer.' })
-        ])
-    );
+    const app = buildApp([
+        sampleEntry(),
+        sampleEntry({ _id: 'npcs:grum', slug: 'grum', title: 'Grum', tags: ['merchant'], excerpt: 'A shady dealer.' })
+    ]);
+    const agent = await authedAgent(app);
 
-    const byTag = await request(app).get('/api/entries').query({ tags: 'merchant' });
+    const byTag = await agent.get('/api/entries').query({ tags: 'merchant' });
     assert.equal(byTag.body.length, 1);
     assert.equal(byTag.body[0].id, 'npcs:grum');
 
-    const byQuery = await request(app).get('/api/entries').query({ query: 'shady' });
+    const byQuery = await agent.get('/api/entries').query({ query: 'shady' });
     assert.equal(byQuery.body.length, 1);
     assert.equal(byQuery.body[0].id, 'npcs:grum');
 });
 
 test('GET /api/entries/:section/:slug returns the full entry', async () => {
-    const app = createApp(createFakeCollection([sampleEntry()]));
-    const response = await request(app).get('/api/entries/npcs/vaelith-corrun');
+    const app = buildApp([sampleEntry()]);
+    const agent = await authedAgent(app);
+    const response = await agent.get('/api/entries/npcs/vaelith-corrun');
 
     assert.equal(response.status, 200);
     assert.equal(response.body.body, '# Who he is\n\nBroker of debts.');
 });
 
 test('GET /api/entries/:section/:slug 404s when the entry is missing', async () => {
-    const app = createApp(createFakeCollection([]));
-    const response = await request(app).get('/api/entries/npcs/missing');
+    const app = buildApp([]);
+    const agent = await authedAgent(app);
+    const response = await agent.get('/api/entries/npcs/missing');
 
     assert.equal(response.status, 404);
     assert.equal(response.body.error, 'Entry not found.');
 });
 
 test('POST /api/entries creates an entry with a slugified title', async () => {
-    const app = createApp(createFakeCollection([]));
-    const response = await request(app)
+    const app = buildApp([]);
+    const agent = await authedAgent(app);
+    const response = await agent
         .post('/api/entries')
         .send({ section: 'places', title: 'Emberfall Road', status: 'Visited' });
 
@@ -94,8 +109,9 @@ test('POST /api/entries creates an entry with a slugified title', async () => {
 });
 
 test('POST /api/entries stores the supplied tags, visibility and fields', async () => {
-    const app = createApp(createFakeCollection([]));
-    const response = await request(app).post('/api/entries').send({
+    const app = buildApp([]);
+    const agent = await authedAgent(app);
+    const response = await agent.post('/api/entries').send({
         section: 'npcs',
         title: 'Grum the Broker',
         status: 'Alive',
@@ -111,8 +127,9 @@ test('POST /api/entries stores the supplied tags, visibility and fields', async 
 });
 
 test('POST /api/entries rejects a duplicate slug in the same section', async () => {
-    const app = createApp(createFakeCollection([sampleEntry()]));
-    const response = await request(app)
+    const app = buildApp([sampleEntry()]);
+    const agent = await authedAgent(app);
+    const response = await agent
         .post('/api/entries')
         .send({ section: 'npcs', title: 'Vaelith Corrun', status: 'Alive' });
 
@@ -121,18 +138,20 @@ test('POST /api/entries rejects a duplicate slug in the same section', async () 
 });
 
 test('POST /api/entries rejects an invalid section or a too-short title', async () => {
-    const app = createApp(createFakeCollection([]));
+    const app = buildApp([]);
+    const agent = await authedAgent(app);
 
-    const badSection = await request(app).post('/api/entries').send({ section: 'dragons', title: 'Smaug' });
+    const badSection = await agent.post('/api/entries').send({ section: 'dragons', title: 'Smaug' });
     assert.equal(badSection.status, 400);
 
-    const shortTitle = await request(app).post('/api/entries').send({ section: 'npcs', title: 'A' });
+    const shortTitle = await agent.post('/api/entries').send({ section: 'npcs', title: 'A' });
     assert.equal(shortTitle.status, 400);
 });
 
 test('PUT /api/entries/:section/:slug updates an existing entry and stamps updatedAt', async () => {
-    const app = createApp(createFakeCollection([sampleEntry()]));
-    const response = await request(app)
+    const app = buildApp([sampleEntry()]);
+    const agent = await authedAgent(app);
+    const response = await agent
         .put('/api/entries/npcs/vaelith-corrun')
         .send({ ...sampleEntry(), status: 'Dead', body: '# Who he is\n\nUpdated.' });
 
@@ -143,16 +162,18 @@ test('PUT /api/entries/:section/:slug updates an existing entry and stamps updat
 });
 
 test('PUT /api/entries/:section/:slug 404s when the entry does not exist', async () => {
-    const app = createApp(createFakeCollection([]));
-    const response = await request(app).put('/api/entries/npcs/missing').send({ title: 'Ghost' });
+    const app = buildApp([]);
+    const agent = await authedAgent(app);
+    const response = await agent.put('/api/entries/npcs/missing').send({ title: 'Ghost' });
 
     assert.equal(response.status, 404);
 });
 
 test('DELETE /api/entries/:section/:slug removes the entry', async () => {
     const collection = createFakeCollection([sampleEntry()]);
-    const app = createApp(collection);
-    const response = await request(app).delete('/api/entries/npcs/vaelith-corrun');
+    const app = createApp(collection, { appPassword: PASSWORD, sessionSecret: 'test-secret' });
+    const agent = await authedAgent(app);
+    const response = await agent.delete('/api/entries/npcs/vaelith-corrun');
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, { id: 'npcs:vaelith-corrun' });
@@ -160,8 +181,9 @@ test('DELETE /api/entries/:section/:slug removes the entry', async () => {
 });
 
 test('DELETE /api/entries/:section/:slug is idempotent when nothing matches', async () => {
-    const app = createApp(createFakeCollection([]));
-    const response = await request(app).delete('/api/entries/npcs/missing');
+    const app = buildApp([]);
+    const agent = await authedAgent(app);
+    const response = await agent.delete('/api/entries/npcs/missing');
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, { id: 'npcs:missing' });

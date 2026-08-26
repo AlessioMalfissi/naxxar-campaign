@@ -1,8 +1,16 @@
 import { Routes } from '@angular/router';
 
+import { authGuard, guestGuard } from '@core/guards/auth.guard';
+
 export const APP_ROUTES: Routes = [
     {
+        path: 'login',
+        canActivate: [guestGuard],
+        loadComponent: () => import('@features/auth/login.component').then((module) => module.LoginComponent)
+    },
+    {
         path: 'campaign',
+        canActivate: [authGuard],
         loadComponent: () =>
             import('@features/shell/campaign-shell.component').then((module) => module.CampaignShellComponent),
         children: [
