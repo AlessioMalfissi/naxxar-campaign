@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: naxxar-campaign
+    runtime: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    startCommand: pnpm run server
+    healthCheckPath: /api/auth/me
+    envVars:
+      # Serves the built Angular app (dist/naxxar-campaign/browser) from the same
+      # Express process that answers /api/* - without this the deploy only exposes the API.
+      - key: STATIC_DIR
+        value: ../dist/naxxar-campaign/browser
+      - key: MONGODB_DB
+        value: naxxar_campaign
+      # Secrets - not stored in this file. Render prompts for these the first time the
+      # blueprint runs, or set/update them under the service's Environment tab.
+      - key: MONGODB_URI
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
