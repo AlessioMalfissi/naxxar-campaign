@@ -1,13 +1,18 @@
 @use '@angular/material' as mat;
+@use 'theme-colors' as theme;
 
 html {
     color-scheme: dark;
 
+    // Material's stock $green-palette renders as a fluorescent green on filled buttons and
+    // focus outlines; this generated palette is seeded from the same muted --cdx-primary (see
+    // below) so Material components match the rest of the hand-styled UI. Tertiary is kept the
+    // same as primary (rather than the auto-derived teal) to stay a single green hue.
     @include mat.theme(
         (
             color: (
-                primary: mat.$green-palette,
-                tertiary: mat.$green-palette
+                primary: theme.$primary-palette,
+                tertiary: theme.$primary-palette
             ),
             typography: Roboto,
             density: 0
