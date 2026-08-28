@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 
 import { ItemRarity, ItemStatus, PARTY_OWNER_ID } from '@core/models';
 import { ModalService } from '@shared/modal/modal.service';
-import { selectPlayerEntries } from '@store/codex/codex.selectors';
+import { selectPlayerEntries, selectPlayerMode } from '@store/codex/codex.selectors';
 import * as InventoryActions from '@store/inventory/inventory.actions';
 import { selectInventoryItems, selectInventoryLoading } from '@store/inventory/inventory.selectors';
 import * as PursesActions from '@store/purses/purses.actions';
@@ -45,6 +45,7 @@ describe('InventoryComponent', () => {
         store.overrideSelector(selectInventoryLoading, false);
         store.overrideSelector(selectPlayerEntries, [PLAYER]);
         store.overrideSelector(selectGoldByOwner, { [PARTY_OWNER_ID]: 120 });
+        store.overrideSelector(selectPlayerMode, false);
 
         fixture = TestBed.createComponent(InventoryComponent);
         component = fixture.componentInstance;
@@ -496,5 +497,59 @@ describe('InventoryComponent', () => {
 
         // Assert
         expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should hide the add-item form in player mode', () => {
+        // Arrange
+        store.overrideSelector(selectPlayerMode, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('.cdx-inventory-form')).toBeNull();
+    });
+
+    it('should hide the delete button for items in player mode', () => {
+        // Arrange
+        store.overrideSelector(selectPlayerMode, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('[aria-label="Delete item"]')).toBeNull();
+    });
+
+    it('should disable quantity, gold and flag controls in player mode', () => {
+        // Arrange
+        store.overrideSelector(selectPlayerMode, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        const decreaseButton = fixture.nativeElement.querySelector(
+            '[aria-label="Decrease quantity"]'
+        ) as HTMLButtonElement;
+        const increaseButton = fixture.nativeElement.querySelector(
+            '[aria-label="Increase quantity"]'
+        ) as HTMLButtonElement;
+        const goldInput = fixture.nativeElement.querySelector('.cdx-inventory-gold-input') as HTMLInputElement;
+        expect(decreaseButton.disabled).toBe(true);
+        expect(increaseButton.disabled).toBe(true);
+        expect(goldInput.disabled).toBe(true);
+    });
+
+    it('should show the add-item form and delete button outside player mode', () => {
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('.cdx-inventory-form')).not.toBeNull();
+        expect(fixture.nativeElement.querySelector('[aria-label="Delete item"]')).not.toBeNull();
     });
 });

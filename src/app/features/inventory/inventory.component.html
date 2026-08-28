@@ -58,72 +58,74 @@
         }
     </div>
 
-    <form class="cdx-inventory-form" [formGroup]="form" (ngSubmit)="addItem()">
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-name">
-            <mat-label>Item name</mat-label>
-            <input matInput formControlName="name" placeholder="Potion of healing" />
-        </mat-form-field>
+    @if (!playerMode()) {
+        <form class="cdx-inventory-form" [formGroup]="form" (ngSubmit)="addItem()">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-name">
+                <mat-label>Item name</mat-label>
+                <input matInput formControlName="name" placeholder="Potion of healing" />
+            </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-description">
-            <mat-label>Description</mat-label>
-            <input matInput formControlName="description" placeholder="Optional" />
-        </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-description">
+                <mat-label>Description</mat-label>
+                <input matInput formControlName="description" placeholder="Optional" />
+            </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-qty">
-            <mat-label>Qty</mat-label>
-            <input matInput type="number" min="0" formControlName="quantity" />
-        </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-qty">
+                <mat-label>Qty</mat-label>
+                <input matInput type="number" min="0" formControlName="quantity" />
+            </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-owner">
-            <mat-label>Assign to</mat-label>
-            <mat-select formControlName="owner">
-                <mat-option [value]="partyOwner">Party inventory</mat-option>
-                @for (player of players(); track player.id) {
-                    <mat-option [value]="player.id">{{ player.title }}</mat-option>
-                }
-            </mat-select>
-        </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-owner">
+                <mat-label>Assign to</mat-label>
+                <mat-select formControlName="owner">
+                    <mat-option [value]="partyOwner">Party inventory</mat-option>
+                    @for (player of players(); track player.id) {
+                        <mat-option [value]="player.id">{{ player.title }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-rarity">
-            <mat-label>Rarity</mat-label>
-            <mat-select formControlName="rarity">
-                <mat-option [value]="rarities.None">None</mat-option>
-                <mat-option [value]="rarities.Common">Common</mat-option>
-                <mat-option [value]="rarities.Uncommon">Uncommon</mat-option>
-                <mat-option [value]="rarities.Rare">Rare</mat-option>
-                <mat-option [value]="rarities.VeryRare">Very rare</mat-option>
-                <mat-option [value]="rarities.Legendary">Legendary</mat-option>
-                <mat-option [value]="rarities.Artifact">Artifact</mat-option>
-            </mat-select>
-        </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-rarity">
+                <mat-label>Rarity</mat-label>
+                <mat-select formControlName="rarity">
+                    <mat-option [value]="rarities.None">None</mat-option>
+                    <mat-option [value]="rarities.Common">Common</mat-option>
+                    <mat-option [value]="rarities.Uncommon">Uncommon</mat-option>
+                    <mat-option [value]="rarities.Rare">Rare</mat-option>
+                    <mat-option [value]="rarities.VeryRare">Very rare</mat-option>
+                    <mat-option [value]="rarities.Legendary">Legendary</mat-option>
+                    <mat-option [value]="rarities.Artifact">Artifact</mat-option>
+                </mat-select>
+            </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-status">
-            <mat-label>Status</mat-label>
-            <mat-select formControlName="status">
-                <mat-option [value]="statuses.Mundane">Mundane</mat-option>
-                <mat-option [value]="statuses.NonAttuned">Non-attuned</mat-option>
-                <mat-option [value]="statuses.Attuned">Attuned</mat-option>
-                <mat-option [value]="statuses.Magic">Magic</mat-option>
-            </mat-select>
-        </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-status">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="status">
+                    <mat-option [value]="statuses.Mundane">Mundane</mat-option>
+                    <mat-option [value]="statuses.NonAttuned">Non-attuned</mat-option>
+                    <mat-option [value]="statuses.Attuned">Attuned</mat-option>
+                    <mat-option [value]="statuses.Magic">Magic</mat-option>
+                </mat-select>
+            </mat-form-field>
 
-        <div class="cdx-inventory-field-flags">
-            <mat-checkbox formControlName="forSale">For sale</mat-checkbox>
-            <mat-checkbox formControlName="imp">IMP</mat-checkbox>
-            <input
-                type="text"
-                class="cdx-inventory-imp-tag"
-                formControlName="impTag"
-                placeholder="Tag (optional)"
-                aria-label="IMP tag"
-            />
-        </div>
+            <div class="cdx-inventory-field-flags">
+                <mat-checkbox formControlName="forSale">For sale</mat-checkbox>
+                <mat-checkbox formControlName="imp">IMP</mat-checkbox>
+                <input
+                    type="text"
+                    class="cdx-inventory-imp-tag"
+                    formControlName="impTag"
+                    placeholder="Tag (optional)"
+                    aria-label="IMP tag"
+                />
+            </div>
 
-        <button mat-flat-button type="submit" class="cdx-inventory-add-button">
-            <mat-icon>add</mat-icon>
-            Add item
-        </button>
-    </form>
+            <button mat-flat-button type="submit" class="cdx-inventory-add-button">
+                <mat-icon>add</mat-icon>
+                Add item
+            </button>
+        </form>
+    }
 
     @for (group of groups(); track group.id) {
         <section class="cdx-inventory-group">
@@ -137,6 +139,7 @@
                         class="cdx-inventory-gold-input"
                         [value]="goldFor(group.id)"
                         [attr.aria-label]="group.label + ' gold'"
+                        [disabled]="playerMode()"
                         (change)="changeGold(group.id, $event)"
                     />
                     <span class="cdx-inventory-gold-suffix">gp</span>
@@ -159,7 +162,7 @@
                                     mat-icon-button
                                     type="button"
                                     aria-label="Decrease quantity"
-                                    [disabled]="item.quantity <= 0"
+                                    [disabled]="playerMode() || item.quantity <= 0"
                                     (click)="changeQuantity(item, -1)"
                                 >
                                     <mat-icon>remove</mat-icon>
@@ -169,6 +172,7 @@
                                     mat-icon-button
                                     type="button"
                                     aria-label="Increase quantity"
+                                    [disabled]="playerMode()"
                                     (click)="changeQuantity(item, 1)"
                                 >
                                     <mat-icon>add</mat-icon>
@@ -179,6 +183,7 @@
                                 <mat-select
                                     [value]="item.rarity"
                                     aria-label="Rarity"
+                                    [disabled]="playerMode()"
                                     (selectionChange)="changeRarity(item, $event)"
                                 >
                                     <mat-option [value]="rarities.None">None</mat-option>
@@ -195,6 +200,7 @@
                                 <mat-select
                                     [value]="item.status"
                                     aria-label="Status"
+                                    [disabled]="playerMode()"
                                     (selectionChange)="changeStatus(item, $event)"
                                 >
                                     <mat-option [value]="statuses.Mundane">Mundane</mat-option>
@@ -208,6 +214,7 @@
                                 <mat-select
                                     [value]="item.owner"
                                     aria-label="Assign to"
+                                    [disabled]="playerMode()"
                                     (selectionChange)="changeOwner(item, $event)"
                                 >
                                     <mat-option [value]="partyOwner">Party inventory</mat-option>
@@ -221,11 +228,16 @@
                                 <div class="cdx-inventory-flags">
                                     <mat-checkbox
                                         [checked]="item.forSale"
+                                        [disabled]="playerMode()"
                                         (change)="changeForSale(item, $event)"
                                     >
                                         For sale
                                     </mat-checkbox>
-                                    <mat-checkbox [checked]="item.imp" (change)="changeImp(item, $event)">
+                                    <mat-checkbox
+                                        [checked]="item.imp"
+                                        [disabled]="playerMode()"
+                                        (change)="changeImp(item, $event)"
+                                    >
                                         IMP
                                     </mat-checkbox>
                                     <input
@@ -234,14 +246,22 @@
                                         [value]="item.impTag"
                                         placeholder="Tag (optional)"
                                         aria-label="IMP tag"
+                                        [disabled]="playerMode()"
                                         (change)="changeImpTag(item, $event)"
                                     />
                                 </div>
                             }
 
-                            <button mat-icon-button type="button" aria-label="Delete item" (click)="deleteItem(item)">
-                                <mat-icon>delete</mat-icon>
-                            </button>
+                            @if (!playerMode()) {
+                                <button
+                                    mat-icon-button
+                                    type="button"
+                                    aria-label="Delete item"
+                                    (click)="deleteItem(item)"
+                                >
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            }
                         </div>
                     }
                 </div>

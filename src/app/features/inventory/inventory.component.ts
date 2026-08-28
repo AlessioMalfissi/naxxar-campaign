@@ -12,7 +12,7 @@ import { filter } from 'rxjs';
 
 import { IInventoryItem, ItemRarity, ItemStatus, PARTY_OWNER_ID } from '@core/models';
 import { ModalService } from '@shared/modal/modal.service';
-import { selectPlayerEntries } from '@store/codex/codex.selectors';
+import { selectPlayerEntries, selectPlayerMode } from '@store/codex/codex.selectors';
 import * as InventoryActions from '@store/inventory/inventory.actions';
 import { selectInventoryItems, selectInventoryLoading } from '@store/inventory/inventory.selectors';
 import * as PursesActions from '@store/purses/purses.actions';
@@ -69,6 +69,7 @@ export class InventoryComponent implements OnInit {
     protected readonly goldByOwner = toSignal(this.store.select(selectGoldByOwner), {
         initialValue: EMPTY_GOLD_BY_OWNER
     });
+    protected readonly playerMode = toSignal(this.store.select(selectPlayerMode), { initialValue: false });
 
     protected readonly form = new FormGroup({
         name: new FormControl<string>('', {
