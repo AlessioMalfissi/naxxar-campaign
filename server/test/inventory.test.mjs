@@ -29,6 +29,7 @@ const sampleItem = (overrides = {}) => ({
     status: 'magic',
     forSale: false,
     imp: false,
+    impTag: '',
     updatedAt: '2026-08-25T00:00:00.000Z',
     ...overrides
 });
@@ -68,6 +69,7 @@ test('POST /api/inventory creates an item defaulting owner to party, quantity to
     assert.equal(response.body.status, 'mundane');
     assert.equal(response.body.forSale, false);
     assert.equal(response.body.imp, false);
+    assert.equal(response.body.impTag, '');
 });
 
 test('POST /api/inventory stores the supplied quantity, owner, description, rarity, status and flags', async () => {
@@ -81,7 +83,8 @@ test('POST /api/inventory stores the supplied quantity, owner, description, rari
         rarity: 'common',
         status: 'magic',
         forSale: true,
-        imp: true
+        imp: true,
+        impTag: ' Cromwell '
     });
 
     assert.equal(response.status, 201);
@@ -92,6 +95,7 @@ test('POST /api/inventory stores the supplied quantity, owner, description, rari
     assert.equal(response.body.status, 'magic');
     assert.equal(response.body.forSale, true);
     assert.equal(response.body.imp, true);
+    assert.equal(response.body.impTag, 'Cromwell');
 });
 
 test('POST /api/inventory falls back to a default rarity and status for an invalid value', async () => {
@@ -183,6 +187,26 @@ test('PATCH /api/inventory/:id updates the forSale and imp flags', async () => {
     assert.equal(response.status, 200);
     assert.equal(response.body.forSale, true);
     assert.equal(response.body.imp, true);
+});
+
+test('PATCH /api/inventory/:id updates the impTag, trimming whitespace', async () => {
+    const app = buildApp([sampleItem({ impTag: '' })]);
+    const agent = await authedAgent(app);
+    const response = await agent
+        .patch(`/api/inventory/${sampleItem()._id}`)
+        .send({ impTag: ' Cromwell ' });
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.impTag, 'Cromwell');
+});
+
+test('PATCH /api/inventory/:id keeps the existing impTag when not supplied', async () => {
+    const app = buildApp([sampleItem({ impTag: 'Cromwell' })]);
+    const agent = await authedAgent(app);
+    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ quantity: 2 });
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.impTag, 'Cromwell');
 });
 
 test('PATCH /api/inventory/:id 404s when the item does not exist', async () => {

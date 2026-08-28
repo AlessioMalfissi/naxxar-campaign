@@ -15,6 +15,7 @@ export const createItem = createApiAction<
         status: ItemStatus;
         forSale: boolean;
         imp: boolean;
+        impTag: string;
     },
     { item: IInventoryItem }
 >(SOURCE, 'create item');

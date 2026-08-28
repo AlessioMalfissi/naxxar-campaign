@@ -13,6 +13,7 @@ export interface IInventoryItem {
     status: ItemStatus;
     forSale: boolean;
     imp: boolean;
+    impTag: string;
     updatedAt: string;
 }
 
@@ -25,4 +26,5 @@ export interface IInventoryItemChanges {
     status?: ItemStatus;
     forSale?: boolean;
     imp?: boolean;
+    impTag?: string;
 }

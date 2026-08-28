@@ -42,7 +42,7 @@ describe('InventoryApiService', () => {
 
         // Act
         service
-            .createItem('Torch', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, true, false)
+            .createItem('Torch', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, true, false, 'Cromwell')
             .subscribe((result) => (created = result));
         const request = httpMock.expectOne('/api/inventory');
         expect(request.request.method).toBe('POST');
@@ -54,7 +54,8 @@ describe('InventoryApiService', () => {
             rarity: ItemRarity.None,
             status: ItemStatus.Mundane,
             forSale: true,
-            imp: false
+            imp: false,
+            impTag: 'Cromwell'
         });
         request.flush(buildInventoryItem({ name: 'Torch' }));
 
@@ -68,7 +69,7 @@ describe('InventoryApiService', () => {
 
         // Act
         service
-            .createItem('', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, false, false)
+            .createItem('', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, false, false, '')
             .subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
             .expectOne('/api/inventory')
@@ -84,7 +85,7 @@ describe('InventoryApiService', () => {
 
         // Act
         service
-            .createItem('Torch', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, false, false)
+            .createItem('Torch', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, false, false, '')
             .subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock.expectOne('/api/inventory').flush(null, { status: 500, statusText: 'Server Error' });
 

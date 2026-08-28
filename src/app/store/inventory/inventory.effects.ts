@@ -27,11 +27,15 @@ export class InventoryEffects {
     readonly createItem$ = createEffect(() =>
         this.actions$.pipe(
             ofType(InventoryActions.createItem.request),
-            switchMap(({ name, description, quantity, owner, rarity, status, forSale, imp }) =>
-                this.inventoryApi.createItem(name, description, quantity, owner, rarity, status, forSale, imp).pipe(
-                    map((item) => InventoryActions.createItem.success({ item })),
-                    catchError((error: Error) => of(InventoryActions.createItem.failure({ error: error.message })))
-                )
+            switchMap(({ name, description, quantity, owner, rarity, status, forSale, imp, impTag }) =>
+                this.inventoryApi
+                    .createItem(name, description, quantity, owner, rarity, status, forSale, imp, impTag)
+                    .pipe(
+                        map((item) => InventoryActions.createItem.success({ item })),
+                        catchError((error: Error) =>
+                            of(InventoryActions.createItem.failure({ error: error.message }))
+                        )
+                    )
             )
         )
     );

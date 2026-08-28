@@ -169,14 +169,55 @@ describe('InventoryComponent', () => {
     it('should clear the filters', () => {
         // Arrange
         fixture.detectChanges();
-        component['filterForm'].setValue({ query: 'potion', rarity: ItemRarity.Rare, status: ItemStatus.Attuned });
+        component['filterForm'].setValue({
+            query: 'potion',
+            rarity: ItemRarity.Rare,
+            status: ItemStatus.Attuned,
+            forSale: 'yes',
+            imp: 'yes'
+        });
 
         // Act
         component['clearFilters']();
 
         // Assert
-        expect(component['filterForm'].getRawValue()).toEqual({ query: '', rarity: 'all', status: 'all' });
+        expect(component['filterForm'].getRawValue()).toEqual({
+            query: '',
+            rarity: 'all',
+            status: 'all',
+            forSale: 'all',
+            imp: 'all'
+        });
         expect(component['hasActiveFilters']()).toBe(false);
+    });
+
+    it('should filter items by the for-sale and IMP flags', () => {
+        // Arrange
+        store.overrideSelector(selectInventoryItems, [
+            buildInventoryItem({ id: 'for-sale-imp', owner: PARTY_OWNER_ID, forSale: true, imp: true }),
+            buildInventoryItem({ id: 'for-sale-only', owner: PARTY_OWNER_ID, forSale: true, imp: false }),
+            buildInventoryItem({ id: 'imp-only', owner: PARTY_OWNER_ID, forSale: false, imp: true }),
+            buildInventoryItem({ id: 'neither', owner: PARTY_OWNER_ID, forSale: false, imp: false })
+        ]);
+        store.refreshState();
+        fixture.detectChanges();
+
+        // Act
+        component['filterForm'].controls.forSale.setValue('yes');
+
+        // Assert
+        expect(component['groups']()[0].items.map((item) => item.id).toSorted()).toEqual([
+            'for-sale-imp',
+            'for-sale-only'
+        ]);
+        expect(component['hasActiveFilters']()).toBe(true);
+
+        // Act
+        component['filterForm'].controls.forSale.setValue('all');
+        component['filterForm'].controls.imp.setValue('no');
+
+        // Assert
+        expect(component['groups']()[0].items.map((item) => item.id).toSorted()).toEqual(['for-sale-only', 'neither']);
     });
 
     it('should not add an item when the form is invalid', () => {
@@ -201,11 +242,12 @@ describe('InventoryComponent', () => {
             name: ' Torch ',
             description: ' Burns brightly ',
             quantity: 2,
-            owner: PLAYER.id,
+            owner: PARTY_OWNER_ID,
             rarity: ItemRarity.Rare,
             status: ItemStatus.Attuned,
             forSale: true,
-            imp: true
+            imp: true,
+            impTag: ' Cromwell '
         });
 
         // Act
@@ -217,11 +259,12 @@ describe('InventoryComponent', () => {
                 name: 'Torch',
                 description: 'Burns brightly',
                 quantity: 2,
-                owner: PLAYER.id,
+                owner: PARTY_OWNER_ID,
                 rarity: ItemRarity.Rare,
                 status: ItemStatus.Attuned,
                 forSale: true,
-                imp: true
+                imp: true,
+                impTag: 'Cromwell'
             })
         );
         expect(component['form'].controls.name.value).toBe('');
@@ -230,6 +273,37 @@ describe('InventoryComponent', () => {
         expect(component['form'].controls.status.value).toBe(ItemStatus.Mundane);
         expect(component['form'].controls.forSale.value).toBe(false);
         expect(component['form'].controls.imp.value).toBe(false);
+        expect(component['form'].controls.impTag.value).toBe('');
+    });
+
+    it('should disable the party-only flags when the assignee is not the party', () => {
+        // Arrange
+        fixture.detectChanges();
+
+        // Act
+        component['form'].controls.owner.setValue(PLAYER.id);
+
+        // Assert
+        expect(component['form'].controls.forSale.disabled).toBe(true);
+        expect(component['form'].controls.imp.disabled).toBe(true);
+        expect(component['form'].controls.impTag.disabled).toBe(true);
+        expect(component['form'].controls.forSale.value).toBe(false);
+        expect(component['form'].controls.imp.value).toBe(false);
+        expect(component['form'].controls.impTag.value).toBe('');
+    });
+
+    it('should re-enable the party-only flags when the assignee is switched back to the party', () => {
+        // Arrange
+        fixture.detectChanges();
+        component['form'].controls.owner.setValue(PLAYER.id);
+
+        // Act
+        component['form'].controls.owner.setValue(PARTY_OWNER_ID);
+
+        // Assert
+        expect(component['form'].controls.forSale.disabled).toBe(false);
+        expect(component['form'].controls.imp.disabled).toBe(false);
+        expect(component['form'].controls.impTag.disabled).toBe(false);
     });
 
     it('should increase and clamp the decreased quantity at zero', () => {
@@ -363,6 +437,38 @@ describe('InventoryComponent', () => {
         expect(dispatchSpy).toHaveBeenCalledWith(
             InventoryActions.updateItem.request({ id: 'item-1', changes: { imp: true } })
         );
+    });
+
+    it('should dispatch an IMP tag update', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const item = buildInventoryItem({ id: 'item-1', impTag: '' });
+        const input = document.createElement('input');
+        input.value = ' Cromwell ';
+
+        // Act
+        component['changeImpTag'](item, { target: input } as unknown as Event);
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            InventoryActions.updateItem.request({ id: 'item-1', changes: { impTag: 'Cromwell' } })
+        );
+    });
+
+    it('should ignore an IMP tag change that matches the current value', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const item = buildInventoryItem({ id: 'item-1', impTag: 'Cromwell' });
+        const input = document.createElement('input');
+        input.value = 'Cromwell';
+
+        // Act
+        component['changeImpTag'](item, { target: input } as unknown as Event);
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
     });
 
     it('should delete an item once the deletion is confirmed', () => {

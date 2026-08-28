@@ -205,3 +205,22 @@
     gap: 8px;
     font-size: 12px;
 }
+
+.cdx-inventory-imp-tag {
+    width: 110px;
+    padding: 4px 8px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 6px;
+    background: var(--cdx-surface-2);
+    color: var(--cdx-text-primary);
+    font: inherit;
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 1px;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+    }
+}

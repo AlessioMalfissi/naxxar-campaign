@@ -76,7 +76,8 @@ describe('InventoryEffects', () => {
                 rarity: ItemRarity.None,
                 status: ItemStatus.Mundane,
                 forSale: true,
-                imp: false
+                imp: false,
+                impTag: 'Cromwell'
             })
         );
 
@@ -92,7 +93,8 @@ describe('InventoryEffects', () => {
             ItemRarity.None,
             ItemStatus.Mundane,
             true,
-            false
+            false,
+            'Cromwell'
         );
         expect(result).toEqual(InventoryActions.createItem.success({ item }));
     });
@@ -109,7 +111,8 @@ describe('InventoryEffects', () => {
                 rarity: ItemRarity.None,
                 status: ItemStatus.Mundane,
                 forSale: false,
-                imp: false
+                imp: false,
+                impTag: ''
             })
         );
 

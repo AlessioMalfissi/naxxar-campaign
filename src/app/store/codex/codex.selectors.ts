@@ -9,6 +9,12 @@ const mentionsEntry = (entry: ICodexEntrySummary, openEntry: ICodexEntry): boole
     entry.tags.some((tag) => tag.includes(openEntry.title)) ||
     Object.values(entry.fields).some((value) => value === openEntry.id || value.includes(openEntry.title));
 
+const isMentionedByEntry = (openEntry: ICodexEntry, entry: ICodexEntrySummary): boolean =>
+    openEntry.title.includes(entry.title) ||
+    openEntry.body.includes(entry.title) ||
+    openEntry.tags.some((tag) => tag.includes(entry.title)) ||
+    Object.values(openEntry.fields).some((value) => value === entry.id || value.includes(entry.title));
+
 export const selectCodexState = createFeatureSelector<ICodexState>(CODEX_FEATURE_KEY);
 
 export const selectPlayerMode = createSelector(selectCodexState, (state) => state.playerMode);
@@ -86,4 +92,13 @@ export const selectReferencingEntries = createSelector(
         openEntry === null
             ? []
             : entries.filter((entry) => entry.id !== openEntry.id && mentionsEntry(entry, openEntry))
+);
+
+export const selectReferencedEntries = createSelector(
+    selectVisibleEntries,
+    selectOpenEntry,
+    (entries, openEntry) =>
+        openEntry === null
+            ? []
+            : entries.filter((entry) => entry.id !== openEntry.id && isMentionedByEntry(openEntry, entry))
 );

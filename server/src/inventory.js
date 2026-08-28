@@ -29,6 +29,8 @@ const normalizeStatus = (value, fallback) => (ITEM_STATUSES.includes(value) ? va
 
 const normalizeFlag = (value, fallback) => (typeof value === 'boolean' ? value : fallback);
 
+const normalizeTag = (value, fallback) => (typeof value === 'string' ? value.trim() : fallback);
+
 export const createInventoryRouter = (collection) => {
     const router = Router();
 
@@ -59,6 +61,7 @@ export const createInventoryRouter = (collection) => {
                 status: normalizeStatus(body.status, 'mundane'),
                 forSale: normalizeFlag(body.forSale, false),
                 imp: normalizeFlag(body.imp, false),
+                impTag: normalizeTag(body.impTag, ''),
                 updatedAt: new Date().toISOString()
             };
 
@@ -98,6 +101,7 @@ export const createInventoryRouter = (collection) => {
                 forSale:
                     payload.forSale === undefined ? existing.forSale : normalizeFlag(payload.forSale, existing.forSale),
                 imp: payload.imp === undefined ? existing.imp : normalizeFlag(payload.imp, existing.imp),
+                impTag: payload.impTag === undefined ? existing.impTag : normalizeTag(payload.impTag, existing.impTag),
                 updatedAt: new Date().toISOString()
             };
 

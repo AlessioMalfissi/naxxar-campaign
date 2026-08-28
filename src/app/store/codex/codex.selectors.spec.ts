@@ -11,6 +11,7 @@ import {
     selectPlayerEntries,
     selectPlayerMode,
     selectRecentEntries,
+    selectReferencedEntries,
     selectReferencingEntries,
     selectSectionCounts,
     selectSectionEntries,
@@ -269,5 +270,94 @@ describe('codexSelectors', () => {
         // Assert
         expect(openEntry === null).toBe(true);
         expect(referencing.length).toBe(0);
+    });
+
+    it('should list entries whose title the open entry title mentions', () => {
+        // Arrange
+        const openEntry = buildEntry({ id: 'places:vaelith-corrun-manor', title: "Vaelith Corrun's manor" });
+
+        // Act
+        const referenced = selectReferencedEntries.projector([REVEALED], openEntry);
+
+        // Assert
+        expect(referenced.map((entry) => entry.id)).toEqual([REVEALED.id]);
+    });
+
+    it('should list entries mentioned in the open entry body', () => {
+        // Arrange
+        const openEntry = buildEntry({ body: 'Owes a favour to the Silver ledger.' });
+        const mentioned = buildSummary({
+            id: 'organizations:silver-ledger',
+            section: CodexSection.Organizations,
+            slug: 'silver-ledger',
+            title: 'Silver ledger',
+            excerpt: ''
+        });
+
+        // Act
+        const referenced = selectReferencedEntries.projector([mentioned], openEntry);
+
+        // Assert
+        expect(referenced.map((entry) => entry.id)).toEqual([mentioned.id]);
+    });
+
+    it('should list entries mentioned in the open entry tags', () => {
+        // Arrange
+        const openEntry = buildEntry({ tags: ['Silver ledger'] });
+        const mentioned = buildSummary({
+            id: 'organizations:silver-ledger',
+            section: CodexSection.Organizations,
+            slug: 'silver-ledger',
+            title: 'Silver ledger',
+            excerpt: ''
+        });
+
+        // Act
+        const referenced = selectReferencedEntries.projector([mentioned], openEntry);
+
+        // Assert
+        expect(referenced.map((entry) => entry.id)).toEqual([mentioned.id]);
+    });
+
+    it('should list entries pointed at by a reference field on the open entry', () => {
+        // Arrange
+        const mentioned = buildSummary({
+            id: 'organizations:silver-ledger',
+            section: CodexSection.Organizations,
+            slug: 'silver-ledger',
+            title: 'Silver ledger',
+            excerpt: ''
+        });
+        const openEntry = buildEntry({ fields: { affiliation: mentioned.id } });
+
+        // Act
+        const referenced = selectReferencedEntries.projector([mentioned], openEntry);
+
+        // Assert
+        expect(referenced.map((entry) => entry.id)).toEqual([mentioned.id]);
+    });
+
+    it('should not reference the open entry itself', () => {
+        // Arrange
+        const openEntry = buildEntry();
+
+        // Act
+        const referenced = selectReferencedEntries.projector([REVEALED], openEntry);
+
+        // Assert
+        expect(referenced.length).toBe(0);
+    });
+
+    it('should return no referenced entries when nothing is open', () => {
+        // Arrange
+        const state = buildState();
+
+        // Act
+        const openEntry = selectOpenEntry.projector(state);
+        const referenced = selectReferencedEntries.projector([REVEALED], openEntry);
+
+        // Assert
+        expect(openEntry === null).toBe(true);
+        expect(referenced.length).toBe(0);
     });
 });
