@@ -1,3 +1,8 @@
+:host {
+    display: block;
+    min-width: 0;
+}
+
 .cdx-inventory {
     display: flex;
     flex-direction: column;

@@ -14,9 +14,13 @@
 }
 
 .cdx-header-campaign {
+    overflow: hidden;
+    min-width: 0;
     color: var(--cdx-text-primary);
     font-size: 15px;
     font-weight: 500;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .cdx-header-spacer {
@@ -24,6 +28,9 @@
 }
 
 .cdx-header-search {
+    --mat-form-field-container-height: 40px;
+    --mat-form-field-container-vertical-padding: 8px;
+
     width: 240px;
     font-size: 12px;
 }
@@ -47,5 +54,21 @@
 @media (width <= 767px) {
     .cdx-header-search {
         width: 140px;
+    }
+}
+
+@media (width <= 599px) {
+    .cdx-header {
+        gap: 6px;
+        padding: 0 8px;
+    }
+
+    .cdx-header-campaign {
+        max-width: 88px;
+        font-size: 13px;
+    }
+
+    .cdx-header-search {
+        width: 100px;
     }
 }

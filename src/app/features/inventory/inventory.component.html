@@ -44,9 +44,6 @@
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-name">
             <mat-label>Item name</mat-label>
             <input matInput formControlName="name" placeholder="Potion of healing" />
-            @if (form.controls.name.touched && form.controls.name.invalid) {
-                <mat-error>Enter a name</mat-error>
-            }
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-description">

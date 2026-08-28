@@ -3,9 +3,9 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Router, RouterLink } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { filter } from 'rxjs';
+import { filter, map } from 'rxjs';
 
 import { CodexSection, findSectionDefinition, ICodexEntrySummary, SECTION_DEFINITIONS } from '@core/models';
 import { ICreateEntryResult } from '@shared/modal/i-modal';
@@ -44,6 +44,21 @@ export class CodexSidebarComponent {
     protected readonly recentEntries = toSignal(this.store.select(selectRecentEntries), { initialValue: [] });
     protected readonly inventoryCount = toSignal(this.store.select(selectInventoryItemCount), { initialValue: 0 });
 
+    /*
+     * The router's `url` getter is a plain, non-reactive property - reading it directly in this
+     * OnPush component's template can leave stale highlighting after a navigation that doesn't
+     * also change a store-driven signal (e.g. clicking into a route, like Inventory, that no
+     * codex selector reacts to). Tracking NavigationEnd as a signal keeps the active-route state
+     * in Angular's reactivity graph so the sidebar re-renders on every navigation.
+     */
+    private readonly currentUrl = toSignal(
+        this.router.events.pipe(
+            filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+            map((event) => event.urlAfterRedirects)
+        ),
+        { initialValue: this.router.url }
+    );
+
     protected readonly activeSectionLabel = computed<string>(() => findSectionDefinition(this.activeSection()).label);
 
     protected countFor(section: CodexSection): number {
@@ -51,11 +66,19 @@ export class CodexSidebarComponent {
     }
 
     protected isActiveEntry(entry: ICodexEntrySummary): boolean {
-        return this.router.url.endsWith(`/${entry.slug}`);
+        return this.currentUrl().endsWith(`/${entry.slug}`);
     }
 
     protected isInventoryActive(): boolean {
-        return this.router.url.startsWith('/campaign/inventory');
+        return this.currentUrl().startsWith('/campaign/inventory');
+    }
+
+    protected isSectionActive(section: CodexSection): boolean {
+        return section === this.activeSection() && !this.isInventoryActive();
+    }
+
+    protected closeSidebar(): void {
+        this.store.dispatch(CodexActions.sidebarToggled());
     }
 
     protected createEntry(): void {

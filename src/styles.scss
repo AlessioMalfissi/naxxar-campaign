@@ -60,6 +60,16 @@ body {
     line-height: 1.7;
 }
 
+// cdx-root has no stylesheet of its own (it's a plain <router-outlet> host), so without this it
+// defaults to `display: inline` - an inline box sizes to its content instead of the viewport,
+// which breaks width constraints for everything nested inside it (the classic cause of a page
+// that only reveals horizontal overflow once some inner element demands more width than a
+// narrow viewport has, e.g. on phone).
+cdx-root {
+    display: block;
+    height: 100%;
+}
+
 :focus-visible {
     outline: 2px solid var(--cdx-primary);
     outline-offset: 2px;

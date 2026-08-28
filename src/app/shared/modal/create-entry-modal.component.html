@@ -4,9 +4,6 @@
     <mat-form-field appearance="outline" class="cdx-modal-field">
         <mat-label>Title</mat-label>
         <input matInput [formControl]="titleControl" placeholder="Vaelith Corrun" />
-        @if (titleControl.touched && titleControl.invalid) {
-            <mat-error>Enter at least two characters</mat-error>
-        }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="cdx-modal-field">

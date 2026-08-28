@@ -13,9 +13,6 @@
                 aria-label="Password"
                 (keydown.enter)="submit()"
             />
-            @if (passwordControl.touched && passwordControl.invalid) {
-                <mat-error>Password is required</mat-error>
-            }
         </mat-form-field>
 
         @if (error(); as message) {

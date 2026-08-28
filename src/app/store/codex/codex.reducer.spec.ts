@@ -84,6 +84,17 @@ describe('codexReducer', () => {
         expect(INITIAL_CODEX_STATE.entries.length).toBe(0);
     });
 
+    it('should set the sidebar collapsed state directly', () => {
+        // Arrange
+        const action = CodexActions.sidebarCollapsedSet({ collapsed: true });
+
+        // Act
+        const state = codexReducer(INITIAL_CODEX_STATE, action);
+
+        // Assert
+        expect(state.sidebarCollapsed).toBe(true);
+    });
+
     it('should toggle the sidebar', () => {
         // Arrange
         const action = CodexActions.sidebarToggled();

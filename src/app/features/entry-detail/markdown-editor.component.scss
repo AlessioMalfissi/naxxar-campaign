@@ -1,3 +1,8 @@
+:host {
+    display: block;
+    min-width: 0;
+}
+
 .cdx-editor-panes {
     display: block;
     min-height: 320px;
@@ -11,8 +16,16 @@
 }
 
 .cdx-editor-split {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    display: block;
+}
+
+// The side-by-side split only has room to breathe at wide viewports; narrower than that it
+// falls back to the editor stacked above the preview, both still fully usable.
+@media (width >= 1280px) {
+    .cdx-editor-split {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
 }
 
 .cdx-editor-input {
@@ -46,5 +59,12 @@
 }
 
 .cdx-editor-split .cdx-editor-preview {
-    border-left: 1px solid var(--cdx-border);
+    border-top: 1px solid var(--cdx-border);
+}
+
+@media (width >= 1280px) {
+    .cdx-editor-split .cdx-editor-preview {
+        border-top: none;
+        border-left: 1px solid var(--cdx-border);
+    }
 }

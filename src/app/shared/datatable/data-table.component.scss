@@ -1,5 +1,16 @@
+:host {
+    display: block;
+    min-width: 0;
+}
+
+.cdx-data-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
 .cdx-data-table {
     width: 100%;
+    min-width: 560px;
     border-collapse: collapse;
     font-size: 13px;
 

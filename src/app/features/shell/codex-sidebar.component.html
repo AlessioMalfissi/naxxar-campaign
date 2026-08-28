@@ -1,3 +1,6 @@
+@if (!collapsed()) {
+    <div class="cdx-sidebar-backdrop" (click)="closeSidebar()"></div>
+}
 <aside class="cdx-sidebar" [class.cdx-sidebar-narrow]="collapsed()">
     @if (collapsed()) {
         <button
@@ -24,7 +27,7 @@
         @for (section of sections; let i = $index; track i) {
             <a
                 class="cdx-sidebar-item"
-                [class.cdx-sidebar-item-active]="section.section === activeSection()"
+                [class.cdx-sidebar-item-active]="isSectionActive(section.section)"
                 [routerLink]="['/campaign', section.section]"
                 [matTooltip]="collapsed() ? section.label : ''"
             >
