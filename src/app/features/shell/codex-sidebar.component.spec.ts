@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
@@ -14,7 +15,11 @@ import {
     selectSectionCounts,
     selectSidebarCollapsed
 } from '@store/codex/codex.selectors';
+import { selectInventoryItemCount } from '@store/inventory/inventory.selectors';
 import { CodexSidebarComponent } from './codex-sidebar.component';
+
+@Component({ selector: 'cdx-route-stub', standalone: true, template: '' })
+class RouteStubComponent {}
 
 describe('CodexSidebarComponent', () => {
     let fixture: ComponentFixture<CodexSidebarComponent>;
@@ -40,7 +45,7 @@ describe('CodexSidebarComponent', () => {
         await TestBed.configureTestingModule({
             imports: [CodexSidebarComponent, NoopAnimationsModule],
             providers: [
-                provideRouter([]),
+                provideRouter([{ path: '**', component: RouteStubComponent }]),
                 provideMockStore({ initialState: {} }),
                 { provide: ModalService, useValue: modalService }
             ]
@@ -51,13 +56,14 @@ describe('CodexSidebarComponent', () => {
         store.overrideSelector(selectSidebarCollapsed, false);
         store.overrideSelector(selectSectionCounts, { npcs: 3 });
         store.overrideSelector(selectRecentEntries, [buildSummary()]);
+        store.overrideSelector(selectInventoryItemCount, 2);
 
         fixture = TestBed.createComponent(CodexSidebarComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });
 
-    it('should render a nav item per section with its count', () => {
+    it('should render a nav item per section plus the inventory link, with its count', () => {
         // Arrange
         const items = fixture.nativeElement.querySelectorAll('.cdx-sidebar-item') as NodeListOf<HTMLElement>;
 
@@ -65,8 +71,87 @@ describe('CodexSidebarComponent', () => {
         const activeItem = fixture.nativeElement.querySelector('.cdx-sidebar-item-active') as HTMLElement;
 
         // Assert
-        expect(items.length).toBe(5);
+        expect(items.length).toBe(6);
         expect((activeItem.textContent ?? '').includes('3')).toBe(true);
+    });
+
+    it('should render the inventory link with its item count', () => {
+        // Arrange
+        const links = fixture.nativeElement.querySelectorAll('.cdx-sidebar-item') as NodeListOf<HTMLElement>;
+        const inventoryLink = [...links].find((link) => (link.textContent ?? '').includes('Inventory'));
+
+        // Assert
+        expect(inventoryLink !== undefined).toBe(true);
+        expect((inventoryLink?.textContent ?? '').includes('2')).toBe(true);
+    });
+
+    it('should mark the inventory link active when on the inventory route', async () => {
+        // Arrange
+        const router = TestBed.inject(Router);
+        await router.navigateByUrl('/campaign/inventory');
+
+        // Act
+        const active = component['isInventoryActive']();
+
+        // Assert
+        expect(active).toBe(true);
+    });
+
+    it('should mark the inventory link inactive on other routes', async () => {
+        // Arrange
+        const router = TestBed.inject(Router);
+        await router.navigateByUrl('/campaign/npcs');
+
+        // Act
+        const active = component['isInventoryActive']();
+
+        // Assert
+        expect(active).toBe(false);
+    });
+
+    it('should mark the last-opened section active while its own route is showing', async () => {
+        // Arrange
+        const router = TestBed.inject(Router);
+        await router.navigateByUrl('/campaign/npcs');
+
+        // Act
+        const active = component['isSectionActive'](CodexSection.Npcs);
+
+        // Assert
+        expect(active).toBe(true);
+    });
+
+    it('should not leave a stale section highlighted once the inventory route is showing', async () => {
+        // Arrange - store still remembers npcs as the last section opened before navigating away
+        const router = TestBed.inject(Router);
+        await router.navigateByUrl('/campaign/inventory');
+
+        // Act
+        const active = component['isSectionActive'](CodexSection.Npcs);
+
+        // Assert
+        expect(active).toBe(false);
+    });
+
+    it('should render no section as active while on the inventory route', async () => {
+        // Arrange - the store still remembers npcs as the last section opened before navigating
+        // away, exactly like a user clicking from a section into Inventory without the store
+        // ever being told the section changed.
+        const router = TestBed.inject(Router);
+
+        // Act
+        await router.navigateByUrl('/campaign/inventory');
+        fixture.detectChanges();
+        const activeSectionItems = fixture.nativeElement.querySelectorAll(
+            '[aria-label="Codex sections"] .cdx-sidebar-item-active'
+        ) as NodeListOf<HTMLElement>;
+        const activeInventoryItems = fixture.nativeElement.querySelectorAll(
+            '[aria-label="Party"] .cdx-sidebar-item-active'
+        ) as NodeListOf<HTMLElement>;
+
+        // Assert
+        expect(activeSectionItems.length).toBe(0);
+        expect(activeInventoryItems.length).toBe(1);
     });
 
     it('should report zero for a section without entries', () => {
@@ -92,10 +177,10 @@ describe('CodexSidebarComponent', () => {
         expect(label.includes('Vaelith Corrun')).toBe(true);
     });
 
-    it('should mark the open entry as active', () => {
+    it('should mark the open entry as active', async () => {
         // Arrange
         const router = TestBed.inject(Router);
-        jest.spyOn(router, 'url', 'get').mockReturnValue('/campaign/npcs/vaelith-corrun');
+        await router.navigateByUrl('/campaign/npcs/vaelith-corrun');
 
         // Act
         const active = component['isActiveEntry'](buildSummary());
@@ -148,5 +233,40 @@ describe('CodexSidebarComponent', () => {
 
         // Assert
         expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should render a backdrop only while the sidebar is expanded', () => {
+        // Arrange - expanded by default (selectSidebarCollapsed is false in this suite's setup)
+
+        // Act
+        const backdrop = fixture.nativeElement.querySelector('.cdx-sidebar-backdrop');
+
+        // Assert
+        expect(backdrop !== null).toBe(true);
+    });
+
+    it('should hide the backdrop when collapsed', () => {
+        // Arrange
+        store.overrideSelector(selectSidebarCollapsed, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+        const backdrop = fixture.nativeElement.querySelector('.cdx-sidebar-backdrop');
+
+        // Assert
+        expect(backdrop === null).toBe(true);
+    });
+
+    it('should toggle the sidebar closed when the backdrop is clicked', () => {
+        // Arrange
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const backdrop = fixture.nativeElement.querySelector('.cdx-sidebar-backdrop') as HTMLElement;
+
+        // Act
+        backdrop.click();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.sidebarToggled());
     });
 });

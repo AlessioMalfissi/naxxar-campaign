@@ -87,6 +87,11 @@ export const codexReducer = createReducer<ICodexState>(
         sidebarCollapsed: !state.sidebarCollapsed
     })),
 
+    on(CodexActions.sidebarCollapsedSet, (state, { collapsed }): ICodexState => ({
+        ...state,
+        sidebarCollapsed: collapsed
+    })),
+
     on(CodexActions.playerModeToggled, (state): ICodexState => ({
         ...state,
         playerMode: !state.playerMode

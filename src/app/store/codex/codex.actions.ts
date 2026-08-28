@@ -31,6 +31,11 @@ export const entryClosed = createAction(`[${SOURCE}] entry closed`);
 
 export const sidebarToggled = createAction(`[${SOURCE}] sidebar toggled`);
 
+export const sidebarCollapsedSet = createAction(
+    `[${SOURCE}] sidebar collapsed set`,
+    props<{ collapsed: boolean }>()
+);
+
 export const playerModeToggled = createAction(`[${SOURCE}] player mode toggled`);
 
 export const favouriteToggled = createAction(`[${SOURCE}] favourite toggled`, props<{ id: string }>());

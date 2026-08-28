@@ -1,3 +1,6 @@
+@if (!collapsed()) {
+    <div class="cdx-sidebar-backdrop" (click)="closeSidebar()"></div>
+}
 <aside class="cdx-sidebar" [class.cdx-sidebar-narrow]="collapsed()">
     @if (collapsed()) {
         <button
@@ -24,7 +27,7 @@
         @for (section of sections; let i = $index; track i) {
             <a
                 class="cdx-sidebar-item"
-                [class.cdx-sidebar-item-active]="section.section === activeSection()"
+                [class.cdx-sidebar-item-active]="isSectionActive(section.section)"
                 [routerLink]="['/campaign', section.section]"
                 [matTooltip]="collapsed() ? section.label : ''"
             >
@@ -37,6 +40,26 @@
                 }
             </a>
         }
+    </nav>
+
+    <div class="cdx-sidebar-divider"></div>
+
+    <nav class="cdx-sidebar-nav" aria-label="Party">
+        @if (!collapsed()) {
+            <p class="cdx-sidebar-caption">Party</p>
+        }
+        <a
+            class="cdx-sidebar-item"
+            [class.cdx-sidebar-item-active]="isInventoryActive()"
+            [routerLink]="['/campaign', 'inventory']"
+            [matTooltip]="collapsed() ? 'Inventory' : ''"
+        >
+            <mat-icon>inventory_2</mat-icon>
+            @if (!collapsed()) {
+                <span class="cdx-sidebar-label">Inventory</span>
+                <span class="cdx-sidebar-count">{{ inventoryCount() }}</span>
+            }
+        </a>
     </nav>
 
     @if (!collapsed() && recentEntries().length > 0) {

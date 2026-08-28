@@ -1,6 +1,6 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 
-import { ApiCallStatus, EntryVisibility, ICodexEntrySummary } from '@core/models';
+import { ApiCallStatus, CodexSection, EntryVisibility, ICodexEntrySummary } from '@core/models';
 import { CODEX_FEATURE_KEY, ICodexState } from './codex.state';
 
 export const selectCodexState = createFeatureSelector<ICodexState>(CODEX_FEATURE_KEY);
@@ -33,6 +33,10 @@ export const selectVisibleEntries = createSelector(selectCodexState, (state) =>
 
 export const selectEntryTitles = createSelector(selectVisibleEntries, (entries) =>
     entries.reduce<Record<string, string>>((titles, entry) => ({ ...titles, [entry.id]: entry.title }), {})
+);
+
+export const selectPlayerEntries = createSelector(selectVisibleEntries, (entries) =>
+    entries.filter((entry) => entry.section === CodexSection.Players)
 );
 
 export const selectSectionCounts = createSelector(selectVisibleEntries, (entries) =>

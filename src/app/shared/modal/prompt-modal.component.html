@@ -3,9 +3,6 @@
     <mat-form-field appearance="outline" class="cdx-modal-field">
         <mat-label>{{ data.label }}</mat-label>
         <input matInput [formControl]="control" [placeholder]="data.placeholder" />
-        @if (control.touched && control.invalid) {
-            <mat-error>Enter at least two characters</mat-error>
-        }
     </mat-form-field>
     <div class="cdx-modal-actions">
         <button mat-button type="button" (click)="cancel()">Cancel</button>

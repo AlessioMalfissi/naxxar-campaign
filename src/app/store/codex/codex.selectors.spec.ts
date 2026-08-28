@@ -8,6 +8,7 @@ import {
     selectFilters,
     selectIndexLoading,
     selectOpenEntry,
+    selectPlayerEntries,
     selectPlayerMode,
     selectRecentEntries,
     selectReferencingEntries,
@@ -146,6 +147,24 @@ describe('codexSelectors', () => {
         expect(byStatus.length).toBe(1);
         expect(byTag[0].id).toBe(HIDDEN.id);
         expect(byQuery[0].id).toBe(REVEALED.id);
+    });
+
+    it('should list only players-section entries', () => {
+        // Arrange
+        const player = buildSummary({
+            id: 'players:tessaly-oakhand',
+            section: CodexSection.Players,
+            slug: 'tessaly-oakhand',
+            title: 'Tessaly Oakhand'
+        });
+        const entries = [REVEALED, player, OTHER_SECTION];
+
+        // Act
+        const players = selectPlayerEntries.projector(entries);
+
+        // Assert
+        expect(players.length).toBe(1);
+        expect(players[0].id).toBe('players:tessaly-oakhand');
     });
 
     it('should list the sorted unique tags of the active section', () => {

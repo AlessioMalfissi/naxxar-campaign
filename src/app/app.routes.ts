@@ -16,6 +16,11 @@ export const APP_ROUTES: Routes = [
         children: [
             { path: '', redirectTo: 'npcs', pathMatch: 'full' },
             {
+                path: 'inventory',
+                loadComponent: () =>
+                    import('@features/inventory/inventory.component').then((module) => module.InventoryComponent)
+            },
+            {
                 path: ':section',
                 loadComponent: () =>
                     import('@features/section-list/section-list.component').then(

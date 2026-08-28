@@ -25,11 +25,11 @@ MongoDB. Both live in this repo as a pnpm workspace.
 pn install                         # installs both the app and server/
 cp server/.env.example server/.env # then fill in MONGODB_URI
 pn run server:seed                 # loads the sample codex entries into Mongo
-pn run dev                         # runs the API (:8000) and `ng serve` (:8001) together
+pn run dev                         # runs the API (:3000) and `ng serve` (:57571) together
 ```
 
-`ng serve` proxies `/api/*` to `http://localhost:8000` (see `proxy.conf.json`), so the app at
-`http://localhost:8001` talks to the local API transparently. To run them separately instead of
+`ng serve` proxies `/api/*` to `http://localhost:3000` (see `proxy.conf.json`), so the app at
+`http://localhost:57571` talks to the local API transparently. To run them separately instead of
 `pn run dev`: `pn run server` (or `pn run server:dev` to restart on file changes) in one terminal, `pn start`
 in another.
 

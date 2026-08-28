@@ -3,6 +3,10 @@
     flex: none;
 }
 
+.cdx-sidebar-backdrop {
+    display: none;
+}
+
 .cdx-sidebar {
     display: flex;
     flex-direction: column;
@@ -12,6 +16,28 @@
     background: var(--cdx-surface-1);
     border-right: 1px solid var(--cdx-border);
     overflow-y: auto;
+}
+
+// Below tablet width, an expanded (non-narrow) sidebar would crowd out the content it sits
+// beside, so it overlays the page instead - same toggle, just a different visual treatment.
+@media (width <= 767px) {
+    .cdx-sidebar:not(.cdx-sidebar-narrow) {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 20;
+        width: min(280px, 85vw);
+        box-shadow: 4px 0 16px rgb(0 0 0 / 40%);
+    }
+
+    .cdx-sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 19;
+        display: block;
+        background: rgb(0 0 0 / 45%);
+    }
 }
 
 .cdx-sidebar-narrow {

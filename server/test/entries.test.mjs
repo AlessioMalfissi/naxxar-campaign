@@ -8,7 +8,10 @@ import { createFakeCollection } from '../test-utils/fake-collection.mjs';
 const PASSWORD = 'campaign-test-password';
 
 const buildApp = (docs = []) =>
-    createApp(createFakeCollection(docs), { appPassword: PASSWORD, sessionSecret: 'test-secret' });
+    createApp(
+        { entries: createFakeCollection(docs), inventory: createFakeCollection([]), purses: createFakeCollection([]) },
+        { appPassword: PASSWORD, sessionSecret: 'test-secret' }
+    );
 
 // Returns a supertest agent that already carries a valid session cookie, so route tests below
 // only need to exercise /api/entries, not the login flow itself (covered in auth.test.mjs).
@@ -171,7 +174,10 @@ test('PUT /api/entries/:section/:slug 404s when the entry does not exist', async
 
 test('DELETE /api/entries/:section/:slug removes the entry', async () => {
     const collection = createFakeCollection([sampleEntry()]);
-    const app = createApp(collection, { appPassword: PASSWORD, sessionSecret: 'test-secret' });
+    const app = createApp(
+        { entries: collection, inventory: createFakeCollection([]), purses: createFakeCollection([]) },
+        { appPassword: PASSWORD, sessionSecret: 'test-secret' }
+    );
     const agent = await authedAgent(app);
     const response = await agent.delete('/api/entries/npcs/vaelith-corrun');
 
