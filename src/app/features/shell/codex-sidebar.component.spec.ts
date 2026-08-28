@@ -14,6 +14,7 @@ import {
     selectSectionCounts,
     selectSidebarCollapsed
 } from '@store/codex/codex.selectors';
+import { selectInventoryItemCount } from '@store/inventory/inventory.selectors';
 import { CodexSidebarComponent } from './codex-sidebar.component';
 
 describe('CodexSidebarComponent', () => {
@@ -51,13 +52,14 @@ describe('CodexSidebarComponent', () => {
         store.overrideSelector(selectSidebarCollapsed, false);
         store.overrideSelector(selectSectionCounts, { npcs: 3 });
         store.overrideSelector(selectRecentEntries, [buildSummary()]);
+        store.overrideSelector(selectInventoryItemCount, 2);
 
         fixture = TestBed.createComponent(CodexSidebarComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });
 
-    it('should render a nav item per section with its count', () => {
+    it('should render a nav item per section plus the inventory link, with its count', () => {
         // Arrange
         const items = fixture.nativeElement.querySelectorAll('.cdx-sidebar-item') as NodeListOf<HTMLElement>;
 
@@ -65,8 +67,42 @@ describe('CodexSidebarComponent', () => {
         const activeItem = fixture.nativeElement.querySelector('.cdx-sidebar-item-active') as HTMLElement;
 
         // Assert
-        expect(items.length).toBe(5);
+        expect(items.length).toBe(6);
         expect((activeItem.textContent ?? '').includes('3')).toBe(true);
+    });
+
+    it('should render the inventory link with its item count', () => {
+        // Arrange
+        const links = fixture.nativeElement.querySelectorAll('.cdx-sidebar-item') as NodeListOf<HTMLElement>;
+        const inventoryLink = [...links].find((link) => (link.textContent ?? '').includes('Inventory'));
+
+        // Assert
+        expect(inventoryLink !== undefined).toBe(true);
+        expect((inventoryLink?.textContent ?? '').includes('2')).toBe(true);
+    });
+
+    it('should mark the inventory link active when on the inventory route', () => {
+        // Arrange
+        const router = TestBed.inject(Router);
+        jest.spyOn(router, 'url', 'get').mockReturnValue('/campaign/inventory');
+
+        // Act
+        const active = component['isInventoryActive']();
+
+        // Assert
+        expect(active).toBe(true);
+    });
+
+    it('should mark the inventory link inactive on other routes', () => {
+        // Arrange
+        const router = TestBed.inject(Router);
+        jest.spyOn(router, 'url', 'get').mockReturnValue('/campaign/npcs');
+
+        // Act
+        const active = component['isInventoryActive']();
+
+        // Assert
+        expect(active).toBe(false);
     });
 
     it('should report zero for a section without entries', () => {

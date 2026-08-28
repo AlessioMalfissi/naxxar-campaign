@@ -7,6 +7,7 @@ import { Store } from '@ngrx/store';
 import { CodexSection, SECTION_DEFINITIONS } from '@core/models';
 import * as CodexActions from '@store/codex/codex.actions';
 import { selectActiveSection, selectSidebarCollapsed } from '@store/codex/codex.selectors';
+import * as InventoryActions from '@store/inventory/inventory.actions';
 import { CodexHeaderComponent } from './codex-header.component';
 import { CodexSidebarComponent } from './codex-sidebar.component';
 
@@ -31,5 +32,6 @@ export class CampaignShellComponent implements OnInit {
 
     ngOnInit(): void {
         this.store.dispatch(CodexActions.loadIndex.request({}));
+        this.store.dispatch(InventoryActions.loadItems.request({}));
     }
 }

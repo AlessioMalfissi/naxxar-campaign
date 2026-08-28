@@ -17,6 +17,7 @@ import {
     selectSectionCounts,
     selectSidebarCollapsed
 } from '@store/codex/codex.selectors';
+import { selectInventoryItemCount } from '@store/inventory/inventory.selectors';
 
 const EMPTY_COUNTS: Record<string, number> = {};
 
@@ -41,6 +42,7 @@ export class CodexSidebarComponent {
     });
     protected readonly collapsed = toSignal(this.store.select(selectSidebarCollapsed), { initialValue: false });
     protected readonly recentEntries = toSignal(this.store.select(selectRecentEntries), { initialValue: [] });
+    protected readonly inventoryCount = toSignal(this.store.select(selectInventoryItemCount), { initialValue: 0 });
 
     protected readonly activeSectionLabel = computed<string>(() => findSectionDefinition(this.activeSection()).label);
 
@@ -50,6 +52,10 @@ export class CodexSidebarComponent {
 
     protected isActiveEntry(entry: ICodexEntrySummary): boolean {
         return this.router.url.endsWith(`/${entry.slug}`);
+    }
+
+    protected isInventoryActive(): boolean {
+        return this.router.url.startsWith('/campaign/inventory');
     }
 
     protected createEntry(): void {

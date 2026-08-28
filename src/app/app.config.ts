@@ -16,6 +16,9 @@ import { CODEX_FEATURE_KEY } from '@store/codex/codex.state';
 import { EditorEffects } from '@store/editor/editor.effects';
 import { editorReducer } from '@store/editor/editor.reducer';
 import { EDITOR_FEATURE_KEY } from '@store/editor/editor.state';
+import { InventoryEffects } from '@store/inventory/inventory.effects';
+import { inventoryReducer } from '@store/inventory/inventory.reducer';
+import { INVENTORY_FEATURE_KEY } from '@store/inventory/inventory.state';
 import { APP_ROUTES } from './app.routes';
 
 export const APP_CONFIG: ApplicationConfig = {
@@ -31,9 +34,10 @@ export const APP_CONFIG: ApplicationConfig = {
         provideStore({
             [AUTH_FEATURE_KEY]: authReducer,
             [CODEX_FEATURE_KEY]: codexReducer,
-            [EDITOR_FEATURE_KEY]: editorReducer
+            [EDITOR_FEATURE_KEY]: editorReducer,
+            [INVENTORY_FEATURE_KEY]: inventoryReducer
         }),
-        provideEffects([AuthEffects, CodexEffects, EditorEffects]),
+        provideEffects([AuthEffects, CodexEffects, EditorEffects, InventoryEffects]),
         provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() })
     ]
 };

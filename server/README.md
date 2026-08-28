@@ -1,7 +1,9 @@
 # naxxar-campaign-server
 
-Express + MongoDB API backing the Naxxar campaign codex. One collection, `entries`, one document per
-codex entry, shaped like `ICodexEntry` (see `../src/app/core/models/i-codex-entry.ts`).
+Express + MongoDB API backing the Naxxar campaign codex. Two collections: `entries`, one document per
+codex entry, shaped like `ICodexEntry` (see `../src/app/core/models/i-codex-entry.ts`), and `inventory`,
+one document per inventory item, shaped like `IInventoryItem` (see
+`../src/app/core/models/i-inventory-item.ts`).
 
 ## Setup
 
@@ -92,18 +94,41 @@ curl -X POST http://localhost:8000/api/entries \
 `section` must be one of `npcs`, `players`, `places`, `organizations`, `story`, and `title` must be at
 least two characters after trimming; anything else fails with `400`.
 
+## Inventory endpoints
+
+Items are addressed by a generated id (not `section:slug`). Every route below also requires a valid
+session cookie.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/inventory` | List every item, sorted by name. |
+| `POST` | `/api/inventory` | Create an item. `name` is required; `quantity` defaults to `1`, `owner` defaults to `"party"`. |
+| `PATCH` | `/api/inventory/:id` | Update one or more of `name`, `description`, `quantity`, `owner`. `404` if the item doesn't exist. |
+| `DELETE` | `/api/inventory/:id` | Delete an item. Idempotent - `200` even if nothing matched. |
+
+`owner` is either the literal `"party"` (party inventory) or a codex entry id of a `players` entry
+(e.g. `"players:tessaly-oakhand"`), assigning the item to that character. The API stores whatever string
+it's given - resolving it to a player's display name is the app's job, not the server's.
+
+```bash
+curl -X POST http://localhost:8000/api/inventory \
+  -H 'Content-Type: application/json' \
+  -d '{ "name": "Potion of healing", "quantity": 3, "owner": "players:tessaly-oakhand" }'
+```
+
 ## Layout
 
 ```
 server/
 ├── src/
-│   ├── app.js          Express app factory - takes a Mongo collection as a dependency
+│   ├── app.js          Express app factory - takes { entries, inventory } Mongo collections as a dependency
 │   ├── auth.js           the /api/auth router and the requireAuth middleware
 │   ├── config.js        reads PORT / MONGODB_URI / MONGODB_DB / STATIC_DIR / APP_PASSWORD / SESSION_SECRET
 │   ├── db.js             connects to MongoDB, ensures indexes
 │   ├── entries.js        the /api/entries router
 │   ├── http-error.js     HttpError(status, message) used for 4xx responses
 │   ├── index.js           entry point: connect, then listen
+│   ├── inventory.js       the /api/inventory router
 │   ├── query.js           builds the MongoDB filter for GET /api/entries
 │   └── sections.js        the five valid section ids
 ├── seed-data/codex/      sample entries as markdown, one folder per section
@@ -112,5 +137,5 @@ server/
 └── test-utils/           the in-memory fake collection used by the tests above
 ```
 
-`createApp(collection, options)` takes the Mongo collection as a parameter rather than importing a
-singleton, so tests can pass in a fake collection instead of connecting to a real database.
+`createApp({ entries, inventory }, options)` takes the Mongo collections as a parameter rather than
+importing a singleton, so tests can pass in fake collections instead of connecting to a real database.

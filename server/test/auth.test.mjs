@@ -7,10 +7,17 @@ import { createFakeCollection } from '../test-utils/fake-collection.mjs';
 
 const PASSWORD = 'campaign-test-password';
 
-const buildApp = () => createApp(createFakeCollection([]), { appPassword: PASSWORD, sessionSecret: 'test-secret' });
+const buildApp = () =>
+    createApp(
+        { entries: createFakeCollection([]), inventory: createFakeCollection([]) },
+        { appPassword: PASSWORD, sessionSecret: 'test-secret' }
+    );
 
 test('createApp refuses to start without an appPassword', () => {
-    assert.throws(() => createApp(createFakeCollection([])), /appPassword/);
+    assert.throws(
+        () => createApp({ entries: createFakeCollection([]), inventory: createFakeCollection([]) }),
+        /appPassword/
+    );
 });
 
 test('GET /api/auth/me reports unauthenticated with no session cookie', async () => {

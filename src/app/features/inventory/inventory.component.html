@@ -1,0 +1,101 @@
+<div class="cdx-inventory" [class.pane-is-loading]="loading()">
+    <div class="cdx-section-head">
+        <h1 class="cdx-section-title">Inventory</h1>
+        <span class="cdx-section-count">{{ items().length }} items</span>
+    </div>
+
+    <form class="cdx-inventory-form" [formGroup]="form" (ngSubmit)="addItem()">
+        <mat-form-field appearance="outline" class="cdx-inventory-field-name">
+            <mat-label>Item name</mat-label>
+            <input matInput formControlName="name" placeholder="Potion of healing" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+                <mat-error>Enter a name</mat-error>
+            }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="cdx-inventory-field-description">
+            <mat-label>Description</mat-label>
+            <input matInput formControlName="description" placeholder="Optional" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="cdx-inventory-field-qty">
+            <mat-label>Qty</mat-label>
+            <input matInput type="number" min="0" formControlName="quantity" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="cdx-inventory-field-owner">
+            <mat-label>Assign to</mat-label>
+            <mat-select formControlName="owner">
+                <mat-option [value]="partyOwner">Party inventory</mat-option>
+                @for (player of players(); track player.id) {
+                    <mat-option [value]="player.id">{{ player.title }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+
+        <button mat-flat-button type="submit">
+            <mat-icon>add</mat-icon>
+            Add item
+        </button>
+    </form>
+
+    @for (group of groups(); track group.id) {
+        <section class="cdx-inventory-group">
+            <h2 class="cdx-inventory-group-title">
+                {{ group.label }}
+                <span class="cdx-inventory-group-count">{{ group.items.length }}</span>
+            </h2>
+
+            @if (group.items.length > 0) {
+                <div class="cdx-inventory-rows">
+                    @for (item of group.items; track item.id) {
+                        <div class="cdx-inventory-row">
+                            <div class="cdx-inventory-row-main">
+                                <span class="cdx-inventory-name">{{ item.name }}</span>
+                                @if (item.description !== '') {
+                                    <span class="cdx-inventory-description">{{ item.description }}</span>
+                                }
+                            </div>
+
+                            <div class="cdx-inventory-qty">
+                                <button
+                                    mat-icon-button
+                                    type="button"
+                                    aria-label="Decrease quantity"
+                                    [disabled]="item.quantity <= 0"
+                                    (click)="changeQuantity(item, -1)"
+                                >
+                                    <mat-icon>remove</mat-icon>
+                                </button>
+                                <span class="cdx-inventory-qty-value">{{ item.quantity }}</span>
+                                <button
+                                    mat-icon-button
+                                    type="button"
+                                    aria-label="Increase quantity"
+                                    (click)="changeQuantity(item, 1)"
+                                >
+                                    <mat-icon>add</mat-icon>
+                                </button>
+                            </div>
+
+                            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-owner">
+                                <mat-select [value]="item.owner" (selectionChange)="changeOwner(item, $event)">
+                                    <mat-option [value]="partyOwner">Party inventory</mat-option>
+                                    @for (player of players(); track player.id) {
+                                        <mat-option [value]="player.id">{{ player.title }}</mat-option>
+                                    }
+                                </mat-select>
+                            </mat-form-field>
+
+                            <button mat-icon-button type="button" aria-label="Delete item" (click)="deleteItem(item)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </div>
+                    }
+                </div>
+            } @else {
+                <p class="cdx-section-empty">Nothing assigned here yet.</p>
+            }
+        </section>
+    }
+</div>
