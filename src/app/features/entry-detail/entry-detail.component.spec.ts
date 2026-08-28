@@ -502,6 +502,40 @@ describe('EntryDetailComponent', () => {
         expect(items.some((item) => (item.textContent ?? '').includes('Edit details'))).toBe(false);
     });
 
+    it('should show the delete entry action outside player mode', () => {
+        // Arrange
+        fixture.detectChanges();
+
+        // Act
+        const menuTrigger = fixture.nativeElement.querySelector(
+            '[aria-label="Entry actions"]'
+        ) as HTMLButtonElement;
+        menuTrigger.click();
+        fixture.detectChanges();
+
+        // Assert
+        const items = Array.from(document.querySelectorAll('.mat-mdc-menu-item')) as HTMLElement[];
+        expect(items.some((item) => (item.textContent ?? '').includes('Delete entry'))).toBe(true);
+    });
+
+    it('should hide the delete entry action in player mode', () => {
+        // Arrange
+        store.overrideSelector(selectPlayerMode, true);
+        store.refreshState();
+        fixture.detectChanges();
+
+        // Act
+        const menuTrigger = fixture.nativeElement.querySelector(
+            '[aria-label="Entry actions"]'
+        ) as HTMLButtonElement;
+        menuTrigger.click();
+        fixture.detectChanges();
+
+        // Assert
+        const items = Array.from(document.querySelectorAll('.mat-mdc-menu-item')) as HTMLElement[];
+        expect(items.some((item) => (item.textContent ?? '').includes('Delete entry'))).toBe(false);
+    });
+
     it('should export the entry with the current draft body', () => {
         // Arrange
         fixture.detectChanges();
