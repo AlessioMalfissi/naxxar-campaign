@@ -202,6 +202,62 @@ describe('codexSelectors', () => {
         expect(referencing[0].id).toBe(HIDDEN.id);
     });
 
+    it('should list entries whose title mentions the open entry', () => {
+        // Arrange
+        const openEntry = buildEntry();
+        const titled = buildSummary({
+            id: 'places:vaelith-corrun-manor',
+            section: CodexSection.Places,
+            slug: 'vaelith-corrun-manor',
+            title: "Vaelith Corrun's manor",
+            excerpt: ''
+        });
+
+        // Act
+        const referencing = selectReferencingEntries.projector([REVEALED, titled], openEntry);
+
+        // Assert
+        expect(referencing.map((entry) => entry.id)).toEqual([titled.id]);
+    });
+
+    it('should list entries whose tags mention the open entry', () => {
+        // Arrange
+        const openEntry = buildEntry();
+        const tagged = buildSummary({
+            id: 'organizations:silver-ledger',
+            section: CodexSection.Organizations,
+            slug: 'silver-ledger',
+            title: 'Silver ledger',
+            excerpt: '',
+            tags: ['Vaelith Corrun']
+        });
+
+        // Act
+        const referencing = selectReferencingEntries.projector([REVEALED, tagged], openEntry);
+
+        // Assert
+        expect(referencing.map((entry) => entry.id)).toEqual([tagged.id]);
+    });
+
+    it('should list entries with a reference field pointing at the open entry', () => {
+        // Arrange
+        const openEntry = buildEntry();
+        const linked = buildSummary({
+            id: 'organizations:silver-ledger',
+            section: CodexSection.Organizations,
+            slug: 'silver-ledger',
+            title: 'Silver ledger',
+            excerpt: '',
+            fields: { leader: openEntry.id }
+        });
+
+        // Act
+        const referencing = selectReferencingEntries.projector([REVEALED, linked], openEntry);
+
+        // Assert
+        expect(referencing.map((entry) => entry.id)).toEqual([linked.id]);
+    });
+
     it('should return no references when nothing is open', () => {
         // Arrange
         const state = buildState();
