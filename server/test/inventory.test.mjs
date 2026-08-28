@@ -9,7 +9,7 @@ const PASSWORD = 'campaign-test-password';
 
 const buildApp = (docs = []) =>
     createApp(
-        { entries: createFakeCollection([]), inventory: createFakeCollection(docs) },
+        { entries: createFakeCollection([]), inventory: createFakeCollection(docs), purses: createFakeCollection([]) },
         { appPassword: PASSWORD, sessionSecret: 'test-secret' }
     );
 
@@ -176,7 +176,7 @@ test('PATCH /api/inventory/:id 404s when the item does not exist', async () => {
 test('DELETE /api/inventory/:id removes the item', async () => {
     const collection = createFakeCollection([sampleItem()]);
     const app = createApp(
-        { entries: createFakeCollection([]), inventory: collection },
+        { entries: createFakeCollection([]), inventory: collection, purses: createFakeCollection([]) },
         { appPassword: PASSWORD, sessionSecret: 'test-secret' }
     );
     const agent = await authedAgent(app);

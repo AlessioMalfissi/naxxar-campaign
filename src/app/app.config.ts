@@ -19,6 +19,9 @@ import { EDITOR_FEATURE_KEY } from '@store/editor/editor.state';
 import { InventoryEffects } from '@store/inventory/inventory.effects';
 import { inventoryReducer } from '@store/inventory/inventory.reducer';
 import { INVENTORY_FEATURE_KEY } from '@store/inventory/inventory.state';
+import { PursesEffects } from '@store/purses/purses.effects';
+import { pursesReducer } from '@store/purses/purses.reducer';
+import { PURSES_FEATURE_KEY } from '@store/purses/purses.state';
 import { APP_ROUTES } from './app.routes';
 
 export const APP_CONFIG: ApplicationConfig = {
@@ -35,9 +38,10 @@ export const APP_CONFIG: ApplicationConfig = {
             [AUTH_FEATURE_KEY]: authReducer,
             [CODEX_FEATURE_KEY]: codexReducer,
             [EDITOR_FEATURE_KEY]: editorReducer,
-            [INVENTORY_FEATURE_KEY]: inventoryReducer
+            [INVENTORY_FEATURE_KEY]: inventoryReducer,
+            [PURSES_FEATURE_KEY]: pursesReducer
         }),
-        provideEffects([AuthEffects, CodexEffects, EditorEffects, InventoryEffects]),
+        provideEffects([AuthEffects, CodexEffects, EditorEffects, InventoryEffects, PursesEffects]),
         provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() })
     ]
 };

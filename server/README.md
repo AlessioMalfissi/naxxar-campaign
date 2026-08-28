@@ -1,9 +1,10 @@
 # naxxar-campaign-server
 
-Express + MongoDB API backing the Naxxar campaign codex. Two collections: `entries`, one document per
-codex entry, shaped like `ICodexEntry` (see `../src/app/core/models/i-codex-entry.ts`), and `inventory`,
-one document per inventory item, shaped like `IInventoryItem` (see
-`../src/app/core/models/i-inventory-item.ts`).
+Express + MongoDB API backing the Naxxar campaign codex. Three collections: `entries`, one document per
+codex entry, shaped like `ICodexEntry` (see `../src/app/core/models/i-codex-entry.ts`); `inventory`, one
+document per inventory item, shaped like `IInventoryItem` (see
+`../src/app/core/models/i-inventory-item.ts`); and `purses`, one document per gold-tracking owner (the
+party, or a player), shaped like `IPurse` (see `../src/app/core/models/i-purse.ts`).
 
 ## Setup
 
@@ -127,12 +128,29 @@ curl -X POST http://localhost:8000/api/inventory \
   }'
 ```
 
+## Purse endpoints
+
+A purse tracks the gold held by the party or by one player, addressed by the same owner id used on
+inventory items (`"party"`, or a `players` entry id like `"players:tessaly-oakhand"`). Every route below
+also requires a valid session cookie.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/purses` | List every purse that has been set. An owner with no purse yet simply isn't in the list - the app treats that as 0 gold. |
+| `PUT` | `/api/purses/:owner` | Create or replace the purse for `owner` with the given `gold`. `gold` must be a non-negative number (fractional values are floored); anything else fails with `400`. |
+
+```bash
+curl -X PUT http://localhost:8000/api/purses/party \
+  -H 'Content-Type: application/json' \
+  -d '{ "gold": 120 }'
+```
+
 ## Layout
 
 ```
 server/
 ├── src/
-│   ├── app.js          Express app factory - takes { entries, inventory } Mongo collections as a dependency
+│   ├── app.js          Express app factory - takes { entries, inventory, purses } Mongo collections as a dependency
 │   ├── auth.js           the /api/auth router and the requireAuth middleware
 │   ├── config.js        reads PORT / MONGODB_URI / MONGODB_DB / STATIC_DIR / APP_PASSWORD / SESSION_SECRET
 │   ├── db.js             connects to MongoDB, ensures indexes
@@ -140,6 +158,7 @@ server/
 │   ├── http-error.js     HttpError(status, message) used for 4xx responses
 │   ├── index.js           entry point: connect, then listen
 │   ├── inventory.js       the /api/inventory router
+│   ├── purses.js          the /api/purses router
 │   ├── query.js           builds the MongoDB filter for GET /api/entries
 │   └── sections.js        the five valid section ids
 ├── seed-data/codex/      sample entries as markdown, one folder per section

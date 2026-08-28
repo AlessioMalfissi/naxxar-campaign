@@ -13,5 +13,7 @@ export const connectToMongo = async ({ uri, dbName }) => {
     const inventoryCollection = db.collection('inventory');
     await inventoryCollection.createIndex({ owner: 1 });
 
-    return { client, collection, inventoryCollection };
+    const pursesCollection = db.collection('purses');
+
+    return { client, collection, inventoryCollection, pursesCollection };
 };

@@ -12,9 +12,12 @@ if (config.appPassword === null) {
 }
 
 const start = async () => {
-    const { collection, inventoryCollection } = await connectToMongo({ uri: config.mongoUri, dbName: config.mongoDb });
+    const { collection, inventoryCollection, pursesCollection } = await connectToMongo({
+        uri: config.mongoUri,
+        dbName: config.mongoDb
+    });
     const app = createApp(
-        { entries: collection, inventory: inventoryCollection },
+        { entries: collection, inventory: inventoryCollection, purses: pursesCollection },
         {
             staticDir: config.staticDir,
             appPassword: config.appPassword,

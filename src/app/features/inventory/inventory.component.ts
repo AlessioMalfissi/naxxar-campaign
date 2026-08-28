@@ -14,11 +14,18 @@ import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries } from '@store/codex/codex.selectors';
 import * as InventoryActions from '@store/inventory/inventory.actions';
 import { selectInventoryItems, selectInventoryLoading } from '@store/inventory/inventory.selectors';
+import * as PursesActions from '@store/purses/purses.actions';
+import { selectGoldByOwner } from '@store/purses/purses.selectors';
+
+const RARITY_FILTER_ALL = 'all';
+const STATUS_FILTER_ALL = 'all';
+const EMPTY_GOLD_BY_OWNER: Record<string, number> = {};
 
 interface IInventoryGroup {
     id: string;
     label: string;
     items: IInventoryItem[];
+    totalCount: number;
 }
 
 @Component({
@@ -44,9 +51,14 @@ export class InventoryComponent implements OnInit {
     protected readonly partyOwner = PARTY_OWNER_ID;
     protected readonly rarities = ItemRarity;
     protected readonly statuses = ItemStatus;
+    protected readonly rarityFilterAll = RARITY_FILTER_ALL;
+    protected readonly statusFilterAll = STATUS_FILTER_ALL;
     protected readonly items = toSignal(this.store.select(selectInventoryItems), { initialValue: [] });
     protected readonly loading = toSignal(this.store.select(selectInventoryLoading), { initialValue: false });
     protected readonly players = toSignal(this.store.select(selectPlayerEntries), { initialValue: [] });
+    protected readonly goldByOwner = toSignal(this.store.select(selectGoldByOwner), {
+        initialValue: EMPTY_GOLD_BY_OWNER
+    });
 
     protected readonly form = new FormGroup({
         name: new FormControl<string>('', {
@@ -60,29 +72,78 @@ export class InventoryComponent implements OnInit {
         status: new FormControl<ItemStatus>(ItemStatus.Mundane, { nonNullable: true })
     });
 
+    protected readonly filterForm = new FormGroup({
+        query: new FormControl<string>('', { nonNullable: true }),
+        rarity: new FormControl<ItemRarity | typeof RARITY_FILTER_ALL>(RARITY_FILTER_ALL, { nonNullable: true }),
+        status: new FormControl<ItemStatus | typeof STATUS_FILTER_ALL>(STATUS_FILTER_ALL, { nonNullable: true })
+    });
+
+    private readonly filters = toSignal(this.filterForm.valueChanges, {
+        initialValue: this.filterForm.getRawValue()
+    });
+
+    protected readonly hasActiveFilters = computed<boolean>(() => {
+        const filters = this.filters();
+        return (
+            (filters.query ?? '').trim() !== '' ||
+            filters.rarity !== RARITY_FILTER_ALL ||
+            filters.status !== STATUS_FILTER_ALL
+        );
+    });
+
+    private readonly filteredItems = computed<IInventoryItem[]>(() => {
+        const filters = this.filters();
+        const query = (filters.query ?? '').trim().toLowerCase();
+
+        return this.items().filter((item) => {
+            if (filters.rarity !== RARITY_FILTER_ALL && item.rarity !== filters.rarity) {
+                return false;
+            }
+            if (filters.status !== STATUS_FILTER_ALL && item.status !== filters.status) {
+                return false;
+            }
+            return (
+                query === '' ||
+                item.name.toLowerCase().includes(query) ||
+                item.description.toLowerCase().includes(query)
+            );
+        });
+    });
+
     protected readonly groups = computed<IInventoryGroup[]>(() => {
         const items = this.items();
-        const groups: IInventoryGroup[] = [
-            {
-                id: PARTY_OWNER_ID,
-                label: 'Party inventory',
-                items: items.filter((item) => item.owner === PARTY_OWNER_ID)
-            }
+        const filteredItems = this.filteredItems();
+
+        const buildGroup = (id: string, label: string): IInventoryGroup => ({
+            id,
+            label,
+            items: filteredItems.filter((item) => item.owner === id),
+            totalCount: items.filter((item) => item.owner === id).length
+        });
+
+        return [
+            buildGroup(PARTY_OWNER_ID, 'Party inventory'),
+            ...this.players().map((player) => buildGroup(player.id, player.title))
         ];
-
-        for (const player of this.players()) {
-            groups.push({
-                id: player.id,
-                label: player.title,
-                items: items.filter((item) => item.owner === player.id)
-            });
-        }
-
-        return groups;
     });
 
     ngOnInit(): void {
         this.store.dispatch(InventoryActions.loadItems.request({}));
+        this.store.dispatch(PursesActions.loadPurses.request({}));
+    }
+
+    protected clearFilters(): void {
+        this.filterForm.reset({ query: '', rarity: RARITY_FILTER_ALL, status: STATUS_FILTER_ALL });
+    }
+
+    protected goldFor(ownerId: string): number {
+        return this.goldByOwner()[ownerId] ?? 0;
+    }
+
+    protected changeGold(ownerId: string, event: Event): void {
+        const value = Number((event.target as HTMLInputElement).value);
+        const gold = Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
+        this.store.dispatch(PursesActions.updateGold.request({ owner: ownerId, gold }));
     }
 
     protected addItem(): void {

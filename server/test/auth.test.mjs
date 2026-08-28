@@ -9,13 +9,18 @@ const PASSWORD = 'campaign-test-password';
 
 const buildApp = () =>
     createApp(
-        { entries: createFakeCollection([]), inventory: createFakeCollection([]) },
+        { entries: createFakeCollection([]), inventory: createFakeCollection([]), purses: createFakeCollection([]) },
         { appPassword: PASSWORD, sessionSecret: 'test-secret' }
     );
 
 test('createApp refuses to start without an appPassword', () => {
     assert.throws(
-        () => createApp({ entries: createFakeCollection([]), inventory: createFakeCollection([]) }),
+        () =>
+            createApp({
+                entries: createFakeCollection([]),
+                inventory: createFakeCollection([]),
+                purses: createFakeCollection([])
+            }),
         /appPassword/
     );
 });

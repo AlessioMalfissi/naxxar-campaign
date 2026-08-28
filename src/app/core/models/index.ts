@@ -7,4 +7,5 @@ export * from './save-status.enum';
 export * from './view-mode.enum';
 export * from './i-codex-entry';
 export * from './i-inventory-item';
+export * from './i-purse';
 export * from './i-section-definition';

@@ -28,15 +28,34 @@
     font-size: 13px;
 }
 
+.cdx-inventory-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.cdx-inventory-filter-query {
+    flex: 1 1 220px;
+}
+
+.cdx-inventory-filter-select {
+    flex: 0 1 160px;
+}
+
 .cdx-inventory-form {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
     padding: 12px;
     border: 1px solid var(--cdx-border);
     border-radius: 12px;
     background: var(--cdx-surface-1);
+}
+
+.cdx-inventory-add-button {
+    align-self: center;
 }
 
 .cdx-inventory-field-name {
@@ -77,6 +96,35 @@
 }
 
 .cdx-inventory-group-count {
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.cdx-inventory-gold {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.cdx-inventory-gold-input {
+    width: 70px;
+    padding: 4px 8px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 6px;
+    background: var(--cdx-surface-2);
+    color: var(--cdx-text-primary);
+    font: inherit;
+    text-align: right;
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 1px;
+    }
+}
+
+.cdx-inventory-gold-suffix {
     color: var(--cdx-text-muted);
     font-size: 11px;
     font-weight: 400;

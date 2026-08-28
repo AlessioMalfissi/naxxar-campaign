@@ -9,7 +9,7 @@ const PASSWORD = 'campaign-test-password';
 
 const buildApp = (docs = []) =>
     createApp(
-        { entries: createFakeCollection(docs), inventory: createFakeCollection([]) },
+        { entries: createFakeCollection(docs), inventory: createFakeCollection([]), purses: createFakeCollection([]) },
         { appPassword: PASSWORD, sessionSecret: 'test-secret' }
     );
 
@@ -175,7 +175,7 @@ test('PUT /api/entries/:section/:slug 404s when the entry does not exist', async
 test('DELETE /api/entries/:section/:slug removes the entry', async () => {
     const collection = createFakeCollection([sampleEntry()]);
     const app = createApp(
-        { entries: collection, inventory: createFakeCollection([]) },
+        { entries: collection, inventory: createFakeCollection([]), purses: createFakeCollection([]) },
         { appPassword: PASSWORD, sessionSecret: 'test-secret' }
     );
     const agent = await authedAgent(app);

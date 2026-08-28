@@ -9,6 +9,8 @@ import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries } from '@store/codex/codex.selectors';
 import * as InventoryActions from '@store/inventory/inventory.actions';
 import { selectInventoryItems, selectInventoryLoading } from '@store/inventory/inventory.selectors';
+import * as PursesActions from '@store/purses/purses.actions';
+import { selectGoldByOwner } from '@store/purses/purses.selectors';
 import { buildSummary } from '@testing/entry.fixtures';
 import { buildInventoryItem } from '@testing/inventory.fixtures';
 import { InventoryComponent } from './inventory.component';
@@ -41,12 +43,13 @@ describe('InventoryComponent', () => {
         ]);
         store.overrideSelector(selectInventoryLoading, false);
         store.overrideSelector(selectPlayerEntries, [PLAYER]);
+        store.overrideSelector(selectGoldByOwner, { [PARTY_OWNER_ID]: 120 });
 
         fixture = TestBed.createComponent(InventoryComponent);
         component = fixture.componentInstance;
     });
 
-    it('should request the inventory on init', () => {
+    it('should request the inventory and purses on init', () => {
         // Arrange
         const dispatchSpy = jest.spyOn(store, 'dispatch');
 
@@ -55,6 +58,7 @@ describe('InventoryComponent', () => {
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(InventoryActions.loadItems.request({}));
+        expect(dispatchSpy).toHaveBeenCalledWith(PursesActions.loadPurses.request({}));
     });
 
     it('should group items under party inventory and each player', () => {
@@ -64,8 +68,114 @@ describe('InventoryComponent', () => {
 
         // Assert
         expect(groups.length).toBe(2);
-        expect(groups[0]).toEqual({ id: PARTY_OWNER_ID, label: 'Party inventory', items: [expect.objectContaining({ id: 'party-item' })] });
-        expect(groups[1]).toEqual({ id: PLAYER.id, label: PLAYER.title, items: [expect.objectContaining({ id: 'player-item' })] });
+        expect(groups[0]).toEqual({
+            id: PARTY_OWNER_ID,
+            label: 'Party inventory',
+            items: [expect.objectContaining({ id: 'party-item' })],
+            totalCount: 1
+        });
+        expect(groups[1]).toEqual({
+            id: PLAYER.id,
+            label: PLAYER.title,
+            items: [expect.objectContaining({ id: 'player-item' })],
+            totalCount: 1
+        });
+    });
+
+    it('should report gold from the store, defaulting to zero for an owner without a purse', () => {
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(component['goldFor'](PARTY_OWNER_ID)).toBe(120);
+        expect(component['goldFor'](PLAYER.id)).toBe(0);
+    });
+
+    it('should dispatch a gold update with the entered value', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const input = document.createElement('input');
+        input.value = '75';
+
+        // Act
+        component['changeGold'](PARTY_OWNER_ID, { target: input } as unknown as Event);
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(PursesActions.updateGold.request({ owner: PARTY_OWNER_ID, gold: 75 }));
+    });
+
+    it('should clamp an invalid gold input to zero', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const input = document.createElement('input');
+        input.value = 'not a number';
+
+        // Act
+        component['changeGold'](PARTY_OWNER_ID, { target: input } as unknown as Event);
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(PursesActions.updateGold.request({ owner: PARTY_OWNER_ID, gold: 0 }));
+    });
+
+    it('should filter items by search query, rarity and status', () => {
+        // Arrange
+        store.overrideSelector(selectInventoryItems, [
+            buildInventoryItem({
+                id: 'potion',
+                name: 'Potion of healing',
+                owner: PARTY_OWNER_ID,
+                rarity: ItemRarity.Common,
+                status: ItemStatus.Magic
+            }),
+            buildInventoryItem({
+                id: 'torch',
+                name: 'Torch',
+                owner: PARTY_OWNER_ID,
+                rarity: ItemRarity.None,
+                status: ItemStatus.Mundane
+            })
+        ]);
+        store.refreshState();
+        fixture.detectChanges();
+
+        // Act
+        component['filterForm'].controls.query.setValue('potion');
+
+        // Assert
+        expect(component['groups']()[0].items.map((item) => item.id)).toEqual(['potion']);
+        expect(component['hasActiveFilters']()).toBe(true);
+    });
+
+    it('should report totalCount unfiltered so the empty state can distinguish no items from no matches', () => {
+        // Arrange
+        store.overrideSelector(selectInventoryItems, [
+            buildInventoryItem({ id: 'torch', name: 'Torch', owner: PARTY_OWNER_ID })
+        ]);
+        store.refreshState();
+        fixture.detectChanges();
+        component['filterForm'].controls.query.setValue('nonexistent');
+
+        // Act
+        const group = component['groups']()[0];
+
+        // Assert
+        expect(group.items.length).toBe(0);
+        expect(group.totalCount).toBe(1);
+    });
+
+    it('should clear the filters', () => {
+        // Arrange
+        fixture.detectChanges();
+        component['filterForm'].setValue({ query: 'potion', rarity: ItemRarity.Rare, status: ItemStatus.Attuned });
+
+        // Act
+        component['clearFilters']();
+
+        // Assert
+        expect(component['filterForm'].getRawValue()).toEqual({ query: '', rarity: 'all', status: 'all' });
+        expect(component['hasActiveFilters']()).toBe(false);
     });
 
     it('should not add an item when the form is invalid', () => {

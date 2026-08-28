@@ -43,9 +43,9 @@ export const createFakeCollection = (initialDocs = []) => {
             docs.set(doc._id, { ...doc });
             return { insertedId: doc._id };
         },
-        replaceOne: async (filter, doc) => {
+        replaceOne: async (filter, doc, options = {}) => {
             const found = [...docs.values()].find((existing) => matches(existing, filter));
-            if (found !== undefined) {
+            if (found !== undefined || options.upsert === true) {
                 docs.set(doc._id, { ...doc });
             }
             return { matchedCount: found === undefined ? 0 : 1 };
