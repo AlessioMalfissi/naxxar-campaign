@@ -11,6 +11,7 @@ import { IDataTableColumn, IDataTableRow } from '@shared/datatable/i-data-table'
 import { buildSummary } from '@testing/entry.fixtures';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
+    selectEntryTitles,
     selectFilters,
     selectIndexLoading,
     selectSectionEntries,
@@ -58,6 +59,7 @@ describe('SectionListComponent', () => {
         store.overrideSelector(selectSectionTags, ['ally', 'silver-ledger']);
         store.overrideSelector(selectFilters, { status: null, tags: [], query: '' });
         store.overrideSelector(selectIndexLoading, false);
+        store.overrideSelector(selectEntryTitles, {});
 
         fixture = TestBed.createComponent(SectionListComponent);
         component = fixture.componentInstance;

@@ -159,7 +159,7 @@ describe('EntryDetailComponent', () => {
 
         // Assert
         expect(component['fields']().find((field) => field.label === 'Affiliation')?.value).toBe(
-            'silver ledger'
+            'Silver Ledger'
         );
     });
 

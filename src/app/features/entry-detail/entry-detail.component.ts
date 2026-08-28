@@ -21,7 +21,7 @@ import {
 import { MarkdownExportService } from '@core/services/markdown-export.service';
 import { MarkdownCommand } from '@core/services/markdown-command.service';
 import { MarkdownRendererService } from '@core/services/markdown-renderer.service';
-import { buildEntryId, parseEntryId } from '@core/utils/entry-id.util';
+import { buildEntryId, formatReferenceValue, parseEntryId } from '@core/utils/entry-id.util';
 import { ModalService } from '@shared/modal/modal.service';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
@@ -258,12 +258,7 @@ export class EntryDetailComponent {
             return value;
         }
 
-        const reference = parseEntryId(value);
-        if (reference === null) {
-            return value;
-        }
-
-        return this.titles()[value] ?? reference.slug.replace(/-/g, ' ');
+        return formatReferenceValue(value, this.titles());
     }
 
     private relativeTime(isoDate: string): string {

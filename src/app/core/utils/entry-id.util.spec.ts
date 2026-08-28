@@ -1,5 +1,5 @@
 import { CodexSection } from '@core/models';
-import { buildEntryId, parseEntryId, slugify } from './entry-id.util';
+import { buildEntryId, formatReferenceValue, formatSlugLabel, parseEntryId, slugify } from './entry-id.util';
 
 describe('entryIdUtil', () => {
     it('should build an id from a section and a slug', () => {
@@ -56,5 +56,50 @@ describe('entryIdUtil', () => {
 
         // Assert
         expect(slug).toBe('mother-ilsabeth-the-ashen-choir');
+    });
+
+    it('should format a slug into a readable title-case label', () => {
+        // Arrange
+        const slug = 'mother-ilsabeth';
+
+        // Act
+        const label = formatSlugLabel(slug);
+
+        // Assert
+        expect(label).toBe('Mother Ilsabeth');
+    });
+
+    it('should format a reference value using the known title', () => {
+        // Arrange
+        const value = 'npcs:vaelith-corrun';
+        const titles = { 'npcs:vaelith-corrun': 'Vaelith Corrun' };
+
+        // Act
+        const label = formatReferenceValue(value, titles);
+
+        // Assert
+        expect(label).toBe('Vaelith Corrun');
+    });
+
+    it('should fall back to a readable slug when the reference title is unknown', () => {
+        // Arrange
+        const value = 'npcs:mother-ilsabeth';
+
+        // Act
+        const label = formatReferenceValue(value, {});
+
+        // Assert
+        expect(label).toBe('Mother Ilsabeth');
+    });
+
+    it('should leave a malformed reference value untouched', () => {
+        // Arrange
+        const value = 'not-a-reference';
+
+        // Act
+        const label = formatReferenceValue(value, {});
+
+        // Assert
+        expect(label).toBe('not-a-reference');
     });
 });
