@@ -89,6 +89,11 @@
             </mat-select>
         </mat-form-field>
 
+        <div class="cdx-inventory-field-flags">
+            <mat-checkbox formControlName="forSale">For sale</mat-checkbox>
+            <mat-checkbox formControlName="imp">IMP (Cromwell)</mat-checkbox>
+        </div>
+
         <button mat-flat-button type="submit" class="cdx-inventory-add-button">
             <mat-icon>add</mat-icon>
             Add item
@@ -186,6 +191,18 @@
                                     }
                                 </mat-select>
                             </mat-form-field>
+
+                            <div class="cdx-inventory-flags">
+                                <mat-checkbox
+                                    [checked]="item.forSale"
+                                    (change)="changeForSale(item, $event)"
+                                >
+                                    For sale
+                                </mat-checkbox>
+                                <mat-checkbox [checked]="item.imp" (change)="changeImp(item, $event)">
+                                    IMP (Cromwell)
+                                </mat-checkbox>
+                            </div>
 
                             <button mat-icon-button type="button" aria-label="Delete item" (click)="deleteItem(item)">
                                 <mat-icon>delete</mat-icon>

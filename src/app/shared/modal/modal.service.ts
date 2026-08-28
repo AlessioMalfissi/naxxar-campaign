@@ -49,7 +49,25 @@ export class ModalService {
                     title: data.title ?? 'New entry',
                     statuses: data.statuses ?? [],
                     fields: data.fields ?? [],
-                    confirmLabel: data.confirmLabel ?? 'Create entry'
+                    confirmLabel: data.confirmLabel ?? 'Create entry',
+                    values: data.values
+                }
+            }
+        );
+
+        return reference.closed.pipe(map((result) => result ?? null));
+    }
+
+    editEntry(data: Partial<ICreateEntryModalData>): Observable<ICreateEntryResult | null> {
+        const reference = this.dialog.open<ICreateEntryResult | null, ICreateEntryModalData, CreateEntryModalComponent>(
+            CreateEntryModalComponent,
+            {
+                data: {
+                    title: data.title ?? 'Edit entry',
+                    statuses: data.statuses ?? [],
+                    fields: data.fields ?? [],
+                    confirmLabel: data.confirmLabel ?? 'Save changes',
+                    values: data.values
                 }
             }
         );

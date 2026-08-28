@@ -21,17 +21,18 @@ export interface ICreateEntryFieldConfig {
     kind: SectionFieldKind;
 }
 
-export interface ICreateEntryModalData {
-    title: string;
-    statuses: string[];
-    fields: ICreateEntryFieldConfig[];
-    confirmLabel: string;
-}
-
 export interface ICreateEntryResult {
     title: string;
     status: string;
     tags: string[];
     visibility: EntryVisibility;
     fields: Record<string, string>;
+}
+
+export interface ICreateEntryModalData {
+    title: string;
+    statuses: string[];
+    fields: ICreateEntryFieldConfig[];
+    confirmLabel: string;
+    values?: ICreateEntryResult;
 }

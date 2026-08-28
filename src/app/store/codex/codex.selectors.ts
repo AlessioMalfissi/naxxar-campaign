@@ -1,7 +1,13 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 
-import { ApiCallStatus, CodexSection, EntryVisibility, ICodexEntrySummary } from '@core/models';
+import { ApiCallStatus, CodexSection, EntryVisibility, ICodexEntry, ICodexEntrySummary } from '@core/models';
 import { CODEX_FEATURE_KEY, ICodexState } from './codex.state';
+
+const mentionsEntry = (entry: ICodexEntrySummary, openEntry: ICodexEntry): boolean =>
+    entry.title.includes(openEntry.title) ||
+    entry.excerpt.includes(openEntry.title) ||
+    entry.tags.some((tag) => tag.includes(openEntry.title)) ||
+    Object.values(entry.fields).some((value) => value === openEntry.id || value.includes(openEntry.title));
 
 export const selectCodexState = createFeatureSelector<ICodexState>(CODEX_FEATURE_KEY);
 
@@ -79,7 +85,5 @@ export const selectReferencingEntries = createSelector(
     (entries, openEntry) =>
         openEntry === null
             ? []
-            : entries.filter(
-                  (entry) => entry.id !== openEntry.id && entry.excerpt.includes(openEntry.title)
-              )
+            : entries.filter((entry) => entry.id !== openEntry.id && mentionsEntry(entry, openEntry))
 );

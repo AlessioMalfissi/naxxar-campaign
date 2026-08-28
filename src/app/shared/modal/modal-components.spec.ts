@@ -274,3 +274,64 @@ describe('CreateEntryModalComponent', () => {
         expect(dialogRef.close).toHaveBeenCalledWith(null);
     });
 });
+
+describe('CreateEntryModalComponent in edit mode', () => {
+    let fixture: ComponentFixture<CreateEntryModalComponent>;
+    let component: CreateEntryModalComponent;
+    let dialogRef: { close: jest.Mock };
+
+    const EDIT_ENTRY_DATA: ICreateEntryModalData = {
+        title: 'Edit Grum the Broker',
+        statuses: ['Alive', 'Dead'],
+        fields: [{ key: 'race', label: 'Race', kind: 'text' }],
+        confirmLabel: 'Save changes',
+        values: {
+            title: 'Grum the Broker',
+            status: 'Dead',
+            tags: ['merchant'],
+            visibility: EntryVisibility.Revealed,
+            fields: { race: 'Dwarf' }
+        }
+    };
+
+    beforeEach(async () => {
+        // Arrange
+        dialogRef = { close: jest.fn() };
+        await TestBed.configureTestingModule({
+            imports: [CreateEntryModalComponent, NoopAnimationsModule],
+            providers: [
+                { provide: DIALOG_DATA, useValue: EDIT_ENTRY_DATA },
+                { provide: DialogRef, useValue: dialogRef }
+            ]
+        }).compileComponents();
+        fixture = TestBed.createComponent(CreateEntryModalComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+    });
+
+    it('should prefill the form with the supplied values', () => {
+        // Assert
+        expect(component['titleControl'].value).toBe('Grum the Broker');
+        expect(component['statusControl'].value).toBe('Dead');
+        expect(component['visibilityControl'].value).toBe(EntryVisibility.Revealed);
+        expect(component['tags']()).toEqual(['merchant']);
+        expect(component['fieldsGroup'].controls['race'].value).toBe('Dwarf');
+    });
+
+    it('should close with the edited values', () => {
+        // Arrange
+        component['fieldsGroup'].controls['race'].setValue('Half-orc');
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        expect(dialogRef.close).toHaveBeenCalledWith({
+            title: 'Grum the Broker',
+            status: 'Dead',
+            tags: ['merchant'],
+            visibility: EntryVisibility.Revealed,
+            fields: { race: 'Half-orc' }
+        });
+    });
+});

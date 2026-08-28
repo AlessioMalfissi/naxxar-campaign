@@ -136,4 +136,57 @@ describe('ModalService', () => {
         // Assert
         expect(value === null).toBe(true);
     });
+
+    it('should open the edit entry modal with the supplied values and defaults', () => {
+        // Arrange
+        dialog.open.mockReturnValue({ closed: of(null) });
+        const values: ICreateEntryResult = {
+            title: 'Grum the Broker',
+            status: 'Alive',
+            tags: ['merchant'],
+            visibility: EntryVisibility.Dm,
+            fields: { race: 'Dwarf' }
+        };
+
+        // Act
+        service.editEntry({ statuses: ['Alive', 'Dead'], fields: [], values }).subscribe();
+
+        // Assert
+        const [component, config] = dialog.open.mock.calls[0] as [unknown, { data: ICreateEntryModalData }];
+        expect(component === CreateEntryModalComponent).toBe(true);
+        expect(config.data.title).toBe('Edit entry');
+        expect(config.data.confirmLabel).toBe('Save changes');
+        expect(config.data.values).toEqual(values);
+    });
+
+    it('should report the edit entry result', () => {
+        // Arrange
+        const edited: ICreateEntryResult = {
+            title: 'Grum the Broker',
+            status: 'Dead',
+            tags: [],
+            visibility: EntryVisibility.Revealed,
+            fields: {}
+        };
+        dialog.open.mockReturnValue({ closed: of(edited) });
+        let value: ICreateEntryResult | null = null;
+
+        // Act
+        service.editEntry({}).subscribe((result) => (value = result));
+
+        // Assert
+        expect(value!).toEqual(edited);
+    });
+
+    it('should report a dismissed edit entry modal as null', () => {
+        // Arrange
+        dialog.open.mockReturnValue({ closed: of(undefined) });
+        let value: ICreateEntryResult | null = { title: 'unset' } as ICreateEntryResult;
+
+        // Act
+        service.editEntry({}).subscribe((result) => (value = result));
+
+        // Assert
+        expect(value === null).toBe(true);
+    });
 });

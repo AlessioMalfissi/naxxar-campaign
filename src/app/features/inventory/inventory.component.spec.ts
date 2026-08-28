@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatCheckboxChange } from '@angular/material/checkbox';
 import { MatSelectChange } from '@angular/material/select';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
@@ -202,7 +203,9 @@ describe('InventoryComponent', () => {
             quantity: 2,
             owner: PLAYER.id,
             rarity: ItemRarity.Rare,
-            status: ItemStatus.Attuned
+            status: ItemStatus.Attuned,
+            forSale: true,
+            imp: true
         });
 
         // Act
@@ -216,13 +219,17 @@ describe('InventoryComponent', () => {
                 quantity: 2,
                 owner: PLAYER.id,
                 rarity: ItemRarity.Rare,
-                status: ItemStatus.Attuned
+                status: ItemStatus.Attuned,
+                forSale: true,
+                imp: true
             })
         );
         expect(component['form'].controls.name.value).toBe('');
         expect(component['form'].controls.owner.value).toBe(PARTY_OWNER_ID);
         expect(component['form'].controls.rarity.value).toBe(ItemRarity.None);
         expect(component['form'].controls.status.value).toBe(ItemStatus.Mundane);
+        expect(component['form'].controls.forSale.value).toBe(false);
+        expect(component['form'].controls.imp.value).toBe(false);
     });
 
     it('should increase and clamp the decreased quantity at zero', () => {
@@ -326,6 +333,36 @@ describe('InventoryComponent', () => {
 
         // Assert
         expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should dispatch a for-sale flag update', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const item = buildInventoryItem({ id: 'item-1', forSale: false });
+
+        // Act
+        component['changeForSale'](item, { checked: true } as MatCheckboxChange);
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            InventoryActions.updateItem.request({ id: 'item-1', changes: { forSale: true } })
+        );
+    });
+
+    it('should dispatch an IMP flag update', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const item = buildInventoryItem({ id: 'item-1', imp: false });
+
+        // Act
+        component['changeImp'](item, { checked: true } as MatCheckboxChange);
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            InventoryActions.updateItem.request({ id: 'item-1', changes: { imp: true } })
+        );
     });
 
     it('should delete an item once the deletion is confirmed', () => {

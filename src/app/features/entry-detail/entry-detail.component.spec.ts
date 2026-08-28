@@ -8,6 +8,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { CodexSection, EntryVisibility, SaveStatus, ViewMode } from '@core/models';
 import { MarkdownCommand } from '@core/services/markdown-command.service';
 import { MarkdownExportService } from '@core/services/markdown-export.service';
+import { ICreateEntryResult } from '@shared/modal/i-modal';
 import { ModalService } from '@shared/modal/modal.service';
 import { buildEntry, buildSummary } from '@testing/entry.fixtures';
 import * as CodexActions from '@store/codex/codex.actions';
@@ -46,7 +47,7 @@ describe('EntryDetailComponent', () => {
     let store: MockStore;
     let paramMap$: BehaviorSubject<ParamMap>;
     let router: { navigate: jest.Mock };
-    let modalService: { confirm: jest.Mock; prompt: jest.Mock };
+    let modalService: { confirm: jest.Mock; prompt: jest.Mock; editEntry: jest.Mock };
     let exportService: { download: jest.Mock; toMarkdown: jest.Mock };
 
     beforeEach(async () => {
@@ -55,7 +56,11 @@ describe('EntryDetailComponent', () => {
             convertToParamMap({ section: CodexSection.Npcs, slug: 'vaelith-corrun' })
         );
         router = { navigate: jest.fn().mockResolvedValue(true) };
-        modalService = { confirm: jest.fn().mockReturnValue(of(true)), prompt: jest.fn() };
+        modalService = {
+            confirm: jest.fn().mockReturnValue(of(true)),
+            prompt: jest.fn(),
+            editEntry: jest.fn().mockReturnValue(of(null))
+        };
         exportService = { download: jest.fn(), toMarkdown: jest.fn() };
 
         await TestBed.configureTestingModule({
@@ -391,6 +396,108 @@ describe('EntryDetailComponent', () => {
         // Assert
         expect(fixture.nativeElement.querySelector('.cdx-entry-status-trigger') === null).toBe(true);
         expect(fixture.nativeElement.querySelector('.cdx-entry-chip-status').textContent.trim()).toBe('Alive');
+    });
+
+    it('should open the edit modal prefilled with the current entry values', () => {
+        // Arrange
+        fixture.detectChanges();
+
+        // Act
+        component['editEntry']();
+
+        // Assert
+        expect(modalService.editEntry).toHaveBeenCalledWith(
+            expect.objectContaining({
+                values: {
+                    title: 'Vaelith Corrun',
+                    status: 'Alive',
+                    tags: ['ally', 'silver-ledger'],
+                    visibility: EntryVisibility.Revealed,
+                    fields: { race: 'Half-elf', role: 'Broker', affiliation: 'organizations:silver-ledger' }
+                }
+            })
+        );
+    });
+
+    it('should save the entry with the edited details', () => {
+        // Arrange
+        const result: ICreateEntryResult = {
+            title: 'Vaelith Corrunne',
+            status: 'Dead',
+            tags: ['ally'],
+            visibility: EntryVisibility.Dm,
+            fields: { race: 'Elf' }
+        };
+        modalService.editEntry.mockReturnValue(of(result));
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['editEntry']();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CodexActions.saveEntry.request({
+                entry: {
+                    ...buildEntry({
+                        fields: { race: 'Half-elf', role: 'Broker', affiliation: 'organizations:silver-ledger' }
+                    }),
+                    title: 'Vaelith Corrunne',
+                    status: 'Dead',
+                    tags: ['ally'],
+                    visibility: EntryVisibility.Dm,
+                    fields: { race: 'Elf' },
+                    body: '# Who he is\n\nBroker of debts.'
+                }
+            })
+        );
+    });
+
+    it('should ignore a dismissed edit modal', () => {
+        // Arrange
+        modalService.editEntry.mockReturnValue(of(null));
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['editEntry']();
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should show the edit details action outside player mode', () => {
+        // Arrange
+        fixture.detectChanges();
+
+        // Act
+        const menuTrigger = fixture.nativeElement.querySelector(
+            '[aria-label="Entry actions"]'
+        ) as HTMLButtonElement;
+        menuTrigger.click();
+        fixture.detectChanges();
+
+        // Assert
+        const items = Array.from(document.querySelectorAll('.mat-mdc-menu-item')) as HTMLElement[];
+        expect(items.some((item) => (item.textContent ?? '').includes('Edit details'))).toBe(true);
+    });
+
+    it('should hide the edit details action in player mode', () => {
+        // Arrange
+        store.overrideSelector(selectPlayerMode, true);
+        store.refreshState();
+        fixture.detectChanges();
+
+        // Act
+        const menuTrigger = fixture.nativeElement.querySelector(
+            '[aria-label="Entry actions"]'
+        ) as HTMLButtonElement;
+        menuTrigger.click();
+        fixture.detectChanges();
+
+        // Assert
+        const items = Array.from(document.querySelectorAll('.mat-mdc-menu-item')) as HTMLElement[];
+        expect(items.some((item) => (item.textContent ?? '').includes('Edit details'))).toBe(false);
     });
 
     it('should export the entry with the current draft body', () => {

@@ -27,6 +27,8 @@ const sampleItem = (overrides = {}) => ({
     owner: 'party',
     rarity: 'common',
     status: 'magic',
+    forSale: false,
+    imp: false,
     updatedAt: '2026-08-25T00:00:00.000Z',
     ...overrides
 });
@@ -64,9 +66,11 @@ test('POST /api/inventory creates an item defaulting owner to party, quantity to
     assert.equal(response.body.description, '');
     assert.equal(response.body.rarity, 'none');
     assert.equal(response.body.status, 'mundane');
+    assert.equal(response.body.forSale, false);
+    assert.equal(response.body.imp, false);
 });
 
-test('POST /api/inventory stores the supplied quantity, owner, description, rarity and status', async () => {
+test('POST /api/inventory stores the supplied quantity, owner, description, rarity, status and flags', async () => {
     const app = buildApp([]);
     const agent = await authedAgent(app);
     const response = await agent.post('/api/inventory').send({
@@ -75,7 +79,9 @@ test('POST /api/inventory stores the supplied quantity, owner, description, rari
         quantity: 5,
         owner: 'players:tessaly-oakhand',
         rarity: 'common',
-        status: 'magic'
+        status: 'magic',
+        forSale: true,
+        imp: true
     });
 
     assert.equal(response.status, 201);
@@ -84,6 +90,8 @@ test('POST /api/inventory stores the supplied quantity, owner, description, rari
     assert.equal(response.body.description, 'Restores 2d4+2 hit points.');
     assert.equal(response.body.rarity, 'common');
     assert.equal(response.body.status, 'magic');
+    assert.equal(response.body.forSale, true);
+    assert.equal(response.body.imp, true);
 });
 
 test('POST /api/inventory falls back to a default rarity and status for an invalid value', async () => {
@@ -163,6 +171,18 @@ test('PATCH /api/inventory/:id keeps the existing rarity and status when given a
     assert.equal(response.status, 200);
     assert.equal(response.body.rarity, 'rare');
     assert.equal(response.body.status, 'attuned');
+});
+
+test('PATCH /api/inventory/:id updates the forSale and imp flags', async () => {
+    const app = buildApp([sampleItem({ forSale: false, imp: false })]);
+    const agent = await authedAgent(app);
+    const response = await agent
+        .patch(`/api/inventory/${sampleItem()._id}`)
+        .send({ forSale: true, imp: true });
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.forSale, true);
+    assert.equal(response.body.imp, true);
 });
 
 test('PATCH /api/inventory/:id 404s when the item does not exist', async () => {

@@ -22,6 +22,7 @@ import { MarkdownExportService } from '@core/services/markdown-export.service';
 import { MarkdownCommand } from '@core/services/markdown-command.service';
 import { MarkdownRendererService } from '@core/services/markdown-renderer.service';
 import { buildEntryId, formatReferenceValue, parseEntryId } from '@core/utils/entry-id.util';
+import { ICreateEntryResult } from '@shared/modal/i-modal';
 import { ModalService } from '@shared/modal/modal.service';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
@@ -197,6 +198,49 @@ export class EntryDetailComponent {
         }
 
         this.store.dispatch(CodexActions.saveEntry.request({ entry: { ...entry, status, body: this.draftBody() } }));
+    }
+
+    protected editEntry(): void {
+        const entry = this.entry();
+        if (entry === null) {
+            return;
+        }
+
+        const definition = findSectionDefinition(entry.section);
+
+        this.modalService
+            .editEntry({
+                title: `Edit ${entry.title}`,
+                statuses: definition.statuses,
+                fields: definition.fields,
+                confirmLabel: 'Save changes',
+                values: {
+                    title: entry.title,
+                    status: entry.status,
+                    tags: entry.tags,
+                    visibility: entry.visibility,
+                    fields: entry.fields
+                }
+            })
+            .pipe(
+                filter((result): result is ICreateEntryResult => result !== null),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((result) => {
+                this.store.dispatch(
+                    CodexActions.saveEntry.request({
+                        entry: {
+                            ...entry,
+                            title: result.title,
+                            status: result.status,
+                            tags: result.tags,
+                            visibility: result.visibility,
+                            fields: result.fields,
+                            body: this.draftBody()
+                        }
+                    })
+                );
+            });
     }
 
     protected toggleFavourite(): void {
