@@ -33,6 +33,29 @@
             </mat-select>
         </mat-form-field>
 
+        <mat-form-field appearance="outline" class="cdx-inventory-field-rarity">
+            <mat-label>Rarity</mat-label>
+            <mat-select formControlName="rarity">
+                <mat-option [value]="rarities.None">None</mat-option>
+                <mat-option [value]="rarities.Common">Common</mat-option>
+                <mat-option [value]="rarities.Uncommon">Uncommon</mat-option>
+                <mat-option [value]="rarities.Rare">Rare</mat-option>
+                <mat-option [value]="rarities.VeryRare">Very rare</mat-option>
+                <mat-option [value]="rarities.Legendary">Legendary</mat-option>
+                <mat-option [value]="rarities.Artifact">Artifact</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="cdx-inventory-field-status">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+                <mat-option [value]="statuses.Mundane">Mundane</mat-option>
+                <mat-option [value]="statuses.NonAttuned">Non-attuned</mat-option>
+                <mat-option [value]="statuses.Attuned">Attuned</mat-option>
+                <mat-option [value]="statuses.Magic">Magic</mat-option>
+            </mat-select>
+        </mat-form-field>
+
         <button mat-flat-button type="submit">
             <mat-icon>add</mat-icon>
             Add item
@@ -78,8 +101,41 @@
                                 </button>
                             </div>
 
+                            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-rarity">
+                                <mat-select
+                                    [value]="item.rarity"
+                                    aria-label="Rarity"
+                                    (selectionChange)="changeRarity(item, $event)"
+                                >
+                                    <mat-option [value]="rarities.None">None</mat-option>
+                                    <mat-option [value]="rarities.Common">Common</mat-option>
+                                    <mat-option [value]="rarities.Uncommon">Uncommon</mat-option>
+                                    <mat-option [value]="rarities.Rare">Rare</mat-option>
+                                    <mat-option [value]="rarities.VeryRare">Very rare</mat-option>
+                                    <mat-option [value]="rarities.Legendary">Legendary</mat-option>
+                                    <mat-option [value]="rarities.Artifact">Artifact</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-status">
+                                <mat-select
+                                    [value]="item.status"
+                                    aria-label="Status"
+                                    (selectionChange)="changeStatus(item, $event)"
+                                >
+                                    <mat-option [value]="statuses.Mundane">Mundane</mat-option>
+                                    <mat-option [value]="statuses.NonAttuned">Non-attuned</mat-option>
+                                    <mat-option [value]="statuses.Attuned">Attuned</mat-option>
+                                    <mat-option [value]="statuses.Magic">Magic</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+
                             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-owner">
-                                <mat-select [value]="item.owner" (selectionChange)="changeOwner(item, $event)">
+                                <mat-select
+                                    [value]="item.owner"
+                                    aria-label="Assign to"
+                                    (selectionChange)="changeOwner(item, $event)"
+                                >
                                     <mat-option [value]="partyOwner">Party inventory</mat-option>
                                     @for (player of players(); track player.id) {
                                         <mat-option [value]="player.id">{{ player.title }}</mat-option>

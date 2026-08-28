@@ -3,6 +3,7 @@ import { provideMockActions } from '@ngrx/effects/testing';
 import { Action } from '@ngrx/store';
 import { Observable, of, ReplaySubject, throwError } from 'rxjs';
 
+import { ItemRarity, ItemStatus } from '@core/models';
 import { InventoryApiService } from '@core/services/inventory-api.service';
 import { buildInventoryItem } from '@testing/inventory.fixtures';
 import * as InventoryActions from './inventory.actions';
@@ -67,14 +68,28 @@ describe('InventoryEffects', () => {
         const item = buildInventoryItem();
         inventoryApi.createItem.mockReturnValue(of(item));
         actions$.next(
-            InventoryActions.createItem.request({ name: 'Torch', description: '', quantity: 1, owner: 'party' })
+            InventoryActions.createItem.request({
+                name: 'Torch',
+                description: '',
+                quantity: 1,
+                owner: 'party',
+                rarity: ItemRarity.None,
+                status: ItemStatus.Mundane
+            })
         );
 
         // Act
         const result = await dispatched(effects.createItem$);
 
         // Assert
-        expect(inventoryApi.createItem).toHaveBeenCalledWith('Torch', '', 1, 'party');
+        expect(inventoryApi.createItem).toHaveBeenCalledWith(
+            'Torch',
+            '',
+            1,
+            'party',
+            ItemRarity.None,
+            ItemStatus.Mundane
+        );
         expect(result).toEqual(InventoryActions.createItem.success({ item }));
     });
 
@@ -82,7 +97,14 @@ describe('InventoryEffects', () => {
         // Arrange
         inventoryApi.createItem.mockReturnValue(throwError(() => new Error('bad name')));
         actions$.next(
-            InventoryActions.createItem.request({ name: '', description: '', quantity: 1, owner: 'party' })
+            InventoryActions.createItem.request({
+                name: '',
+                description: '',
+                quantity: 1,
+                owner: 'party',
+                rarity: ItemRarity.None,
+                status: ItemStatus.Mundane
+            })
         );
 
         // Act

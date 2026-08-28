@@ -102,18 +102,29 @@ session cookie.
 | Method | Path | Description |
 | --- | --- | --- |
 | `GET` | `/api/inventory` | List every item, sorted by name. |
-| `POST` | `/api/inventory` | Create an item. `name` is required; `quantity` defaults to `1`, `owner` defaults to `"party"`. |
-| `PATCH` | `/api/inventory/:id` | Update one or more of `name`, `description`, `quantity`, `owner`. `404` if the item doesn't exist. |
+| `POST` | `/api/inventory` | Create an item. `name` is required; `quantity` defaults to `1`, `owner` defaults to `"party"`, `rarity` defaults to `"none"`, `status` defaults to `"mundane"`. |
+| `PATCH` | `/api/inventory/:id` | Update one or more of `name`, `description`, `quantity`, `owner`, `rarity`, `status`. `404` if the item doesn't exist. |
 | `DELETE` | `/api/inventory/:id` | Delete an item. Idempotent - `200` even if nothing matched. |
 
 `owner` is either the literal `"party"` (party inventory) or a codex entry id of a `players` entry
 (e.g. `"players:tessaly-oakhand"`), assigning the item to that character. The API stores whatever string
 it's given - resolving it to a player's display name is the app's job, not the server's.
 
+`rarity` is one of the D&D 5.5e (2024) magic item tiers - `"none"`, `"common"`, `"uncommon"`, `"rare"`,
+`"very-rare"`, `"legendary"`, `"artifact"` - and `status` is one of `"mundane"`, `"non-attuned"`,
+`"attuned"`, `"magic"`. Either field falls back to its default (create) or its previous value (update)
+if given anything else.
+
 ```bash
 curl -X POST http://localhost:8000/api/inventory \
   -H 'Content-Type: application/json' \
-  -d '{ "name": "Potion of healing", "quantity": 3, "owner": "players:tessaly-oakhand" }'
+  -d '{
+    "name": "Potion of healing",
+    "quantity": 3,
+    "owner": "players:tessaly-oakhand",
+    "rarity": "common",
+    "status": "magic"
+  }'
 ```
 
 ## Layout

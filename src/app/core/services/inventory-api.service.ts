@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable, throwError } from 'rxjs';
 
-import { IInventoryItem, IInventoryItemChanges } from '../models';
+import { IInventoryItem, IInventoryItemChanges, ItemRarity, ItemStatus } from '../models';
 
 const INVENTORY_URL = '/api/inventory';
 
@@ -14,9 +14,16 @@ export class InventoryApiService {
         return this.http.get<IInventoryItem[]>(INVENTORY_URL);
     }
 
-    createItem(name: string, description: string, quantity: number, owner: string): Observable<IInventoryItem> {
+    createItem(
+        name: string,
+        description: string,
+        quantity: number,
+        owner: string,
+        rarity: ItemRarity,
+        status: ItemStatus
+    ): Observable<IInventoryItem> {
         return this.http
-            .post<IInventoryItem>(INVENTORY_URL, { name, description, quantity, owner })
+            .post<IInventoryItem>(INVENTORY_URL, { name, description, quantity, owner, rarity, status })
             .pipe(catchError(this.toFriendlyError("Couldn't create the item. Retry.")));
     }
 

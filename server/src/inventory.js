@@ -5,6 +5,11 @@ import { HttpError } from './http-error.js';
 
 export const PARTY_OWNER = 'party';
 
+// D&D 5.5e (2024) magic item rarity tiers, plus "none" for mundane gear that has no rarity.
+export const ITEM_RARITIES = ['none', 'common', 'uncommon', 'rare', 'very-rare', 'legendary', 'artifact'];
+
+export const ITEM_STATUSES = ['mundane', 'non-attuned', 'attuned', 'magic'];
+
 const toPublicItem = (doc) => {
     const { _id, ...rest } = doc;
     return { id: _id, ...rest };
@@ -17,6 +22,10 @@ const normalizeQuantity = (value, fallback) => {
 
 const normalizeOwner = (value, fallback) =>
     typeof value === 'string' && value.trim() !== '' ? value.trim() : fallback;
+
+const normalizeRarity = (value, fallback) => (ITEM_RARITIES.includes(value) ? value : fallback);
+
+const normalizeStatus = (value, fallback) => (ITEM_STATUSES.includes(value) ? value : fallback);
 
 export const createInventoryRouter = (collection) => {
     const router = Router();
@@ -44,6 +53,8 @@ export const createInventoryRouter = (collection) => {
                 description: typeof body.description === 'string' ? body.description.trim() : '',
                 quantity: normalizeQuantity(body.quantity, 1),
                 owner: normalizeOwner(body.owner, PARTY_OWNER),
+                rarity: normalizeRarity(body.rarity, 'none'),
+                status: normalizeStatus(body.status, 'mundane'),
                 updatedAt: new Date().toISOString()
             };
 
@@ -76,6 +87,10 @@ export const createInventoryRouter = (collection) => {
                         ? existing.quantity
                         : normalizeQuantity(payload.quantity, existing.quantity),
                 owner: payload.owner === undefined ? existing.owner : normalizeOwner(payload.owner, existing.owner),
+                rarity:
+                    payload.rarity === undefined ? existing.rarity : normalizeRarity(payload.rarity, existing.rarity),
+                status:
+                    payload.status === undefined ? existing.status : normalizeStatus(payload.status, existing.status),
                 updatedAt: new Date().toISOString()
             };
 

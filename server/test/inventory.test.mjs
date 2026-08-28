@@ -25,6 +25,8 @@ const sampleItem = (overrides = {}) => ({
     description: 'Restores 2d4+2 hit points.',
     quantity: 3,
     owner: 'party',
+    rarity: 'common',
+    status: 'magic',
     updatedAt: '2026-08-25T00:00:00.000Z',
     ...overrides
 });
@@ -50,7 +52,7 @@ test('GET /api/inventory requires a session', async () => {
     assert.equal(response.status, 401);
 });
 
-test('POST /api/inventory creates an item defaulting owner to party and quantity to 1', async () => {
+test('POST /api/inventory creates an item defaulting owner to party, quantity to 1, rarity to none and status to mundane', async () => {
     const app = buildApp([]);
     const agent = await authedAgent(app);
     const response = await agent.post('/api/inventory').send({ name: 'Torch' });
@@ -60,22 +62,40 @@ test('POST /api/inventory creates an item defaulting owner to party and quantity
     assert.equal(response.body.quantity, 1);
     assert.equal(response.body.owner, 'party');
     assert.equal(response.body.description, '');
+    assert.equal(response.body.rarity, 'none');
+    assert.equal(response.body.status, 'mundane');
 });
 
-test('POST /api/inventory stores the supplied quantity, owner and description', async () => {
+test('POST /api/inventory stores the supplied quantity, owner, description, rarity and status', async () => {
     const app = buildApp([]);
     const agent = await authedAgent(app);
     const response = await agent.post('/api/inventory').send({
         name: 'Potion of healing',
         description: 'Restores 2d4+2 hit points.',
         quantity: 5,
-        owner: 'players:tessaly-oakhand'
+        owner: 'players:tessaly-oakhand',
+        rarity: 'common',
+        status: 'magic'
     });
 
     assert.equal(response.status, 201);
     assert.equal(response.body.quantity, 5);
     assert.equal(response.body.owner, 'players:tessaly-oakhand');
     assert.equal(response.body.description, 'Restores 2d4+2 hit points.');
+    assert.equal(response.body.rarity, 'common');
+    assert.equal(response.body.status, 'magic');
+});
+
+test('POST /api/inventory falls back to a default rarity and status for an invalid value', async () => {
+    const app = buildApp([]);
+    const agent = await authedAgent(app);
+    const response = await agent
+        .post('/api/inventory')
+        .send({ name: 'Torch', rarity: 'mythical', status: 'cursed' });
+
+    assert.equal(response.status, 201);
+    assert.equal(response.body.rarity, 'none');
+    assert.equal(response.body.status, 'mundane');
 });
 
 test('POST /api/inventory rejects an empty name', async () => {
@@ -119,6 +139,30 @@ test('PATCH /api/inventory/:id reassigns the owner to a player', async () => {
     assert.equal(response.status, 200);
     assert.equal(response.body.owner, 'players:tessaly-oakhand');
     assert.equal(response.body.quantity, sampleItem().quantity);
+});
+
+test('PATCH /api/inventory/:id updates the rarity and status', async () => {
+    const app = buildApp([sampleItem({ rarity: 'none', status: 'mundane' })]);
+    const agent = await authedAgent(app);
+    const response = await agent
+        .patch(`/api/inventory/${sampleItem()._id}`)
+        .send({ rarity: 'legendary', status: 'attuned' });
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.rarity, 'legendary');
+    assert.equal(response.body.status, 'attuned');
+});
+
+test('PATCH /api/inventory/:id keeps the existing rarity and status when given an invalid value', async () => {
+    const app = buildApp([sampleItem({ rarity: 'rare', status: 'attuned' })]);
+    const agent = await authedAgent(app);
+    const response = await agent
+        .patch(`/api/inventory/${sampleItem()._id}`)
+        .send({ rarity: 'mythical', status: 'cursed' });
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.rarity, 'rare');
+    assert.equal(response.body.status, 'attuned');
 });
 
 test('PATCH /api/inventory/:id 404s when the item does not exist', async () => {

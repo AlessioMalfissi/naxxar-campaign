@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { IInventoryItem } from '@core/models';
+import { IInventoryItem, ItemRarity, ItemStatus } from '@core/models';
 import { buildInventoryItem } from '@testing/inventory.fixtures';
 import { InventoryApiService } from './inventory-api.service';
 
@@ -41,10 +41,19 @@ describe('InventoryApiService', () => {
         let created: IInventoryItem | null = null;
 
         // Act
-        service.createItem('Torch', '', 1, 'party').subscribe((result) => (created = result));
+        service
+            .createItem('Torch', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane)
+            .subscribe((result) => (created = result));
         const request = httpMock.expectOne('/api/inventory');
         expect(request.request.method).toBe('POST');
-        expect(request.request.body).toEqual({ name: 'Torch', description: '', quantity: 1, owner: 'party' });
+        expect(request.request.body).toEqual({
+            name: 'Torch',
+            description: '',
+            quantity: 1,
+            owner: 'party',
+            rarity: ItemRarity.None,
+            status: ItemStatus.Mundane
+        });
         request.flush(buildInventoryItem({ name: 'Torch' }));
 
         // Assert
@@ -56,7 +65,9 @@ describe('InventoryApiService', () => {
         let error: Error | null = null;
 
         // Act
-        service.createItem('', '', 1, 'party').subscribe({ error: (thrown: Error) => (error = thrown) });
+        service
+            .createItem('', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane)
+            .subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
             .expectOne('/api/inventory')
             .flush({ error: 'Name is required.' }, { status: 400, statusText: 'Bad Request' });
@@ -70,7 +81,9 @@ describe('InventoryApiService', () => {
         let error: Error | null = null;
 
         // Act
-        service.createItem('Torch', '', 1, 'party').subscribe({ error: (thrown: Error) => (error = thrown) });
+        service
+            .createItem('Torch', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane)
+            .subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock.expectOne('/api/inventory').flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert

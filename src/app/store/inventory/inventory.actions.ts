@@ -1,4 +1,4 @@
-import { IInventoryItem, IInventoryItemChanges } from '@core/models';
+import { IInventoryItem, IInventoryItemChanges, ItemRarity, ItemStatus } from '@core/models';
 import { createApiAction } from '../create-api-action';
 
 const SOURCE = 'Inventory';
@@ -6,7 +6,7 @@ const SOURCE = 'Inventory';
 export const loadItems = createApiAction<Record<string, never>, { items: IInventoryItem[] }>(SOURCE, 'load items');
 
 export const createItem = createApiAction<
-    { name: string; description: string; quantity: number; owner: string },
+    { name: string; description: string; quantity: number; owner: string; rarity: ItemRarity; status: ItemStatus },
     { item: IInventoryItem }
 >(SOURCE, 'create item');
 

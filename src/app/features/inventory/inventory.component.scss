@@ -55,6 +55,11 @@
     flex: 1 1 200px;
 }
 
+.cdx-inventory-field-rarity,
+.cdx-inventory-field-status {
+    flex: 0 1 150px;
+}
+
 .cdx-inventory-group {
     display: flex;
     flex-direction: column;
@@ -85,6 +90,7 @@
 
 .cdx-inventory-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
     padding: 8px 10px;
@@ -95,7 +101,7 @@
 
 .cdx-inventory-row-main {
     display: flex;
-    flex: 1;
+    flex: 1 1 160px;
     flex-direction: column;
     min-width: 0;
     gap: 2px;
@@ -130,4 +136,10 @@
 .cdx-inventory-owner {
     flex: none;
     width: 180px;
+}
+
+.cdx-inventory-rarity,
+.cdx-inventory-status {
+    flex: none;
+    width: 130px;
 }

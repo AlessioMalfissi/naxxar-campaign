@@ -27,8 +27,8 @@ export class InventoryEffects {
     readonly createItem$ = createEffect(() =>
         this.actions$.pipe(
             ofType(InventoryActions.createItem.request),
-            switchMap(({ name, description, quantity, owner }) =>
-                this.inventoryApi.createItem(name, description, quantity, owner).pipe(
+            switchMap(({ name, description, quantity, owner, rarity, status }) =>
+                this.inventoryApi.createItem(name, description, quantity, owner, rarity, status).pipe(
                     map((item) => InventoryActions.createItem.success({ item })),
                     catchError((error: Error) => of(InventoryActions.createItem.failure({ error: error.message })))
                 )

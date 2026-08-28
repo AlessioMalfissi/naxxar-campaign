@@ -4,7 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of } from 'rxjs';
 
-import { PARTY_OWNER_ID } from '@core/models';
+import { ItemRarity, ItemStatus, PARTY_OWNER_ID } from '@core/models';
 import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries } from '@store/codex/codex.selectors';
 import * as InventoryActions from '@store/inventory/inventory.actions';
@@ -86,7 +86,14 @@ describe('InventoryComponent', () => {
         // Arrange
         fixture.detectChanges();
         const dispatchSpy = jest.spyOn(store, 'dispatch');
-        component['form'].setValue({ name: ' Torch ', description: ' Burns brightly ', quantity: 2, owner: PLAYER.id });
+        component['form'].setValue({
+            name: ' Torch ',
+            description: ' Burns brightly ',
+            quantity: 2,
+            owner: PLAYER.id,
+            rarity: ItemRarity.Rare,
+            status: ItemStatus.Attuned
+        });
 
         // Act
         component['addItem']();
@@ -97,11 +104,15 @@ describe('InventoryComponent', () => {
                 name: 'Torch',
                 description: 'Burns brightly',
                 quantity: 2,
-                owner: PLAYER.id
+                owner: PLAYER.id,
+                rarity: ItemRarity.Rare,
+                status: ItemStatus.Attuned
             })
         );
         expect(component['form'].controls.name.value).toBe('');
         expect(component['form'].controls.owner.value).toBe(PARTY_OWNER_ID);
+        expect(component['form'].controls.rarity.value).toBe(ItemRarity.None);
+        expect(component['form'].controls.status.value).toBe(ItemStatus.Mundane);
     });
 
     it('should increase and clamp the decreased quantity at zero', () => {
@@ -146,6 +157,62 @@ describe('InventoryComponent', () => {
 
         // Act
         component['changeOwner'](item, { value: PARTY_OWNER_ID } as MatSelectChange);
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should dispatch a rarity update when the rarity actually changes', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const item = buildInventoryItem({ id: 'item-1', rarity: ItemRarity.None });
+
+        // Act
+        component['changeRarity'](item, { value: ItemRarity.Legendary } as MatSelectChange);
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            InventoryActions.updateItem.request({ id: 'item-1', changes: { rarity: ItemRarity.Legendary } })
+        );
+    });
+
+    it('should ignore a rarity change to the same rarity', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const item = buildInventoryItem({ id: 'item-1', rarity: ItemRarity.None });
+
+        // Act
+        component['changeRarity'](item, { value: ItemRarity.None } as MatSelectChange);
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should dispatch a status update when the status actually changes', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const item = buildInventoryItem({ id: 'item-1', status: ItemStatus.Mundane });
+
+        // Act
+        component['changeStatus'](item, { value: ItemStatus.Attuned } as MatSelectChange);
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            InventoryActions.updateItem.request({ id: 'item-1', changes: { status: ItemStatus.Attuned } })
+        );
+    });
+
+    it('should ignore a status change to the same status', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const item = buildInventoryItem({ id: 'item-1', status: ItemStatus.Mundane });
+
+        // Act
+        component['changeStatus'](item, { value: ItemStatus.Mundane } as MatSelectChange);
 
         // Assert
         expect(dispatchSpy).not.toHaveBeenCalled();

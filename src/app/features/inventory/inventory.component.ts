@@ -9,7 +9,7 @@ import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { filter } from 'rxjs';
 
-import { IInventoryItem, PARTY_OWNER_ID } from '@core/models';
+import { IInventoryItem, ItemRarity, ItemStatus, PARTY_OWNER_ID } from '@core/models';
 import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries } from '@store/codex/codex.selectors';
 import * as InventoryActions from '@store/inventory/inventory.actions';
@@ -42,6 +42,8 @@ export class InventoryComponent implements OnInit {
     private readonly destroyRef = inject(DestroyRef);
 
     protected readonly partyOwner = PARTY_OWNER_ID;
+    protected readonly rarities = ItemRarity;
+    protected readonly statuses = ItemStatus;
     protected readonly items = toSignal(this.store.select(selectInventoryItems), { initialValue: [] });
     protected readonly loading = toSignal(this.store.select(selectInventoryLoading), { initialValue: false });
     protected readonly players = toSignal(this.store.select(selectPlayerEntries), { initialValue: [] });
@@ -53,7 +55,9 @@ export class InventoryComponent implements OnInit {
         }),
         description: new FormControl<string>('', { nonNullable: true }),
         quantity: new FormControl<number>(1, { nonNullable: true, validators: [Validators.required, Validators.min(0)] }),
-        owner: new FormControl<string>(PARTY_OWNER_ID, { nonNullable: true })
+        owner: new FormControl<string>(PARTY_OWNER_ID, { nonNullable: true }),
+        rarity: new FormControl<ItemRarity>(ItemRarity.None, { nonNullable: true }),
+        status: new FormControl<ItemStatus>(ItemStatus.Mundane, { nonNullable: true })
     });
 
     protected readonly groups = computed<IInventoryGroup[]>(() => {
@@ -87,16 +91,25 @@ export class InventoryComponent implements OnInit {
             return;
         }
 
-        const { name, description, quantity, owner } = this.form.getRawValue();
+        const { name, description, quantity, owner, rarity, status } = this.form.getRawValue();
         this.store.dispatch(
             InventoryActions.createItem.request({
                 name: name.trim(),
                 description: description.trim(),
                 quantity,
-                owner
+                owner,
+                rarity,
+                status
             })
         );
-        this.form.reset({ name: '', description: '', quantity: 1, owner: PARTY_OWNER_ID });
+        this.form.reset({
+            name: '',
+            description: '',
+            quantity: 1,
+            owner: PARTY_OWNER_ID,
+            rarity: ItemRarity.None,
+            status: ItemStatus.Mundane
+        });
     }
 
     protected changeQuantity(item: IInventoryItem, delta: number): void {
@@ -111,6 +124,24 @@ export class InventoryComponent implements OnInit {
         }
 
         this.store.dispatch(InventoryActions.updateItem.request({ id: item.id, changes: { owner } }));
+    }
+
+    protected changeRarity(item: IInventoryItem, event: MatSelectChange): void {
+        const rarity = event.value as ItemRarity;
+        if (rarity === item.rarity) {
+            return;
+        }
+
+        this.store.dispatch(InventoryActions.updateItem.request({ id: item.id, changes: { rarity } }));
+    }
+
+    protected changeStatus(item: IInventoryItem, event: MatSelectChange): void {
+        const status = event.value as ItemStatus;
+        if (status === item.status) {
+            return;
+        }
+
+        this.store.dispatch(InventoryActions.updateItem.request({ id: item.id, changes: { status } }));
     }
 
     protected deleteItem(item: IInventoryItem): void {
