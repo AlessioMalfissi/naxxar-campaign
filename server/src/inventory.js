@@ -27,6 +27,8 @@ const normalizeRarity = (value, fallback) => (ITEM_RARITIES.includes(value) ? va
 
 const normalizeStatus = (value, fallback) => (ITEM_STATUSES.includes(value) ? value : fallback);
 
+const normalizeFlag = (value, fallback) => (typeof value === 'boolean' ? value : fallback);
+
 export const createInventoryRouter = (collection) => {
     const router = Router();
 
@@ -55,6 +57,8 @@ export const createInventoryRouter = (collection) => {
                 owner: normalizeOwner(body.owner, PARTY_OWNER),
                 rarity: normalizeRarity(body.rarity, 'none'),
                 status: normalizeStatus(body.status, 'mundane'),
+                forSale: normalizeFlag(body.forSale, false),
+                imp: normalizeFlag(body.imp, false),
                 updatedAt: new Date().toISOString()
             };
 
@@ -91,6 +95,9 @@ export const createInventoryRouter = (collection) => {
                     payload.rarity === undefined ? existing.rarity : normalizeRarity(payload.rarity, existing.rarity),
                 status:
                     payload.status === undefined ? existing.status : normalizeStatus(payload.status, existing.status),
+                forSale:
+                    payload.forSale === undefined ? existing.forSale : normalizeFlag(payload.forSale, existing.forSale),
+                imp: payload.imp === undefined ? existing.imp : normalizeFlag(payload.imp, existing.imp),
                 updatedAt: new Date().toISOString()
             };
 

@@ -11,6 +11,8 @@ export interface IInventoryItem {
     owner: string;
     rarity: ItemRarity;
     status: ItemStatus;
+    forSale: boolean;
+    imp: boolean;
     updatedAt: string;
 }
 
@@ -21,4 +23,6 @@ export interface IInventoryItemChanges {
     owner?: string;
     rarity?: ItemRarity;
     status?: ItemStatus;
+    forSale?: boolean;
+    imp?: boolean;
 }

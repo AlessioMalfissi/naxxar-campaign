@@ -74,7 +74,9 @@ describe('InventoryEffects', () => {
                 quantity: 1,
                 owner: 'party',
                 rarity: ItemRarity.None,
-                status: ItemStatus.Mundane
+                status: ItemStatus.Mundane,
+                forSale: true,
+                imp: false
             })
         );
 
@@ -88,7 +90,9 @@ describe('InventoryEffects', () => {
             1,
             'party',
             ItemRarity.None,
-            ItemStatus.Mundane
+            ItemStatus.Mundane,
+            true,
+            false
         );
         expect(result).toEqual(InventoryActions.createItem.success({ item }));
     });
@@ -103,7 +107,9 @@ describe('InventoryEffects', () => {
                 quantity: 1,
                 owner: 'party',
                 rarity: ItemRarity.None,
-                status: ItemStatus.Mundane
+                status: ItemStatus.Mundane,
+                forSale: false,
+                imp: false
             })
         );
 

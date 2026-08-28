@@ -8,6 +8,8 @@ export const buildInventoryItem = (overrides: Partial<IInventoryItem> = {}): IIn
     owner: 'party',
     rarity: ItemRarity.Common,
     status: ItemStatus.Magic,
+    forSale: false,
+    imp: false,
     updatedAt: '2026-08-25T00:00:00.000Z',
     ...overrides
 });

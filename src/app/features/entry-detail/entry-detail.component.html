@@ -128,6 +128,9 @@
         }
 
         <mat-menu #entryMenu="matMenu">
+            @if (!playerMode()) {
+                <button mat-menu-item type="button" (click)="editEntry()">Edit details</button>
+            }
             <button mat-menu-item type="button" (click)="exportMarkdown()">Export markdown</button>
             <button mat-menu-item type="button" (click)="deleteEntry()">Delete entry</button>
         </mat-menu>

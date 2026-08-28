@@ -6,7 +6,16 @@ const SOURCE = 'Inventory';
 export const loadItems = createApiAction<Record<string, never>, { items: IInventoryItem[] }>(SOURCE, 'load items');
 
 export const createItem = createApiAction<
-    { name: string; description: string; quantity: number; owner: string; rarity: ItemRarity; status: ItemStatus },
+    {
+        name: string;
+        description: string;
+        quantity: number;
+        owner: string;
+        rarity: ItemRarity;
+        status: ItemStatus;
+        forSale: boolean;
+        imp: boolean;
+    },
     { item: IInventoryItem }
 >(SOURCE, 'create item');
 

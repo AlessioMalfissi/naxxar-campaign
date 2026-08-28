@@ -20,10 +20,12 @@ export class InventoryApiService {
         quantity: number,
         owner: string,
         rarity: ItemRarity,
-        status: ItemStatus
+        status: ItemStatus,
+        forSale: boolean,
+        imp: boolean
     ): Observable<IInventoryItem> {
         return this.http
-            .post<IInventoryItem>(INVENTORY_URL, { name, description, quantity, owner, rarity, status })
+            .post<IInventoryItem>(INVENTORY_URL, { name, description, quantity, owner, rarity, status, forSale, imp })
             .pipe(catchError(this.toFriendlyError("Couldn't create the item. Retry.")));
     }
 

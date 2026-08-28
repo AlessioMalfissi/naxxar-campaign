@@ -35,19 +35,28 @@ export class CreateEntryModalComponent {
     protected readonly visibilities = EntryVisibility;
     protected readonly separatorKeys = [ENTER, COMMA];
 
-    protected readonly titleControl = new FormControl<string>('', {
+    protected readonly titleControl = new FormControl<string>(this.data.values?.title ?? '', {
         nonNullable: true,
         validators: [Validators.required, Validators.minLength(2)]
     });
-    protected readonly statusControl = new FormControl<string>(this.data.statuses[0] ?? '', { nonNullable: true });
-    protected readonly visibilityControl = new FormControl<EntryVisibility>(EntryVisibility.Dm, {
-        nonNullable: true
-    });
+    protected readonly statusControl = new FormControl<string>(
+        this.data.values?.status ?? this.data.statuses[0] ?? '',
+        { nonNullable: true }
+    );
+    protected readonly visibilityControl = new FormControl<EntryVisibility>(
+        this.data.values?.visibility ?? EntryVisibility.Dm,
+        { nonNullable: true }
+    );
     protected readonly fieldsGroup = new FormRecord<FormControl<string>>(
-        Object.fromEntries(this.data.fields.map((field) => [field.key, new FormControl('', { nonNullable: true })]))
+        Object.fromEntries(
+            this.data.fields.map((field) => [
+                field.key,
+                new FormControl(this.data.values?.fields[field.key] ?? '', { nonNullable: true })
+            ])
+        )
     );
 
-    protected readonly tags = signal<string[]>([]);
+    protected readonly tags = signal<string[]>(this.data.values?.tags ?? []);
 
     private readonly tagInput = viewChild<ElementRef<HTMLInputElement>>('tagInput');
     private readonly dialogRef = inject<DialogRef<ICreateEntryResult | null>>(DialogRef);

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnIni
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule, MatCheckboxChange } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -34,6 +35,7 @@ interface IInventoryGroup {
     imports: [
         ReactiveFormsModule,
         MatButtonModule,
+        MatCheckboxModule,
         MatFormFieldModule,
         MatIconModule,
         MatInputModule,
@@ -69,7 +71,9 @@ export class InventoryComponent implements OnInit {
         quantity: new FormControl<number>(1, { nonNullable: true, validators: [Validators.required, Validators.min(0)] }),
         owner: new FormControl<string>(PARTY_OWNER_ID, { nonNullable: true }),
         rarity: new FormControl<ItemRarity>(ItemRarity.None, { nonNullable: true }),
-        status: new FormControl<ItemStatus>(ItemStatus.Mundane, { nonNullable: true })
+        status: new FormControl<ItemStatus>(ItemStatus.Mundane, { nonNullable: true }),
+        forSale: new FormControl<boolean>(false, { nonNullable: true }),
+        imp: new FormControl<boolean>(false, { nonNullable: true })
     });
 
     protected readonly filterForm = new FormGroup({
@@ -152,7 +156,7 @@ export class InventoryComponent implements OnInit {
             return;
         }
 
-        const { name, description, quantity, owner, rarity, status } = this.form.getRawValue();
+        const { name, description, quantity, owner, rarity, status, forSale, imp } = this.form.getRawValue();
         this.store.dispatch(
             InventoryActions.createItem.request({
                 name: name.trim(),
@@ -160,7 +164,9 @@ export class InventoryComponent implements OnInit {
                 quantity,
                 owner,
                 rarity,
-                status
+                status,
+                forSale,
+                imp
             })
         );
         this.form.reset({
@@ -169,7 +175,9 @@ export class InventoryComponent implements OnInit {
             quantity: 1,
             owner: PARTY_OWNER_ID,
             rarity: ItemRarity.None,
-            status: ItemStatus.Mundane
+            status: ItemStatus.Mundane,
+            forSale: false,
+            imp: false
         });
     }
 
@@ -203,6 +211,16 @@ export class InventoryComponent implements OnInit {
         }
 
         this.store.dispatch(InventoryActions.updateItem.request({ id: item.id, changes: { status } }));
+    }
+
+    protected changeForSale(item: IInventoryItem, event: MatCheckboxChange): void {
+        this.store.dispatch(
+            InventoryActions.updateItem.request({ id: item.id, changes: { forSale: event.checked } })
+        );
+    }
+
+    protected changeImp(item: IInventoryItem, event: MatCheckboxChange): void {
+        this.store.dispatch(InventoryActions.updateItem.request({ id: item.id, changes: { imp: event.checked } }));
     }
 
     protected deleteItem(item: IInventoryItem): void {
