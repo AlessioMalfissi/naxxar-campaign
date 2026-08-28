@@ -9,15 +9,19 @@ import { Store } from '@ngrx/store';
 import { map } from 'rxjs';
 
 import { CodexSection, findSectionDefinition, ICodexEntrySummary } from '@core/models';
+import { formatReferenceValue } from '@core/utils/entry-id.util';
 import { DataTableComponent } from '@shared/datatable/data-table.component';
 import { IDataTableColumn, IDataTableRow } from '@shared/datatable/i-data-table';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
+    selectEntryTitles,
     selectFilters,
     selectIndexLoading,
     selectSectionEntries,
     selectSectionTags
 } from '@store/codex/codex.selectors';
+
+const EMPTY_TITLES: Record<string, string> = {};
 
 type ListView = 'table' | 'cards';
 
@@ -42,6 +46,7 @@ export class SectionListComponent {
         initialValue: { status: null, tags: [], query: '' }
     });
     protected readonly loading = toSignal(this.store.select(selectIndexLoading), { initialValue: false });
+    protected readonly titles = toSignal(this.store.select(selectEntryTitles), { initialValue: EMPTY_TITLES });
     protected readonly section = signal<CodexSection>(CodexSection.Npcs);
 
     protected readonly definition = computed(() => findSectionDefinition(this.section()));
@@ -57,21 +62,27 @@ export class SectionListComponent {
         { key: 'updated', label: 'Updated', width: '14%' }
     ]);
 
-    protected readonly rows = computed<IDataTableRow[]>(() =>
-        this.entries().map((entry) => ({
+    protected readonly rows = computed<IDataTableRow[]>(() => {
+        const definition = this.definition();
+        const titles = this.titles();
+
+        return this.entries().map((entry) => ({
             id: entry.id,
             chip: entry.status,
             tags: entry.tags,
             cells: {
                 title: entry.title,
                 updated: new Date(entry.updatedAt).toLocaleDateString(),
-                ...this.definition().listColumns.reduce<Record<string, string>>(
-                    (cells, key) => ({ ...cells, [key]: entry.fields[key] ?? '—' }),
-                    {}
-                )
+                ...definition.listColumns.reduce<Record<string, string>>((cells, key) => {
+                    const value = entry.fields[key] ?? '';
+                    const field = definition.fields.find((item) => item.key === key);
+                    const formatted =
+                        field?.kind === 'reference' && value !== '' ? formatReferenceValue(value, titles) : value;
+                    return { ...cells, [key]: formatted === '' ? '—' : formatted };
+                }, {})
             }
-        }))
-    );
+        }));
+    });
 
     constructor() {
         this.route.paramMap
