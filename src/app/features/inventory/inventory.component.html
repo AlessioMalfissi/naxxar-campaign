@@ -35,6 +35,24 @@
             </mat-select>
         </mat-form-field>
 
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-filter-select">
+            <mat-label>For sale</mat-label>
+            <mat-select formControlName="forSale">
+                <mat-option [value]="flagFilterAll">All items</mat-option>
+                <mat-option [value]="flagFilterYes">For sale</mat-option>
+                <mat-option [value]="flagFilterNo">Not for sale</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-filter-select">
+            <mat-label>IMP</mat-label>
+            <mat-select formControlName="imp">
+                <mat-option [value]="flagFilterAll">All items</mat-option>
+                <mat-option [value]="flagFilterYes">IMP</mat-option>
+                <mat-option [value]="flagFilterNo">Not IMP</mat-option>
+            </mat-select>
+        </mat-form-field>
+
         @if (hasActiveFilters()) {
             <button mat-button type="button" (click)="clearFilters()">Clear filters</button>
         }
@@ -91,7 +109,14 @@
 
         <div class="cdx-inventory-field-flags">
             <mat-checkbox formControlName="forSale">For sale</mat-checkbox>
-            <mat-checkbox formControlName="imp">IMP (Cromwell)</mat-checkbox>
+            <mat-checkbox formControlName="imp">IMP</mat-checkbox>
+            <input
+                type="text"
+                class="cdx-inventory-imp-tag"
+                formControlName="impTag"
+                placeholder="Tag (optional)"
+                aria-label="IMP tag"
+            />
         </div>
 
         <button mat-flat-button type="submit" class="cdx-inventory-add-button">
@@ -192,17 +217,27 @@
                                 </mat-select>
                             </mat-form-field>
 
-                            <div class="cdx-inventory-flags">
-                                <mat-checkbox
-                                    [checked]="item.forSale"
-                                    (change)="changeForSale(item, $event)"
-                                >
-                                    For sale
-                                </mat-checkbox>
-                                <mat-checkbox [checked]="item.imp" (change)="changeImp(item, $event)">
-                                    IMP (Cromwell)
-                                </mat-checkbox>
-                            </div>
+                            @if (item.owner === partyOwner) {
+                                <div class="cdx-inventory-flags">
+                                    <mat-checkbox
+                                        [checked]="item.forSale"
+                                        (change)="changeForSale(item, $event)"
+                                    >
+                                        For sale
+                                    </mat-checkbox>
+                                    <mat-checkbox [checked]="item.imp" (change)="changeImp(item, $event)">
+                                        IMP
+                                    </mat-checkbox>
+                                    <input
+                                        type="text"
+                                        class="cdx-inventory-imp-tag"
+                                        [value]="item.impTag"
+                                        placeholder="Tag (optional)"
+                                        aria-label="IMP tag"
+                                        (change)="changeImpTag(item, $event)"
+                                    />
+                                </div>
+                            }
 
                             <button mat-icon-button type="button" aria-label="Delete item" (click)="deleteItem(item)">
                                 <mat-icon>delete</mat-icon>

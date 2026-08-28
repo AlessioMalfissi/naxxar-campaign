@@ -10,6 +10,7 @@ export const buildInventoryItem = (overrides: Partial<IInventoryItem> = {}): IIn
     status: ItemStatus.Magic,
     forSale: false,
     imp: false,
+    impTag: '',
     updatedAt: '2026-08-25T00:00:00.000Z',
     ...overrides
 });

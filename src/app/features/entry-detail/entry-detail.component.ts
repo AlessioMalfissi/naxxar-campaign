@@ -30,6 +30,7 @@ import {
     selectEntryTitles,
     selectOpenEntry,
     selectPlayerMode,
+    selectReferencedEntries,
     selectReferencingEntries
 } from '@store/codex/codex.selectors';
 import * as EditorActions from '@store/editor/editor.actions';
@@ -90,6 +91,9 @@ export class EntryDetailComponent {
     protected readonly lastSavedAt = toSignal(this.store.select(selectLastSavedAt), { initialValue: null });
     protected readonly lastSavedBy = toSignal(this.store.select(selectLastSavedBy), { initialValue: null });
     protected readonly referencingEntries = toSignal(this.store.select(selectReferencingEntries), {
+        initialValue: []
+    });
+    protected readonly referencedEntries = toSignal(this.store.select(selectReferencedEntries), {
         initialValue: []
     });
 

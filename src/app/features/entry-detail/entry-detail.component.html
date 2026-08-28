@@ -116,6 +116,17 @@
             </div>
         }
 
+        @if (referencedEntries().length > 0) {
+            <section class="cdx-entry-references">
+                <h2 class="cdx-entry-references-title">References</h2>
+                @for (reference of referencedEntries(); track reference.id) {
+                    <button mat-button type="button" (click)="onEntryLink(reference.id)">
+                        {{ reference.title }}
+                    </button>
+                }
+            </section>
+        }
+
         @if (referencingEntries().length > 0) {
             <section class="cdx-entry-references">
                 <h2 class="cdx-entry-references-title">Referenced by</h2>

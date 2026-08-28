@@ -17,6 +17,7 @@ import {
     selectEntryTitles,
     selectOpenEntry,
     selectPlayerMode,
+    selectReferencedEntries,
     selectReferencingEntries
 } from '@store/codex/codex.selectors';
 import * as EditorActions from '@store/editor/editor.actions';
@@ -98,6 +99,7 @@ describe('EntryDetailComponent', () => {
         store.overrideSelector(selectLastSavedBy, 'DM');
         store.overrideSelector(selectEntryTitles, { 'organizations:silver-ledger': 'Silver ledger' });
         store.overrideSelector(selectReferencingEntries, []);
+        store.overrideSelector(selectReferencedEntries, []);
 
         fixture = TestBed.createComponent(EntryDetailComponent);
         component = fixture.componentInstance;
