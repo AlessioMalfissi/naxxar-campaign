@@ -14,12 +14,13 @@ import { filter } from 'rxjs';
 import {
     COMBAT_CONDITIONS,
     CombatantKind,
+    DEFAULT_COMBATANT_COLORS,
     ICodexEntrySummary,
     ICombatant,
     ICombatantChanges,
     ICombatCondition
 } from '@core/models';
-import { createCombatantId, rollD20 } from '@core/utils/combat.util';
+import { colorOf, createCombatantId, rollD20 } from '@core/utils/combat.util';
 import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries, selectPlayerMode } from '@store/codex/codex.selectors';
 import * as CombatActions from '@store/combat/combat.actions';
@@ -33,6 +34,7 @@ import {
 } from '@store/combat/combat.selectors';
 
 const MAX_ENEMY_COUNT = 20;
+const MAX_NAME_LENGTH = 100;
 const EMPTY_ENEMY_FORM = { name: '', count: 1, initiative: null };
 
 @Component({
@@ -59,6 +61,7 @@ export class CombatComponent implements OnInit {
 
     protected readonly combatantKind = CombatantKind;
     protected readonly maxEnemyCount = MAX_ENEMY_COUNT;
+    protected readonly maxNameLength = MAX_NAME_LENGTH;
     protected readonly turnOrder = toSignal(this.store.select(selectTurnOrder), { initialValue: [] });
     protected readonly round = toSignal(this.store.select(selectCombatRound), { initialValue: 0 });
     protected readonly activeTurnId = toSignal(this.store.select(selectActiveTurnId), { initialValue: null });
@@ -103,6 +106,10 @@ export class CombatComponent implements OnInit {
         return combatant.id === this.activeTurnId();
     }
 
+    protected colorOf(combatant: ICombatant): string {
+        return colorOf(combatant);
+    }
+
     protected addPlayers(players: ICodexEntrySummary[]): void {
         if (players.length === 0) {
             return;
@@ -116,6 +123,8 @@ export class CombatComponent implements OnInit {
                     kind: CombatantKind.Player,
                     entryId: player.id,
                     initiative: 0,
+                    initiativeNudge: 0,
+                    color: null,
                     hp: null,
                     maxHp: null,
                     ac: null,
@@ -144,6 +153,8 @@ export class CombatComponent implements OnInit {
             kind: CombatantKind.Enemy,
             entryId: null,
             initiative: initiative ?? rollD20(),
+            initiativeNudge: 0,
+            color: null,
             hp: null,
             maxHp: null,
             ac: null,
@@ -175,11 +186,39 @@ export class CombatComponent implements OnInit {
         }, 1);
     }
 
+    // A blank name is rejected and the field shows the current name again.
+    protected changeName(combatant: ICombatant, event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const name = input.value.trim().slice(0, MAX_NAME_LENGTH);
+        if (name === '') {
+            input.value = combatant.name;
+            return;
+        }
+        if (name !== combatant.name) {
+            this.update(combatant, { name });
+        }
+    }
+
     protected changeInitiative(combatant: ICombatant, event: Event): void {
-        const value = Number((event.target as HTMLInputElement).value);
-        const initiative = Number.isFinite(value) ? Math.trunc(value) : 0;
+        const initiative = this.readInteger(event);
         if (initiative !== combatant.initiative) {
             this.update(combatant, { initiative });
+        }
+    }
+
+    protected changeInitiativeNudge(combatant: ICombatant, event: Event): void {
+        const initiativeNudge = this.readInteger(event);
+        if (initiativeNudge !== combatant.initiativeNudge) {
+            this.update(combatant, { initiativeNudge });
+        }
+    }
+
+    // Picking the default colour for the combatant's kind stores null, so it follows any later default change.
+    protected changeColor(combatant: ICombatant, event: Event): void {
+        const picked = (event.target as HTMLInputElement).value.toLowerCase();
+        const color = picked === DEFAULT_COMBATANT_COLORS[combatant.kind] ? null : picked;
+        if (color !== combatant.color) {
+            this.update(combatant, { color });
         }
     }
 
@@ -192,6 +231,24 @@ export class CombatComponent implements OnInit {
             )
             .subscribe((condition) => {
                 this.store.dispatch(CombatActions.conditionAdded({ id: combatant.id, condition }));
+            });
+    }
+
+    protected editCondition(combatant: ICombatant, condition: ICombatCondition): void {
+        this.modalService
+            .editCondition({
+                title: `Edit ${condition.name} on ${combatant.name}`,
+                suggestions: COMBAT_CONDITIONS,
+                condition
+            })
+            .pipe(
+                filter((edited): edited is ICombatCondition => edited !== null),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((edited) => {
+                this.store.dispatch(
+                    CombatActions.conditionUpdated({ id: combatant.id, name: condition.name, condition: edited })
+                );
             });
     }
 
@@ -234,5 +291,10 @@ export class CombatComponent implements OnInit {
 
     private update(combatant: ICombatant, changes: ICombatantChanges): void {
         this.store.dispatch(CombatActions.combatantUpdated({ id: combatant.id, changes }));
+    }
+
+    private readInteger(event: Event): number {
+        const value = Number((event.target as HTMLInputElement).value);
+        return Number.isFinite(value) ? Math.trunc(value) : 0;
     }
 }

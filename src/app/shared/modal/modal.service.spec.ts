@@ -211,7 +211,11 @@ describe('ModalService', () => {
         // Assert
         const [component, config] = dialog.open.mock.calls[0] as [unknown, { data: IConditionModalData }];
         expect(component === ConditionModalComponent).toBe(true);
-        expect(config.data).toEqual({ title: 'Add condition to Goblin 1', suggestions: ['Prone'] });
+        expect(config.data).toEqual({
+            title: 'Add condition to Goblin 1',
+            suggestions: ['Prone'],
+            confirmLabel: 'Add condition'
+        });
         expect(value!).toEqual(condition);
     });
 
@@ -225,7 +229,50 @@ describe('ModalService', () => {
 
         // Assert
         const [, config] = dialog.open.mock.calls[0] as [unknown, { data: IConditionModalData }];
-        expect(config.data).toEqual({ title: 'Add condition', suggestions: [] });
+        expect(config.data).toEqual({ title: 'Add condition', suggestions: [], confirmLabel: 'Add condition' });
+        expect(value === null).toBe(true);
+    });
+
+    it('should open the condition modal pre-filled for editing and return the edited condition', () => {
+        // Arrange
+        const condition: ICombatCondition = { name: 'Prone', rounds: 2 };
+        const edited: ICombatCondition = { name: 'Prone', rounds: 4 };
+        dialog.open.mockReturnValue({ closed: of(edited) });
+        let value: ICombatCondition | null = null;
+
+        // Act
+        service
+            .editCondition({ title: 'Edit Prone on Goblin 1', suggestions: ['Prone'], condition })
+            .subscribe((result) => (value = result));
+
+        // Assert
+        const [component, config] = dialog.open.mock.calls[0] as [unknown, { data: IConditionModalData }];
+        expect(component === ConditionModalComponent).toBe(true);
+        expect(config.data).toEqual({
+            title: 'Edit Prone on Goblin 1',
+            suggestions: ['Prone'],
+            confirmLabel: 'Save condition',
+            condition
+        });
+        expect(value!).toEqual(edited);
+    });
+
+    it('should apply edit condition modal defaults and report a dismissal as null', () => {
+        // Arrange
+        dialog.open.mockReturnValue({ closed: of(undefined) });
+        let value: ICombatCondition | null = { name: 'unset', rounds: null };
+
+        // Act
+        service.editCondition({}).subscribe((result) => (value = result));
+
+        // Assert
+        const [, config] = dialog.open.mock.calls[0] as [unknown, { data: IConditionModalData }];
+        expect(config.data).toEqual({
+            title: 'Edit condition',
+            suggestions: [],
+            confirmLabel: 'Save condition',
+            condition: undefined
+        });
         expect(value === null).toBe(true);
     });
 });

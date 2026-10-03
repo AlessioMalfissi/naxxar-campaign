@@ -11,7 +11,8 @@ import {
     removeCondition,
     revertTurn,
     startCombat,
-    updateCombatant
+    updateCombatant,
+    updateCondition
 } from '@core/utils/combat.util';
 import * as CombatActions from './combat.actions';
 import { ICombatState, INITIAL_COMBAT_STATE } from './combat.state';
@@ -75,6 +76,10 @@ export const combatReducer = createReducer<ICombatState>(
 
     on(CombatActions.conditionAdded, (state, { id, condition }): ICombatState =>
         withEncounter(state, addCondition(state.encounter, id, condition))
+    ),
+
+    on(CombatActions.conditionUpdated, (state, { id, name, condition }): ICombatState =>
+        withEncounter(state, updateCondition(state.encounter, id, name, condition))
     ),
 
     on(CombatActions.conditionRemoved, (state, { id, name }): ICombatState =>

@@ -89,7 +89,24 @@ export class ModalService {
             {
                 data: {
                     title: data.title ?? 'Add condition',
-                    suggestions: data.suggestions ?? []
+                    suggestions: data.suggestions ?? [],
+                    confirmLabel: data.confirmLabel ?? 'Add condition'
+                }
+            }
+        );
+
+        return reference.closed.pipe(map((result) => result ?? null));
+    }
+
+    editCondition(data: Partial<IConditionModalData>): Observable<ICombatCondition | null> {
+        const reference = this.dialog.open<ICombatCondition | null, IConditionModalData, ConditionModalComponent>(
+            ConditionModalComponent,
+            {
+                data: {
+                    title: data.title ?? 'Edit condition',
+                    suggestions: data.suggestions ?? [],
+                    confirmLabel: data.confirmLabel ?? 'Save condition',
+                    condition: data.condition
                 }
             }
         );

@@ -88,6 +88,7 @@
                 <li
                     class="cdx-combat-row"
                     [class.cdx-combat-row-active]="isActive(combatant)"
+                    [style.--cdx-combatant-color]="colorOf(combatant)"
                     [attr.aria-current]="isActive(combatant) ? 'step' : null"
                 >
                     <span class="cdx-combat-marker">
@@ -105,8 +106,38 @@
                         (change)="changeInitiative(combatant, $event)"
                     />
 
+                    @if (!playerMode()) {
+                        <input
+                            type="number"
+                            class="cdx-combat-input cdx-combat-nudge"
+                            matTooltip="Tie-break: among equal initiatives, higher acts first"
+                            [value]="combatant.initiativeNudge"
+                            [attr.aria-label]="combatant.name + ' initiative nudge'"
+                            (change)="changeInitiativeNudge(combatant, $event)"
+                        />
+                    }
+
                     <div class="cdx-combat-identity">
-                        <span class="cdx-combat-name">{{ combatant.name }}</span>
+                        @if (playerMode()) {
+                            <span class="cdx-combat-name">{{ combatant.name }}</span>
+                        } @else {
+                            <input
+                                type="color"
+                                class="cdx-combat-color"
+                                matTooltip="Row colour"
+                                [value]="colorOf(combatant)"
+                                [attr.aria-label]="combatant.name + ' colour'"
+                                (change)="changeColor(combatant, $event)"
+                            />
+                            <input
+                                type="text"
+                                class="cdx-combat-input cdx-combat-name-input"
+                                [value]="combatant.name"
+                                [attr.maxlength]="maxNameLength"
+                                [attr.aria-label]="combatant.name + ' name'"
+                                (change)="changeName(combatant, $event)"
+                            />
+                        }
                         <span
                             class="cdx-combat-kind"
                             [class.cdx-combat-kind-enemy]="combatant.kind === combatantKind.Enemy"
@@ -126,13 +157,21 @@
                                     [attr.aria-description]="condition.description ?? null"
                                     (removed)="removeCondition(combatant, condition)"
                                 >
-                                    {{ condition.name }}
-                                    @if (condition.description) {
-                                        <mat-icon class="cdx-combat-condition-info" aria-hidden="true">info</mat-icon>
-                                    }
-                                    @if (condition.rounds !== null) {
-                                        <span class="cdx-combat-condition-rounds">{{ condition.rounds }}r</span>
-                                    }
+                                    <button
+                                        type="button"
+                                        class="cdx-combat-condition-edit"
+                                        [disabled]="playerMode()"
+                                        [attr.aria-label]="playerMode() ? null : 'Edit ' + condition.name"
+                                        (click)="editCondition(combatant, condition)"
+                                    >
+                                        {{ condition.name }}
+                                        @if (condition.description) {
+                                            <mat-icon class="cdx-combat-condition-info" aria-hidden="true">info</mat-icon>
+                                        }
+                                        @if (condition.rounds !== null) {
+                                            <span class="cdx-combat-condition-rounds">{{ condition.rounds }}r</span>
+                                        }
+                                    </button>
                                     @if (!playerMode()) {
                                         <button matChipRemove [attr.aria-label]="'Remove ' + condition.name">
                                             <mat-icon>cancel</mat-icon>

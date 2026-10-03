@@ -34,6 +34,8 @@ const goblin = (overrides = {}) => ({
     kind: 'enemy',
     entryId: null,
     initiative: 12,
+    initiativeNudge: 0,
+    color: null,
     hp: null,
     maxHp: null,
     ac: null,
@@ -74,6 +76,16 @@ test('GET /api/combat returns the saved encounter without internal fields', asyn
     assert.deepEqual(response.body, { round: 2, turnId: 'goblin-1', combatants: [goblin()] });
 });
 
+test('GET /api/combat fills in the nudge and colour of encounters saved without them', async () => {
+    const { initiativeNudge, color, ...legacy } = goblin();
+    const { app } = buildApp([{ _id: ENCOUNTER_ID, round: 0, turnId: null, combatants: [legacy] }]);
+    const agent = await authedAgent(app);
+    const response = await agent.get('/api/combat');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.combatants[0], goblin({ initiativeNudge, color }));
+});
+
 test('PUT /api/combat stores the encounter and returns it', async () => {
     const { app, combat } = buildApp();
     const agent = await authedAgent(app);
@@ -101,6 +113,8 @@ test('PUT /api/combat normalizes combatant fields, drops blank conditions and ca
                 kind: 'player',
                 entryId: ' players:tessaly-oakhand ',
                 initiative: '14.7',
+                initiativeNudge: '2.9',
+                color: '#AABBCC',
                 hp: -4,
                 maxHp: '',
                 ac: 'tough',
@@ -125,6 +139,8 @@ test('PUT /api/combat normalizes combatant fields, drops blank conditions and ca
                 kind: 'player',
                 entryId: 'players:tessaly-oakhand',
                 initiative: 14,
+                initiativeNudge: 2,
+                color: '#aabbcc',
                 hp: 0,
                 maxHp: null,
                 ac: null,
@@ -158,6 +174,18 @@ test('PUT /api/combat stores enemies without hit points or armour class', async 
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body.combatants[0], goblin());
+});
+
+test('PUT /api/combat drops a colour that is not a hex code and caps long names', async () => {
+    const { app } = buildApp();
+    const agent = await authedAgent(app);
+    const response = await agent.put('/api/combat').send({
+        round: 0,
+        combatants: [goblin({ name: 'x'.repeat(150), color: 'red', initiativeNudge: 'first' })]
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.combatants[0], goblin({ name: 'x'.repeat(100) }));
 });
 
 test('PUT /api/combat rejects a body without a combatant list', async () => {

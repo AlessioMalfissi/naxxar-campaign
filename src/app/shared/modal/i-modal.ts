@@ -1,4 +1,4 @@
-import { EntryVisibility, SectionFieldKind } from '@core/models';
+import { EntryVisibility, ICombatCondition, SectionFieldKind } from '@core/models';
 
 export interface IConfirmModalData {
     title: string;
@@ -40,4 +40,7 @@ export interface ICreateEntryModalData {
 export interface IConditionModalData {
     title: string;
     suggestions: readonly string[];
+    confirmLabel: string;
+    // Pre-fills the form when editing a condition the combatant already has.
+    condition?: ICombatCondition;
 }

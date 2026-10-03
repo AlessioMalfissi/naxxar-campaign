@@ -7,7 +7,8 @@ import { IConditionModalData } from './i-modal';
 
 const CONDITION_DATA: IConditionModalData = {
     title: 'Add condition to Goblin 1',
-    suggestions: ['Blinded', 'Prone', 'Poisoned']
+    suggestions: ['Blinded', 'Prone', 'Poisoned'],
+    confirmLabel: 'Add condition'
 };
 
 describe('ConditionModalComponent', () => {
@@ -59,6 +60,18 @@ describe('ConditionModalComponent', () => {
 
         // Assert
         expect(suggestions).toEqual(['Poisoned']);
+    });
+
+    it('should drop a suggestion that matches what was typed exactly', () => {
+        // Arrange
+        const nameControl = component['form'].controls.name;
+
+        // Act
+        nameControl.setValue('prone');
+        const suggestions = component['suggestions']();
+
+        // Assert
+        expect(suggestions).toEqual([]);
     });
 
     it('should close with a trimmed name and whole-round duration', () => {
@@ -161,5 +174,76 @@ describe('ConditionModalComponent', () => {
 
         // Assert
         expect(dialogRef.close).toHaveBeenCalledWith({ name: 'Prone', rounds: null });
+    });
+});
+
+describe('ConditionModalComponent when editing', () => {
+    let fixture: ComponentFixture<ConditionModalComponent>;
+    let component: ConditionModalComponent;
+    let dialogRef: { close: jest.Mock };
+
+    beforeEach(async () => {
+        // Arrange
+        dialogRef = { close: jest.fn() };
+        await TestBed.configureTestingModule({
+            imports: [ConditionModalComponent, NoopAnimationsModule],
+            providers: [
+                {
+                    provide: DIALOG_DATA,
+                    useValue: {
+                        ...CONDITION_DATA,
+                        title: 'Edit Poisoned on Goblin 1',
+                        confirmLabel: 'Save condition',
+                        condition: { name: 'Poisoned', rounds: 2, description: 'Disadvantage on attacks.' }
+                    }
+                },
+                { provide: DialogRef, useValue: dialogRef }
+            ]
+        }).compileComponents();
+        fixture = TestBed.createComponent(ConditionModalComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+    });
+
+    it('should pre-fill the form with the condition being edited', () => {
+        // Act
+        const value = component['form'].getRawValue();
+
+        // Assert
+        expect(value).toEqual({ name: 'Poisoned', rounds: 2, description: 'Disadvantage on attacks.' });
+    });
+
+    it('should not suggest the name the condition already has', () => {
+        // Act
+        const suggestions = component['suggestions']();
+
+        // Assert
+        expect(suggestions).toEqual([]);
+    });
+
+    it('should label the submit button with the supplied confirm label', () => {
+        // Arrange
+        const submit = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+        // Act
+        const text = (submit.textContent ?? '').trim();
+
+        // Assert
+        expect(text).toBe('Save condition');
+    });
+
+    it('should close with the edited condition', () => {
+        // Arrange
+        component['form'].controls.rounds.setValue(5);
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        expect(dialogRef.close).toHaveBeenCalledWith({
+            name: 'Poisoned',
+            rounds: 5,
+            description: 'Disadvantage on attacks.'
+        });
     });
 });

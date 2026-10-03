@@ -5,7 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of } from 'rxjs';
 
-import { COMBAT_CONDITIONS, CombatantKind, ICombatant } from '@core/models';
+import { COMBAT_CONDITIONS, CombatantKind, DEFAULT_COMBATANT_COLORS, ICombatant } from '@core/models';
 import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries, selectPlayerMode } from '@store/codex/codex.selectors';
 import * as CombatActions from '@store/combat/combat.actions';
@@ -36,7 +36,7 @@ describe('CombatComponent', () => {
     let fixture: ComponentFixture<CombatComponent>;
     let component: CombatComponent;
     let store: MockStore;
-    let modalService: { confirm: jest.Mock; addCondition: jest.Mock };
+    let modalService: { confirm: jest.Mock; addCondition: jest.Mock; editCondition: jest.Mock };
 
     const setTurnOrder = (combatants: ICombatant[]): void => {
         store.overrideSelector(selectTurnOrder, combatants);
@@ -58,9 +58,14 @@ describe('CombatComponent', () => {
     const textOf = (selector: string): string =>
         (fixture.nativeElement.querySelector(selector) as HTMLElement | null)?.textContent ?? '';
 
+    const nameIn = (row: HTMLElement): string =>
+        (row.querySelector('.cdx-combat-name-input') as HTMLInputElement | null)?.value ??
+        row.querySelector('.cdx-combat-name')?.textContent ??
+        '';
+
     beforeEach(async () => {
         // Arrange
-        modalService = { confirm: jest.fn(), addCondition: jest.fn() };
+        modalService = { confirm: jest.fn(), addCondition: jest.fn(), editCondition: jest.fn() };
 
         await TestBed.configureTestingModule({
             imports: [CombatComponent, NoopAnimationsModule],
@@ -111,8 +116,8 @@ describe('CombatComponent', () => {
 
         // Assert
         expect(rows.length).toBe(2);
-        expect((rows[0].textContent ?? '').includes('Tessaly Oakhand')).toBe(true);
-        expect((rows[1].textContent ?? '').includes('Goblin 1')).toBe(true);
+        expect(nameIn(rows[0])).toBe('Tessaly Oakhand');
+        expect(nameIn(rows[1])).toBe('Goblin 1');
     });
 
     it('should render an empty state without combatants', () => {
@@ -150,7 +155,7 @@ describe('CombatComponent', () => {
 
         // Assert
         expect(textOf('.cdx-combat-round').includes('Round 3')).toBe(true);
-        expect((active.textContent ?? '').includes('Goblin 1')).toBe(true);
+        expect(nameIn(active)).toBe('Goblin 1');
         expect(active.getAttribute('aria-current')).toBe('step');
     });
 
@@ -181,6 +186,8 @@ describe('CombatComponent', () => {
                         kind: CombatantKind.Player,
                         entryId: SERRIK.id,
                         initiative: 0,
+                        initiativeNudge: 0,
+                        color: null,
                         hp: null,
                         maxHp: null,
                         ac: null,
@@ -223,6 +230,8 @@ describe('CombatComponent', () => {
                         kind: CombatantKind.Enemy,
                         entryId: null,
                         initiative: 8,
+                        initiativeNudge: 0,
+                        color: null,
                         hp: null,
                         maxHp: null,
                         ac: null,
@@ -329,6 +338,154 @@ describe('CombatComponent', () => {
         );
     });
 
+    it('should update the initiative nudge only when it changed', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const goblin = buildCombatant();
+
+        // Act
+        component['changeInitiativeNudge'](goblin, changeEvent('0'));
+        component['changeInitiativeNudge'](goblin, changeEvent('2.4'));
+        component['changeInitiativeNudge'](goblin, changeEvent('abc'));
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledTimes(1);
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CombatActions.combatantUpdated({ id: 'goblin-1', changes: { initiativeNudge: 2 } })
+        );
+    });
+
+    it('should rename a combatant with a trimmed name', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['changeName'](buildCombatant(), changeEvent('  Goblin Boss  '));
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CombatActions.combatantUpdated({ id: 'goblin-1', changes: { name: 'Goblin Boss' } })
+        );
+    });
+
+    it('should not rename a combatant when the name is unchanged', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['changeName'](buildCombatant(), changeEvent(' Goblin 1 '));
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should restore the current name when the field is cleared', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const input = inputWithValue('   ');
+
+        // Act
+        component['changeName'](buildCombatant(), { target: input } as unknown as Event);
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
+        expect(input.value).toBe('Goblin 1');
+    });
+
+    it('should store a picked colour in lower case', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['changeColor'](buildCombatant(), changeEvent('#AA00CC'));
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CombatActions.combatantUpdated({ id: 'goblin-1', changes: { color: '#aa00cc' } })
+        );
+    });
+
+    it('should store null when the default colour for the kind is picked', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const goblin = buildCombatant({ color: '#aa00cc' });
+
+        // Act
+        component['changeColor'](goblin, changeEvent(DEFAULT_COMBATANT_COLORS[CombatantKind.Enemy]));
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CombatActions.combatantUpdated({ id: 'goblin-1', changes: { color: null } })
+        );
+    });
+
+    it('should not update the colour when it is unchanged', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        component['changeColor'](buildCombatant(), changeEvent(DEFAULT_COMBATANT_COLORS[CombatantKind.Enemy]));
+        component['changeColor'](buildCombatant({ color: '#aa00cc' }), changeEvent('#aa00cc'));
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should colour each row with its own colour or the default for its kind', () => {
+        // Arrange
+        setTurnOrder([buildPlayerCombatant(), buildCombatant({ color: '#aa00cc' })]);
+
+        // Act
+        fixture.detectChanges();
+        const rows = fixture.nativeElement.querySelectorAll('.cdx-combat-row') as NodeListOf<HTMLElement>;
+        const pickers = fixture.nativeElement.querySelectorAll('.cdx-combat-color') as NodeListOf<HTMLInputElement>;
+
+        // Assert
+        expect(rows[0].style.getPropertyValue('--cdx-combatant-color')).toBe(
+            DEFAULT_COMBATANT_COLORS[CombatantKind.Player]
+        );
+        expect(rows[1].style.getPropertyValue('--cdx-combatant-color')).toBe('#aa00cc');
+        expect(pickers[1].value).toBe('#aa00cc');
+    });
+
+    it('should render the name, nudge and colour fields for the DM', () => {
+        // Arrange
+        setTurnOrder([buildCombatant({ initiativeNudge: 3 })]);
+
+        // Act
+        fixture.detectChanges();
+        const row = fixture.nativeElement.querySelector('.cdx-combat-row') as HTMLElement;
+        const nudge = row.querySelector('[aria-label="Goblin 1 initiative nudge"]') as HTMLInputElement;
+
+        // Assert
+        expect(nudge.value).toBe('3');
+        expect(row.querySelector('[aria-label="Goblin 1 name"]') !== null).toBe(true);
+        expect(row.querySelector('[aria-label="Goblin 1 colour"]') !== null).toBe(true);
+    });
+
+    it('should show the name as text without nudge or colour fields in player view', () => {
+        // Arrange
+        fixture.detectChanges();
+
+        // Act
+        setPlayerMode(true);
+        fixture.detectChanges();
+        const row = fixture.nativeElement.querySelector('.cdx-combat-row') as HTMLElement;
+
+        // Assert
+        expect(textOf('.cdx-combat-name')).toBe('Tessaly Oakhand');
+        expect(row.querySelector('.cdx-combat-name-input') === null).toBe(true);
+        expect(row.querySelector('.cdx-combat-nudge') === null).toBe(true);
+        expect(row.querySelector('.cdx-combat-color') === null).toBe(true);
+    });
+
     it('should add the condition chosen in the modal', () => {
         // Arrange
         fixture.detectChanges();
@@ -358,6 +515,70 @@ describe('CombatComponent', () => {
 
         // Assert
         expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should update a condition edited in the modal', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const condition = { name: 'Poisoned', rounds: 3 };
+        const edited = { name: 'Poisoned', rounds: 1, description: 'Disadvantage on attacks.' };
+        modalService.editCondition.mockReturnValue(of(edited));
+
+        // Act
+        component['editCondition'](buildCombatant(), condition);
+
+        // Assert
+        expect(modalService.editCondition).toHaveBeenCalledWith({
+            title: 'Edit Poisoned on Goblin 1',
+            suggestions: COMBAT_CONDITIONS,
+            condition
+        });
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CombatActions.conditionUpdated({ id: 'goblin-1', name: 'Poisoned', condition: edited })
+        );
+    });
+
+    it('should not update a condition when the edit modal is dismissed', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        modalService.editCondition.mockReturnValue(of(null));
+
+        // Act
+        component['editCondition'](buildCombatant(), { name: 'Prone', rounds: null });
+
+        // Assert
+        expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should open the edit modal when a condition is clicked', () => {
+        // Arrange
+        const condition = { name: 'Prone', rounds: null };
+        setTurnOrder([buildCombatant({ conditions: [condition] })]);
+        modalService.editCondition.mockReturnValue(of(null));
+        fixture.detectChanges();
+        const edit = fixture.nativeElement.querySelector('[aria-label="Edit Prone"]') as HTMLButtonElement;
+
+        // Act
+        edit.click();
+
+        // Assert
+        expect(modalService.editCondition).toHaveBeenCalledWith(expect.objectContaining({ condition }));
+    });
+
+    it('should not allow editing conditions in player view', () => {
+        // Arrange
+        setTurnOrder([buildCombatant({ conditions: [{ name: 'Prone', rounds: null }] })]);
+        setPlayerMode(true);
+
+        // Act
+        fixture.detectChanges();
+        const edit = fixture.nativeElement.querySelector('.cdx-combat-condition-edit') as HTMLButtonElement;
+
+        // Assert
+        expect(edit.disabled).toBe(true);
+        expect(edit.hasAttribute('aria-label')).toBe(false);
     });
 
     it('should render conditions with their remaining rounds', () => {
