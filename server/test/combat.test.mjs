@@ -88,7 +88,7 @@ test('PUT /api/combat stores the encounter and returns it', async () => {
     assert.deepEqual(listed.body, encounter);
 });
 
-test('PUT /api/combat normalizes combatant fields and drops blank conditions', async () => {
+test('PUT /api/combat normalizes combatant fields, drops blank conditions and caps descriptions', async () => {
     const { app } = buildApp();
     const agent = await authedAgent(app);
     const response = await agent.put('/api/combat').send({
@@ -104,7 +104,12 @@ test('PUT /api/combat normalizes combatant fields and drops blank conditions', a
                 hp: -4,
                 maxHp: '',
                 ac: 'tough',
-                conditions: [{ name: ' Prone ', rounds: null }, { name: 'Poisoned', rounds: 0 }, { name: '  ' }]
+                conditions: [
+                    { name: ' Prone ', rounds: null, description: '   ' },
+                    { name: 'Poisoned', rounds: 0 },
+                    { name: '  ' },
+                    { name: 'Hexed', rounds: 2, description: ` ${'x'.repeat(600)} ` }
+                ]
             }
         ]
     });
@@ -125,7 +130,8 @@ test('PUT /api/combat normalizes combatant fields and drops blank conditions', a
                 ac: null,
                 conditions: [
                     { name: 'Prone', rounds: null },
-                    { name: 'Poisoned', rounds: 1 }
+                    { name: 'Poisoned', rounds: 1 },
+                    { name: 'Hexed', rounds: 2, description: 'x'.repeat(500) }
                 ]
             }
         ]

@@ -187,6 +187,19 @@
     gap: 4px;
 }
 
+.cdx-combat-condition-described {
+    cursor: help;
+}
+
+.cdx-combat-condition-info {
+    margin-left: 4px;
+    width: 14px;
+    height: 14px;
+    color: var(--cdx-text-muted);
+    font-size: 14px;
+    vertical-align: middle;
+}
+
 .cdx-combat-condition-rounds {
     margin-left: 4px;
     color: var(--cdx-text-muted);

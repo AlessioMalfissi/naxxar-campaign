@@ -10,6 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { ICombatCondition } from '@core/models';
 import { IConditionModalData } from './i-modal';
 
+const MAX_DESCRIPTION_LENGTH = 500;
+
 @Component({
     selector: 'cdx-condition-modal',
     standalone: true,
@@ -20,9 +22,14 @@ import { IConditionModalData } from './i-modal';
 })
 export class ConditionModalComponent {
     protected readonly data = inject<IConditionModalData>(DIALOG_DATA);
+    protected readonly maxDescriptionLength = MAX_DESCRIPTION_LENGTH;
     protected readonly form = new FormGroup({
         name: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
-        rounds: new FormControl<number | null>(null, { validators: [Validators.min(1)] })
+        rounds: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),
+        description: new FormControl<string>('', {
+            nonNullable: true,
+            validators: [Validators.maxLength(MAX_DESCRIPTION_LENGTH)]
+        })
     });
 
     private readonly dialogRef = inject<DialogRef<ICombatCondition | null>>(DialogRef);
@@ -41,7 +48,9 @@ export class ConditionModalComponent {
         }
 
         const rounds = this.form.controls.rounds.value;
-        this.dialogRef.close({ name, rounds: rounds == null ? null : Math.floor(rounds) });
+        const description = this.form.controls.description.value.trim();
+        const condition: ICombatCondition = { name, rounds: rounds == null ? null : Math.floor(rounds) };
+        this.dialogRef.close(description === '' ? condition : { ...condition, description });
     }
 
     protected cancel(): void {

@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatTooltip } from '@angular/material/tooltip';
+import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of } from 'rxjs';
@@ -377,6 +379,32 @@ describe('CombatComponent', () => {
         expect(chips.length).toBe(2);
         expect((chips[0].textContent ?? '').includes('Prone')).toBe(true);
         expect((chips[1].textContent ?? '').includes('2r')).toBe(true);
+    });
+
+    it('should show a condition description as a tooltip with an info icon', () => {
+        // Arrange
+        setTurnOrder([
+            buildCombatant({
+                conditions: [
+                    { name: 'Marked', rounds: null, description: 'Next hit deals +1d6.' },
+                    { name: 'Prone', rounds: null }
+                ]
+            })
+        ]);
+
+        // Act
+        fixture.detectChanges();
+        const chips = fixture.debugElement.queryAll(By.css('.cdx-combat-condition'));
+        const described = chips[0].injector.get(MatTooltip);
+        const plain = chips[1].injector.get(MatTooltip);
+
+        // Assert
+        expect(described.message).toBe('Next hit deals +1d6.');
+        expect(plain.message).toBe('');
+        expect(chips[0].nativeElement.getAttribute('aria-description')).toBe('Next hit deals +1d6.');
+        expect(chips[0].nativeElement.querySelector('.cdx-combat-condition-info') !== null).toBe(true);
+        expect(chips[1].nativeElement.querySelector('.cdx-combat-condition-info') === null).toBe(true);
+        expect(chips[1].nativeElement.hasAttribute('aria-description')).toBe(false);
     });
 
     it('should remove a condition', () => {

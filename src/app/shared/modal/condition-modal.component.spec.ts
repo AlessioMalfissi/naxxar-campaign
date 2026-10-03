@@ -63,7 +63,7 @@ describe('ConditionModalComponent', () => {
 
     it('should close with a trimmed name and whole-round duration', () => {
         // Arrange
-        component['form'].setValue({ name: ' Poisoned ', rounds: 3.6 });
+        component['form'].setValue({ name: ' Poisoned ', rounds: 3.6, description: '' });
 
         // Act
         component['confirm']();
@@ -74,7 +74,7 @@ describe('ConditionModalComponent', () => {
 
     it('should close with no duration when rounds is left blank', () => {
         // Arrange
-        component['form'].setValue({ name: 'Hexed', rounds: null });
+        component['form'].setValue({ name: 'Hexed', rounds: null, description: '' });
 
         // Act
         component['confirm']();
@@ -83,9 +83,43 @@ describe('ConditionModalComponent', () => {
         expect(dialogRef.close).toHaveBeenCalledWith({ name: 'Hexed', rounds: null });
     });
 
+    it('should close with a trimmed description for a custom status', () => {
+        // Arrange
+        component['form'].setValue({ name: ' Marked ', rounds: 2, description: '  Next hit deals +1d6.  ' });
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        expect(dialogRef.close).toHaveBeenCalledWith({ name: 'Marked', rounds: 2, description: 'Next hit deals +1d6.' });
+    });
+
+    it('should leave out a blank description', () => {
+        // Arrange
+        component['form'].setValue({ name: 'Hexed', rounds: null, description: '   ' });
+
+        // Act
+        component['confirm']();
+        const [closed] = dialogRef.close.mock.calls[0] as [Record<string, unknown>];
+
+        // Assert
+        expect('description' in closed).toBe(false);
+    });
+
+    it('should not close with a description over the length limit', () => {
+        // Arrange
+        component['form'].setValue({ name: 'Hexed', rounds: null, description: 'x'.repeat(501) });
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        expect(dialogRef.close).not.toHaveBeenCalled();
+    });
+
     it('should not close without a name', () => {
         // Arrange
-        component['form'].setValue({ name: '   ', rounds: null });
+        component['form'].setValue({ name: '   ', rounds: null, description: '' });
 
         // Act
         component['confirm']();
@@ -97,7 +131,7 @@ describe('ConditionModalComponent', () => {
 
     it('should not close with a duration below one round', () => {
         // Arrange
-        component['form'].setValue({ name: 'Prone', rounds: 0 });
+        component['form'].setValue({ name: 'Prone', rounds: 0, description: '' });
 
         // Act
         component['confirm']();
@@ -119,7 +153,7 @@ describe('ConditionModalComponent', () => {
 
     it('should confirm when the form is submitted', () => {
         // Arrange
-        component['form'].setValue({ name: 'Prone', rounds: null });
+        component['form'].setValue({ name: 'Prone', rounds: null, description: '' });
         const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
 
         // Act

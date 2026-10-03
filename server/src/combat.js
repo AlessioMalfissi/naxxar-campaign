@@ -11,6 +11,8 @@ export const MAX_COMBATANTS = 100;
 
 const MAX_CONDITIONS = 30;
 
+const MAX_CONDITION_DESCRIPTION = 500;
+
 const EMPTY_ENCOUNTER = { round: 0, turnId: null, combatants: [] };
 
 const toPublicEncounter = (doc) => ({
@@ -41,7 +43,9 @@ const normalizeCondition = (value) => {
         return null;
     }
 
-    return { name, rounds: normalizeOptionalInteger(value.rounds, 1) };
+    const description = normalizeText(value.description).slice(0, MAX_CONDITION_DESCRIPTION);
+    const condition = { name, rounds: normalizeOptionalInteger(value.rounds, 1) };
+    return description === '' ? condition : { ...condition, description };
 };
 
 const normalizeCombatant = (value) => {

@@ -120,10 +120,16 @@
                             @for (condition of combatant.conditions; track condition.name) {
                                 <mat-chip
                                     class="cdx-combat-condition"
+                                    [class.cdx-combat-condition-described]="!!condition.description"
                                     [removable]="!playerMode()"
+                                    [matTooltip]="condition.description ?? ''"
+                                    [attr.aria-description]="condition.description ?? null"
                                     (removed)="removeCondition(combatant, condition)"
                                 >
                                     {{ condition.name }}
+                                    @if (condition.description) {
+                                        <mat-icon class="cdx-combat-condition-info" aria-hidden="true">info</mat-icon>
+                                    }
                                     @if (condition.rounds !== null) {
                                         <span class="cdx-combat-condition-rounds">{{ condition.rounds }}r</span>
                                     }

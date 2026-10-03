@@ -23,6 +23,8 @@ export interface ICombatCondition {
     name: string;
     // Rounds left, counted down at the end of the affected combatant's turn; null lasts until removed.
     rounds: number | null;
+    // Free text shown as a tooltip on the condition; omitted when blank.
+    description?: string;
 }
 
 export interface ICombatant {
