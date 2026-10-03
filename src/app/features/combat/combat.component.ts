@@ -19,7 +19,7 @@ import {
     ICombatantChanges,
     ICombatCondition
 } from '@core/models';
-import { createCombatantId, describeHealth, rollD20 } from '@core/utils/combat.util';
+import { createCombatantId, rollD20 } from '@core/utils/combat.util';
 import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries, selectPlayerMode } from '@store/codex/codex.selectors';
 import * as CombatActions from '@store/combat/combat.actions';
@@ -34,8 +34,6 @@ import {
 
 const MAX_ENEMY_COUNT = 20;
 const EMPTY_ENEMY_FORM = { name: '', count: 1, initiative: null };
-
-type NumericField = 'hp' | 'maxHp' | 'ac';
 
 @Component({
     selector: 'cdx-combat',
@@ -103,10 +101,6 @@ export class CombatComponent implements OnInit {
 
     protected isActive(combatant: ICombatant): boolean {
         return combatant.id === this.activeTurnId();
-    }
-
-    protected healthLabel(combatant: ICombatant): string {
-        return describeHealth(combatant);
     }
 
     protected addPlayers(players: ICodexEntrySummary[]): void {
@@ -187,33 +181,6 @@ export class CombatComponent implements OnInit {
         if (initiative !== combatant.initiative) {
             this.update(combatant, { initiative });
         }
-    }
-
-    protected changeStat(combatant: ICombatant, field: NumericField, event: Event): void {
-        const raw = (event.target as HTMLInputElement).value.trim();
-        const parsed = Number(raw);
-        const value = raw === '' || !Number.isFinite(parsed) ? null : Math.max(0, Math.trunc(parsed));
-        if (value !== combatant[field]) {
-            this.update(combatant, { [field]: value });
-        }
-    }
-
-    protected damage(combatant: ICombatant, input: HTMLInputElement): void {
-        this.adjustHp(combatant, input, -1);
-    }
-
-    protected heal(combatant: ICombatant, input: HTMLInputElement): void {
-        this.adjustHp(combatant, input, 1);
-    }
-
-    private adjustHp(combatant: ICombatant, input: HTMLInputElement, direction: number): void {
-        const amount = Math.trunc(Number(input.value));
-        input.value = '';
-        if (!Number.isFinite(amount) || amount <= 0) {
-            return;
-        }
-
-        this.store.dispatch(CombatActions.hpAdjusted({ id: combatant.id, delta: amount * direction }));
     }
 
     protected addCondition(combatant: ICombatant): void {

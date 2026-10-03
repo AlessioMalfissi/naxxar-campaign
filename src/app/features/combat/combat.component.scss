@@ -113,14 +113,6 @@
     background: var(--cdx-primary-tint);
 }
 
-.cdx-combat-row-down {
-    opacity: 0.6;
-
-    .cdx-combat-name {
-        text-decoration: line-through;
-    }
-}
-
 .cdx-combat-marker {
     display: flex;
     flex: none;
@@ -187,42 +179,25 @@
     color: var(--cdx-warning);
 }
 
-.cdx-combat-health {
-    color: var(--cdx-text-muted);
-    font-size: 11px;
-}
-
-.cdx-combat-stats {
-    display: flex;
-    flex: none;
-    align-items: center;
-    gap: 12px;
-}
-
-.cdx-combat-stat {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.cdx-combat-stat-label {
-    color: var(--cdx-text-muted);
-    font-size: 11px;
-}
-
-.cdx-combat-hp-change {
-    display: flex;
-    flex: none;
-    align-items: center;
-    gap: 2px;
-}
-
 .cdx-combat-conditions {
     display: flex;
     flex: 1 1 200px;
     flex-wrap: wrap;
     align-items: center;
     gap: 4px;
+}
+
+.cdx-combat-condition-described {
+    cursor: help;
+}
+
+.cdx-combat-condition-info {
+    margin-left: 4px;
+    width: 14px;
+    height: 14px;
+    color: var(--cdx-text-muted);
+    font-size: 14px;
+    vertical-align: middle;
 }
 
 .cdx-combat-condition-rounds {

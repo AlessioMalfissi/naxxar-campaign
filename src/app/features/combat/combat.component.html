@@ -53,7 +53,6 @@
                 Add player
             </button>
             <mat-menu #playerMenu="matMenu">
-                <button mat-menu-item type="button" (click)="addPlayers(availablePlayers())">Whole party</button>
                 @for (player of availablePlayers(); track player.id) {
                     <button mat-menu-item type="button" (click)="addPlayers([player])">{{ player.title }}</button>
                 }
@@ -89,7 +88,6 @@
                 <li
                     class="cdx-combat-row"
                     [class.cdx-combat-row-active]="isActive(combatant)"
-                    [class.cdx-combat-row-down]="combatant.hp === 0"
                     [attr.aria-current]="isActive(combatant) ? 'step' : null"
                 >
                     <span class="cdx-combat-marker">
@@ -115,94 +113,23 @@
                         >
                             {{ combatant.kind === combatantKind.Player ? 'Player' : 'Enemy' }}
                         </span>
-                        @if (healthLabel(combatant) !== '') {
-                            <span class="cdx-combat-health">{{ healthLabel(combatant) }}</span>
-                        }
                     </div>
-
-                    @if (combatant.kind === combatantKind.Player) {
-                        <div class="cdx-combat-stats">
-                            @if (!playerMode() || combatant.hp !== null) {
-                                <label class="cdx-combat-stat">
-                                    <span class="cdx-combat-stat-label">HP</span>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        class="cdx-combat-input"
-                                        [value]="combatant.hp ?? ''"
-                                        [attr.aria-label]="combatant.name + ' current HP'"
-                                        [disabled]="playerMode()"
-                                        (change)="changeStat(combatant, 'hp', $event)"
-                                    />
-                                    <span class="cdx-combat-stat-label">/</span>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        class="cdx-combat-input"
-                                        [value]="combatant.maxHp ?? ''"
-                                        [attr.aria-label]="combatant.name + ' max HP'"
-                                        [disabled]="playerMode()"
-                                        (change)="changeStat(combatant, 'maxHp', $event)"
-                                    />
-                                </label>
-                            }
-                            @if (!playerMode() || combatant.ac !== null) {
-                                <label class="cdx-combat-stat">
-                                    <span class="cdx-combat-stat-label">AC</span>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        class="cdx-combat-input"
-                                        [value]="combatant.ac ?? ''"
-                                        [attr.aria-label]="combatant.name + ' armour class'"
-                                        [disabled]="playerMode()"
-                                        (change)="changeStat(combatant, 'ac', $event)"
-                                    />
-                                </label>
-                            }
-                        </div>
-                    }
-
-                    @if (!playerMode() && combatant.kind === combatantKind.Player && combatant.hp !== null) {
-                        <div class="cdx-combat-hp-change">
-                            <input
-                                #hpAmount
-                                type="number"
-                                min="1"
-                                class="cdx-combat-input"
-                                placeholder="±"
-                                [attr.aria-label]="combatant.name + ' HP change'"
-                            />
-                            <button
-                                mat-icon-button
-                                type="button"
-                                aria-label="Damage"
-                                matTooltip="Damage"
-                                (click)="damage(combatant, hpAmount)"
-                            >
-                                <mat-icon>remove</mat-icon>
-                            </button>
-                            <button
-                                mat-icon-button
-                                type="button"
-                                aria-label="Heal"
-                                matTooltip="Heal"
-                                (click)="heal(combatant, hpAmount)"
-                            >
-                                <mat-icon>add</mat-icon>
-                            </button>
-                        </div>
-                    }
 
                     <div class="cdx-combat-conditions">
                         <mat-chip-set [attr.aria-label]="combatant.name + ' conditions'">
                             @for (condition of combatant.conditions; track condition.name) {
                                 <mat-chip
                                     class="cdx-combat-condition"
+                                    [class.cdx-combat-condition-described]="!!condition.description"
                                     [removable]="!playerMode()"
+                                    [matTooltip]="condition.description ?? ''"
+                                    [attr.aria-description]="condition.description ?? null"
                                     (removed)="removeCondition(combatant, condition)"
                                 >
                                     {{ condition.name }}
+                                    @if (condition.description) {
+                                        <mat-icon class="cdx-combat-condition-info" aria-hidden="true">info</mat-icon>
+                                    }
                                     @if (condition.rounds !== null) {
                                         <span class="cdx-combat-condition-rounds">{{ condition.rounds }}r</span>
                                     }
