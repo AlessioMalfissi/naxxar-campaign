@@ -152,18 +152,6 @@ describe('CombatComponent', () => {
         expect(active.getAttribute('aria-current')).toBe('step');
     });
 
-    it('should mark a combatant at 0 HP as down', () => {
-        // Arrange
-        setTurnOrder([buildPlayerCombatant({ hp: 0 })]);
-
-        // Act
-        fixture.detectChanges();
-
-        // Assert
-        expect(fixture.nativeElement.querySelector('.cdx-combat-row-down') !== null).toBe(true);
-        expect(textOf('.cdx-combat-health')).toBe('Down');
-    });
-
     it('should list only the players not yet in the fight', () => {
         // Act
         fixture.detectChanges();
@@ -337,55 +325,6 @@ describe('CombatComponent', () => {
         expect(dispatchSpy).toHaveBeenCalledWith(
             CombatActions.combatantUpdated({ id: 'goblin-1', changes: { initiative: 0 } })
         );
-    });
-
-    it('should update a stat, clearing it when blank and flooring negatives at 0', () => {
-        // Arrange
-        fixture.detectChanges();
-        const dispatchSpy = jest.spyOn(store, 'dispatch');
-        const tessaly = buildPlayerCombatant();
-
-        // Act
-        component['changeStat'](tessaly, 'ac', changeEvent(''));
-        component['changeStat'](tessaly, 'hp', changeEvent('-3'));
-        component['changeStat'](tessaly, 'maxHp', changeEvent('24'));
-
-        // Assert
-        expect(dispatchSpy).toHaveBeenCalledTimes(2);
-        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.combatantUpdated({ id: 'tessaly', changes: { ac: null } }));
-        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.combatantUpdated({ id: 'tessaly', changes: { hp: 0 } }));
-    });
-
-    it('should apply damage and healing from the amount field, then clear it', () => {
-        // Arrange
-        fixture.detectChanges();
-        const dispatchSpy = jest.spyOn(store, 'dispatch');
-        const tessaly = buildPlayerCombatant();
-        const damageInput = inputWithValue('4');
-        const healInput = inputWithValue('2');
-
-        // Act
-        component['damage'](tessaly, damageInput);
-        component['heal'](tessaly, healInput);
-
-        // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.hpAdjusted({ id: 'tessaly', delta: -4 }));
-        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.hpAdjusted({ id: 'tessaly', delta: 2 }));
-        expect(damageInput.value).toBe('');
-        expect(healInput.value).toBe('');
-    });
-
-    it('should ignore an empty or non-positive amount', () => {
-        // Arrange
-        fixture.detectChanges();
-        const dispatchSpy = jest.spyOn(store, 'dispatch');
-
-        // Act
-        component['damage'](buildPlayerCombatant(), inputWithValue(''));
-        component['heal'](buildPlayerCombatant(), inputWithValue('-5'));
-
-        // Assert
-        expect(dispatchSpy).not.toHaveBeenCalled();
     });
 
     it('should add the condition chosen in the modal', () => {
@@ -562,36 +501,42 @@ describe('CombatComponent', () => {
         // Assert
         expect(fixture.nativeElement.querySelector('.cdx-combat-controls') === null).toBe(true);
         expect(fixture.nativeElement.querySelector('.cdx-combat-form') === null).toBe(true);
-        expect(rows[0].querySelector('.cdx-combat-stats') !== null).toBe(true);
-        expect(rows[0].querySelector('.cdx-combat-hp-change') === null).toBe(true);
         expect(rows[1].querySelector('[aria-label="Remove from combat"]') === null).toBe(true);
     });
 
-    it('should hide a player stat that is not tracked in player view', () => {
+    it('should not show hit points or armour class for any combatant', () => {
         // Arrange
-        setTurnOrder([buildPlayerCombatant({ hp: null, maxHp: null })]);
-        setPlayerMode(true);
+        setTurnOrder([buildPlayerCombatant({ hp: 0 }), buildCombatant()]);
 
         // Act
         fixture.detectChanges();
-        const row = fixture.nativeElement.querySelector('.cdx-combat-row') as HTMLElement;
+        const order = fixture.nativeElement.querySelector('.cdx-combat-order') as HTMLElement;
 
         // Assert
-        expect(row.querySelector('[aria-label="Tessaly Oakhand current HP"]') === null).toBe(true);
-        expect(row.querySelector('[aria-label="Tessaly Oakhand armour class"]') !== null).toBe(true);
+        expect(order.querySelector('[aria-label="Tessaly Oakhand current HP"]') === null).toBe(true);
+        expect(order.querySelector('[aria-label="Tessaly Oakhand armour class"]') === null).toBe(true);
+        expect(order.querySelector('[aria-label="Damage"]') === null).toBe(true);
+        expect(order.querySelector('[aria-label="Heal"]') === null).toBe(true);
+        expect((order.textContent ?? '').includes('Down')).toBe(false);
     });
 
-    it('should give players hit points and armour class but never enemies', () => {
-        // Act
+    it('should list each available player in the add menu without a whole party option', () => {
+        // Arrange
+        setTurnOrder([]);
         fixture.detectChanges();
-        const rows = fixture.nativeElement.querySelectorAll('.cdx-combat-row') as NodeListOf<HTMLElement>;
+        const addButton = Array.from(
+            fixture.nativeElement.querySelectorAll('.cdx-combat-controls button') as NodeListOf<HTMLButtonElement>
+        ).find((button) => (button.textContent ?? '').includes('Add player')) as HTMLButtonElement;
+
+        // Act
+        addButton.click();
+        fixture.detectChanges();
+        const items = Array.from(document.querySelectorAll('.mat-mdc-menu-item')).map((item) =>
+            (item.textContent ?? '').trim()
+        );
 
         // Assert
-        expect(rows[0].querySelector('.cdx-combat-stats') !== null).toBe(true);
-        expect(rows[0].querySelector('.cdx-combat-hp-change') !== null).toBe(true);
-        expect(rows[1].querySelector('.cdx-combat-stats') === null).toBe(true);
-        expect(rows[1].querySelector('.cdx-combat-hp-change') === null).toBe(true);
-        expect(rows[1].querySelector('.cdx-combat-health') === null).toBe(true);
+        expect(items).toEqual(['Tessaly Oakhand', 'Serrik Vane']);
     });
 
     it('should not offer HP or AC fields when adding an enemy', () => {

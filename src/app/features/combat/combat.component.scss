@@ -113,14 +113,6 @@
     background: var(--cdx-primary-tint);
 }
 
-.cdx-combat-row-down {
-    opacity: 0.6;
-
-    .cdx-combat-name {
-        text-decoration: line-through;
-    }
-}
-
 .cdx-combat-marker {
     display: flex;
     flex: none;
@@ -185,36 +177,6 @@
 
 .cdx-combat-kind-enemy {
     color: var(--cdx-warning);
-}
-
-.cdx-combat-health {
-    color: var(--cdx-text-muted);
-    font-size: 11px;
-}
-
-.cdx-combat-stats {
-    display: flex;
-    flex: none;
-    align-items: center;
-    gap: 12px;
-}
-
-.cdx-combat-stat {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.cdx-combat-stat-label {
-    color: var(--cdx-text-muted);
-    font-size: 11px;
-}
-
-.cdx-combat-hp-change {
-    display: flex;
-    flex: none;
-    align-items: center;
-    gap: 2px;
 }
 
 .cdx-combat-conditions {
