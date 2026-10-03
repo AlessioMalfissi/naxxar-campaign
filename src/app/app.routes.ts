@@ -21,6 +21,11 @@ export const APP_ROUTES: Routes = [
                     import('@features/inventory/inventory.component').then((module) => module.InventoryComponent)
             },
             {
+                path: 'combat',
+                loadComponent: () =>
+                    import('@features/combat/combat.component').then((module) => module.CombatComponent)
+            },
+            {
                 path: ':section',
                 loadComponent: () =>
                     import('@features/section-list/section-list.component').then(

@@ -2,9 +2,17 @@ import { Dialog } from '@angular/cdk/dialog';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
+import { ICombatCondition } from '@core/models';
+import { ConditionModalComponent } from './condition-modal.component';
 import { ConfirmModalComponent } from './confirm-modal.component';
 import { CreateEntryModalComponent } from './create-entry-modal.component';
-import { IConfirmModalData, ICreateEntryModalData, ICreateEntryResult, IPromptModalData } from './i-modal';
+import {
+    IConditionModalData,
+    IConfirmModalData,
+    ICreateEntryModalData,
+    ICreateEntryResult,
+    IPromptModalData
+} from './i-modal';
 import { PromptModalComponent } from './prompt-modal.component';
 
 @Injectable({ providedIn: 'root' })
@@ -68,6 +76,20 @@ export class ModalService {
                     fields: data.fields ?? [],
                     confirmLabel: data.confirmLabel ?? 'Save changes',
                     values: data.values
+                }
+            }
+        );
+
+        return reference.closed.pipe(map((result) => result ?? null));
+    }
+
+    addCondition(data: Partial<IConditionModalData>): Observable<ICombatCondition | null> {
+        const reference = this.dialog.open<ICombatCondition | null, IConditionModalData, ConditionModalComponent>(
+            ConditionModalComponent,
+            {
+                data: {
+                    title: data.title ?? 'Add condition',
+                    suggestions: data.suggestions ?? []
                 }
             }
         );

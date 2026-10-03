@@ -17,6 +17,7 @@ import {
     selectSectionCounts,
     selectSidebarCollapsed
 } from '@store/codex/codex.selectors';
+import { selectCombatInProgress, selectCombatRound } from '@store/combat/combat.selectors';
 import { selectInventoryItemCount } from '@store/inventory/inventory.selectors';
 
 const EMPTY_COUNTS: Record<string, number> = {};
@@ -43,6 +44,8 @@ export class CodexSidebarComponent {
     protected readonly collapsed = toSignal(this.store.select(selectSidebarCollapsed), { initialValue: false });
     protected readonly recentEntries = toSignal(this.store.select(selectRecentEntries), { initialValue: [] });
     protected readonly inventoryCount = toSignal(this.store.select(selectInventoryItemCount), { initialValue: 0 });
+    protected readonly combatInProgress = toSignal(this.store.select(selectCombatInProgress), { initialValue: false });
+    protected readonly combatRound = toSignal(this.store.select(selectCombatRound), { initialValue: 0 });
 
     /*
      * The router's `url` getter is a plain, non-reactive property - reading it directly in this
@@ -73,8 +76,12 @@ export class CodexSidebarComponent {
         return this.currentUrl().startsWith('/campaign/inventory');
     }
 
+    protected isCombatActive(): boolean {
+        return this.currentUrl().startsWith('/campaign/combat');
+    }
+
     protected isSectionActive(section: CodexSection): boolean {
-        return section === this.activeSection() && !this.isInventoryActive();
+        return section === this.activeSection() && !this.isInventoryActive() && !this.isCombatActive();
     }
 
     protected closeSidebar(): void {

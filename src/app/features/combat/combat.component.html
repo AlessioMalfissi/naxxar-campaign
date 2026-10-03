@@ -1,0 +1,252 @@
+<div class="cdx-combat" [class.pane-is-loading]="loading()">
+    <div class="cdx-section-head">
+        <h1 class="cdx-section-title">Combat</h1>
+        <span class="cdx-section-count">{{ turnOrder().length }} combatants</span>
+        @if (inProgress()) {
+            <span class="cdx-combat-round">Round {{ round() }}</span>
+        }
+        <span class="cdx-combat-head-spacer"></span>
+        <button mat-icon-button type="button" aria-label="Refresh" matTooltip="Refresh" (click)="refresh()">
+            <mat-icon>refresh</mat-icon>
+        </button>
+    </div>
+
+    @if (error(); as message) {
+        <p class="cdx-combat-error" role="alert">{{ message }}</p>
+    }
+
+    @if (!playerMode()) {
+        <div class="cdx-combat-controls">
+            @if (inProgress()) {
+                <button mat-button type="button" [disabled]="!canRevert()" (click)="previousTurn()">
+                    <mat-icon>skip_previous</mat-icon>
+                    Previous
+                </button>
+                <button mat-flat-button type="button" class="cdx-combat-next" (click)="nextTurn()">
+                    <mat-icon>skip_next</mat-icon>
+                    Next turn
+                </button>
+                <button mat-button type="button" class="cdx-combat-end" (click)="endCombat()">
+                    <mat-icon>flag</mat-icon>
+                    End combat
+                </button>
+            } @else {
+                <button
+                    mat-flat-button
+                    type="button"
+                    class="cdx-combat-start"
+                    [disabled]="turnOrder().length === 0"
+                    (click)="startCombat()"
+                >
+                    <mat-icon>play_arrow</mat-icon>
+                    Start combat
+                </button>
+            }
+
+            <button
+                mat-button
+                type="button"
+                [disabled]="availablePlayers().length === 0"
+                [matMenuTriggerFor]="playerMenu"
+            >
+                <mat-icon>group_add</mat-icon>
+                Add player
+            </button>
+            <mat-menu #playerMenu="matMenu">
+                <button mat-menu-item type="button" (click)="addPlayers(availablePlayers())">Whole party</button>
+                @for (player of availablePlayers(); track player.id) {
+                    <button mat-menu-item type="button" (click)="addPlayers([player])">{{ player.title }}</button>
+                }
+            </mat-menu>
+        </div>
+
+        <form class="cdx-combat-form" [formGroup]="enemyForm" (ngSubmit)="addEnemies()">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-combat-field-name">
+                <mat-label>Enemy name</mat-label>
+                <input matInput formControlName="name" placeholder="Goblin" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-combat-field-number">
+                <mat-label>Count</mat-label>
+                <input matInput type="number" min="1" [max]="maxEnemyCount" formControlName="count" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-combat-field-number">
+                <mat-label>Initiative</mat-label>
+                <input matInput type="number" formControlName="initiative" placeholder="d20" />
+            </mat-form-field>
+
+            <button mat-flat-button type="submit" class="cdx-combat-add-button">
+                <mat-icon>add</mat-icon>
+                Add enemy
+            </button>
+        </form>
+    }
+
+    @if (turnOrder().length > 0) {
+        <ol class="cdx-combat-order" aria-label="Turn order">
+            @for (combatant of turnOrder(); track combatant.id) {
+                <li
+                    class="cdx-combat-row"
+                    [class.cdx-combat-row-active]="isActive(combatant)"
+                    [class.cdx-combat-row-down]="combatant.hp === 0"
+                    [attr.aria-current]="isActive(combatant) ? 'step' : null"
+                >
+                    <span class="cdx-combat-marker">
+                        @if (isActive(combatant)) {
+                            <mat-icon aria-label="Current turn">play_arrow</mat-icon>
+                        }
+                    </span>
+
+                    <input
+                        type="number"
+                        class="cdx-combat-input cdx-combat-initiative"
+                        [value]="combatant.initiative"
+                        [attr.aria-label]="combatant.name + ' initiative'"
+                        [disabled]="playerMode()"
+                        (change)="changeInitiative(combatant, $event)"
+                    />
+
+                    <div class="cdx-combat-identity">
+                        <span class="cdx-combat-name">{{ combatant.name }}</span>
+                        <span
+                            class="cdx-combat-kind"
+                            [class.cdx-combat-kind-enemy]="combatant.kind === combatantKind.Enemy"
+                        >
+                            {{ combatant.kind === combatantKind.Player ? 'Player' : 'Enemy' }}
+                        </span>
+                        @if (healthLabel(combatant) !== '') {
+                            <span class="cdx-combat-health">{{ healthLabel(combatant) }}</span>
+                        }
+                    </div>
+
+                    @if (combatant.kind === combatantKind.Player) {
+                        <div class="cdx-combat-stats">
+                            @if (!playerMode() || combatant.hp !== null) {
+                                <label class="cdx-combat-stat">
+                                    <span class="cdx-combat-stat-label">HP</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        class="cdx-combat-input"
+                                        [value]="combatant.hp ?? ''"
+                                        [attr.aria-label]="combatant.name + ' current HP'"
+                                        [disabled]="playerMode()"
+                                        (change)="changeStat(combatant, 'hp', $event)"
+                                    />
+                                    <span class="cdx-combat-stat-label">/</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        class="cdx-combat-input"
+                                        [value]="combatant.maxHp ?? ''"
+                                        [attr.aria-label]="combatant.name + ' max HP'"
+                                        [disabled]="playerMode()"
+                                        (change)="changeStat(combatant, 'maxHp', $event)"
+                                    />
+                                </label>
+                            }
+                            @if (!playerMode() || combatant.ac !== null) {
+                                <label class="cdx-combat-stat">
+                                    <span class="cdx-combat-stat-label">AC</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        class="cdx-combat-input"
+                                        [value]="combatant.ac ?? ''"
+                                        [attr.aria-label]="combatant.name + ' armour class'"
+                                        [disabled]="playerMode()"
+                                        (change)="changeStat(combatant, 'ac', $event)"
+                                    />
+                                </label>
+                            }
+                        </div>
+                    }
+
+                    @if (!playerMode() && combatant.kind === combatantKind.Player && combatant.hp !== null) {
+                        <div class="cdx-combat-hp-change">
+                            <input
+                                #hpAmount
+                                type="number"
+                                min="1"
+                                class="cdx-combat-input"
+                                placeholder="±"
+                                [attr.aria-label]="combatant.name + ' HP change'"
+                            />
+                            <button
+                                mat-icon-button
+                                type="button"
+                                aria-label="Damage"
+                                matTooltip="Damage"
+                                (click)="damage(combatant, hpAmount)"
+                            >
+                                <mat-icon>remove</mat-icon>
+                            </button>
+                            <button
+                                mat-icon-button
+                                type="button"
+                                aria-label="Heal"
+                                matTooltip="Heal"
+                                (click)="heal(combatant, hpAmount)"
+                            >
+                                <mat-icon>add</mat-icon>
+                            </button>
+                        </div>
+                    }
+
+                    <div class="cdx-combat-conditions">
+                        <mat-chip-set [attr.aria-label]="combatant.name + ' conditions'">
+                            @for (condition of combatant.conditions; track condition.name) {
+                                <mat-chip
+                                    class="cdx-combat-condition"
+                                    [removable]="!playerMode()"
+                                    (removed)="removeCondition(combatant, condition)"
+                                >
+                                    {{ condition.name }}
+                                    @if (condition.rounds !== null) {
+                                        <span class="cdx-combat-condition-rounds">{{ condition.rounds }}r</span>
+                                    }
+                                    @if (!playerMode()) {
+                                        <button matChipRemove [attr.aria-label]="'Remove ' + condition.name">
+                                            <mat-icon>cancel</mat-icon>
+                                        </button>
+                                    }
+                                </mat-chip>
+                            }
+                        </mat-chip-set>
+                        @if (!playerMode()) {
+                            <button
+                                mat-button
+                                type="button"
+                                class="cdx-combat-add-condition"
+                                (click)="addCondition(combatant)"
+                            >
+                                <mat-icon>add</mat-icon>
+                                Condition
+                            </button>
+                        }
+                    </div>
+
+                    @if (!playerMode()) {
+                        <button
+                            mat-icon-button
+                            type="button"
+                            aria-label="Remove from combat"
+                            matTooltip="Remove from combat"
+                            (click)="removeCombatant(combatant)"
+                        >
+                            <mat-icon>close</mat-icon>
+                        </button>
+                    }
+                </li>
+            }
+        </ol>
+    } @else {
+        <p class="cdx-section-empty">
+            No one is in the turn order yet.
+            @if (!playerMode()) {
+                Add the party and some enemies to get started.
+            }
+        </p>
+    }
+</div>

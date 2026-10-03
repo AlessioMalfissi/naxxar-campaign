@@ -36,3 +36,8 @@ export interface ICreateEntryModalData {
     confirmLabel: string;
     values?: ICreateEntryResult;
 }
+
+export interface IConditionModalData {
+    title: string;
+    suggestions: readonly string[];
+}

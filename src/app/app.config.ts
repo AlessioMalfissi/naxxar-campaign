@@ -13,6 +13,9 @@ import { AUTH_FEATURE_KEY } from '@store/auth/auth.state';
 import { CodexEffects } from '@store/codex/codex.effects';
 import { codexReducer } from '@store/codex/codex.reducer';
 import { CODEX_FEATURE_KEY } from '@store/codex/codex.state';
+import { CombatEffects } from '@store/combat/combat.effects';
+import { combatReducer } from '@store/combat/combat.reducer';
+import { COMBAT_FEATURE_KEY } from '@store/combat/combat.state';
 import { EditorEffects } from '@store/editor/editor.effects';
 import { editorReducer } from '@store/editor/editor.reducer';
 import { EDITOR_FEATURE_KEY } from '@store/editor/editor.state';
@@ -37,11 +40,12 @@ export const APP_CONFIG: ApplicationConfig = {
         provideStore({
             [AUTH_FEATURE_KEY]: authReducer,
             [CODEX_FEATURE_KEY]: codexReducer,
+            [COMBAT_FEATURE_KEY]: combatReducer,
             [EDITOR_FEATURE_KEY]: editorReducer,
             [INVENTORY_FEATURE_KEY]: inventoryReducer,
             [PURSES_FEATURE_KEY]: pursesReducer
         }),
-        provideEffects([AuthEffects, CodexEffects, EditorEffects, InventoryEffects, PursesEffects]),
+        provideEffects([AuthEffects, CodexEffects, CombatEffects, EditorEffects, InventoryEffects, PursesEffects]),
         provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() })
     ]
 };

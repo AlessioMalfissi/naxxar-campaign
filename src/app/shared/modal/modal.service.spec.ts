@@ -2,10 +2,17 @@ import { Dialog } from '@angular/cdk/dialog';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { EntryVisibility } from '@core/models';
+import { EntryVisibility, ICombatCondition } from '@core/models';
+import { ConditionModalComponent } from './condition-modal.component';
 import { ConfirmModalComponent } from './confirm-modal.component';
 import { CreateEntryModalComponent } from './create-entry-modal.component';
-import { IConfirmModalData, ICreateEntryModalData, ICreateEntryResult, IPromptModalData } from './i-modal';
+import {
+    IConditionModalData,
+    IConfirmModalData,
+    ICreateEntryModalData,
+    ICreateEntryResult,
+    IPromptModalData
+} from './i-modal';
 import { ModalService } from './modal.service';
 import { PromptModalComponent } from './prompt-modal.component';
 
@@ -187,6 +194,38 @@ describe('ModalService', () => {
         service.editEntry({}).subscribe((result) => (value = result));
 
         // Assert
+        expect(value === null).toBe(true);
+    });
+
+    it('should open the condition modal and return the chosen condition', () => {
+        // Arrange
+        const condition: ICombatCondition = { name: 'Prone', rounds: 2 };
+        dialog.open.mockReturnValue({ closed: of(condition) });
+        let value: ICombatCondition | null = null;
+
+        // Act
+        service
+            .addCondition({ title: 'Add condition to Goblin 1', suggestions: ['Prone'] })
+            .subscribe((result) => (value = result));
+
+        // Assert
+        const [component, config] = dialog.open.mock.calls[0] as [unknown, { data: IConditionModalData }];
+        expect(component === ConditionModalComponent).toBe(true);
+        expect(config.data).toEqual({ title: 'Add condition to Goblin 1', suggestions: ['Prone'] });
+        expect(value!).toEqual(condition);
+    });
+
+    it('should apply condition modal defaults and report a dismissal as null', () => {
+        // Arrange
+        dialog.open.mockReturnValue({ closed: of(undefined) });
+        let value: ICombatCondition | null = { name: 'unset', rounds: null };
+
+        // Act
+        service.addCondition({}).subscribe((result) => (value = result));
+
+        // Assert
+        const [, config] = dialog.open.mock.calls[0] as [unknown, { data: IConditionModalData }];
+        expect(config.data).toEqual({ title: 'Add condition', suggestions: [] });
         expect(value === null).toBe(true);
     });
 });
