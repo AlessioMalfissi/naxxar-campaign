@@ -1,15 +1,28 @@
-import { CombatantKind, ICombatant, ICombatantChanges, ICombatCondition, IEncounter } from '../models';
+import {
+    CombatantKind,
+    DEFAULT_COMBATANT_COLORS,
+    ICombatant,
+    ICombatantChanges,
+    ICombatCondition,
+    IEncounter
+} from '../models';
 
 const D20_SIDES = 20;
 
 export const EMPTY_ENCOUNTER: IEncounter = { round: 0, turnId: null, combatants: [] };
 
 /*
- * Highest initiative acts first. toSorted is stable, so ties keep the order the combatants were
- * added in - the DM breaks a tie by editing one of the scores.
+ * Highest initiative acts first, then the highest nudge among equal initiatives. toSorted is stable,
+ * so remaining ties keep the order the combatants were added in.
  */
 export const sortByInitiative = (combatants: ICombatant[]): ICombatant[] =>
-    combatants.toSorted((a, b) => b.initiative - a.initiative);
+    combatants.toSorted((a, b) => b.initiative - a.initiative || b.initiativeNudge - a.initiativeNudge);
+
+// Alphabetical, ignoring case.
+export const sortConditions = (conditions: ICombatCondition[]): ICombatCondition[] =>
+    conditions.toSorted((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+export const colorOf = (combatant: ICombatant): string => combatant.color ?? DEFAULT_COMBATANT_COLORS[combatant.kind];
 
 let fallbackIdCounter = 0;
 
@@ -128,14 +141,33 @@ export const adjustHp = (encounter: IEncounter, id: string, delta: number): IEnc
         return { ...combatant, hp: delta > 0 ? Math.min(raw, ceiling) : raw };
     });
 
+const isSameCondition = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
+
 // Re-applying a condition the combatant already has replaces it, so its duration resets.
 export const addCondition = (encounter: IEncounter, id: string, condition: ICombatCondition): IEncounter =>
     updateById(encounter, id, (combatant) => ({
         ...combatant,
-        conditions: [
-            ...combatant.conditions.filter((existing) => existing.name.toLowerCase() !== condition.name.toLowerCase()),
+        conditions: sortConditions([
+            ...combatant.conditions.filter((existing) => !isSameCondition(existing.name, condition.name)),
             condition
-        ]
+        ])
+    }));
+
+// Replaces the condition called `name`; renaming onto another condition the combatant has merges the two.
+export const updateCondition = (
+    encounter: IEncounter,
+    id: string,
+    name: string,
+    condition: ICombatCondition
+): IEncounter =>
+    updateById(encounter, id, (combatant) => ({
+        ...combatant,
+        conditions: sortConditions([
+            ...combatant.conditions.filter(
+                (existing) => existing.name !== name && !isSameCondition(existing.name, condition.name)
+            ),
+            condition
+        ])
     }));
 
 export const removeCondition = (encounter: IEncounter, id: string, name: string): IEncounter =>

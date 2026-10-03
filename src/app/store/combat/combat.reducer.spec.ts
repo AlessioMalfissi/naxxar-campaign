@@ -143,6 +143,22 @@ describe('combatReducer', () => {
         expect(removed.encounter.combatants[1].conditions).toEqual([]);
     });
 
+    it('should update a condition by its previous name', () => {
+        // Arrange
+        const condition = { name: 'Prone', rounds: null };
+        const edited = { name: 'Restrained', rounds: 2 };
+        const added = combatReducer(withEncounter(), CombatActions.conditionAdded({ id: 'goblin-1', condition }));
+
+        // Act
+        const state = combatReducer(
+            added,
+            CombatActions.conditionUpdated({ id: 'goblin-1', name: 'Prone', condition: edited })
+        );
+
+        // Assert
+        expect(state.encounter.combatants[1].conditions).toEqual([edited]);
+    });
+
     it('should start, advance, revert and end combat', () => {
         // Act
         const started = combatReducer(withEncounter(), CombatActions.combatStarted());

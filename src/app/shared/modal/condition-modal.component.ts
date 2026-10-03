@@ -24,20 +24,31 @@ export class ConditionModalComponent {
     protected readonly data = inject<IConditionModalData>(DIALOG_DATA);
     protected readonly maxDescriptionLength = MAX_DESCRIPTION_LENGTH;
     protected readonly form = new FormGroup({
-        name: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
-        rounds: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),
-        description: new FormControl<string>('', {
+        name: new FormControl<string>(this.data.condition?.name ?? '', {
+            nonNullable: true,
+            validators: [Validators.required]
+        }),
+        rounds: new FormControl<number | null>(this.data.condition?.rounds ?? null, {
+            validators: [Validators.min(1)]
+        }),
+        description: new FormControl<string>(this.data.condition?.description ?? '', {
             nonNullable: true,
             validators: [Validators.maxLength(MAX_DESCRIPTION_LENGTH)]
         })
     });
 
     private readonly dialogRef = inject<DialogRef<ICombatCondition | null>>(DialogRef);
-    private readonly query = toSignal(this.form.controls.name.valueChanges, { initialValue: '' });
+    private readonly query = toSignal(this.form.controls.name.valueChanges, {
+        initialValue: this.form.controls.name.value
+    });
 
+    // A suggestion that matches the name exactly adds nothing, so a pre-filled edit opens without a panel.
     protected readonly suggestions = computed<string[]>(() => {
         const query = this.query().trim().toLowerCase();
-        return this.data.suggestions.filter((suggestion) => suggestion.toLowerCase().includes(query));
+        return this.data.suggestions.filter((suggestion) => {
+            const candidate = suggestion.toLowerCase();
+            return candidate !== query && candidate.includes(query);
+        });
     });
 
     protected confirm(): void {

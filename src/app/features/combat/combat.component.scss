@@ -104,12 +104,14 @@
     gap: 12px;
     padding: 8px 10px;
     border: 1px solid var(--cdx-border);
+    border-left: 4px solid var(--cdx-combatant-color, var(--cdx-border));
     border-radius: 8px;
     background: var(--cdx-surface-2);
 }
 
 .cdx-combat-row-active {
     border-color: var(--cdx-primary);
+    border-left-color: var(--cdx-combatant-color, var(--cdx-primary));
     background: var(--cdx-primary-tint);
 }
 
@@ -152,6 +154,42 @@
     font-weight: 500;
 }
 
+.cdx-combat-nudge {
+    width: 44px;
+    color: var(--cdx-text-muted);
+    font-size: 12px;
+}
+
+.cdx-combat-color {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid var(--cdx-border);
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+
+    &::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+
+    &::-webkit-color-swatch {
+        border: none;
+        border-radius: 50%;
+    }
+
+    &::-moz-color-swatch {
+        border: none;
+        border-radius: 50%;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 1px;
+    }
+}
+
 .cdx-combat-identity {
     display: flex;
     flex: 1 1 160px;
@@ -162,8 +200,26 @@
 }
 
 .cdx-combat-name {
-    color: var(--cdx-text-primary);
+    color: var(--cdx-combatant-color, var(--cdx-text-primary));
     font-size: 13px;
+}
+
+// Reads as plain text until hovered or focused, so the row doesn't look like a form.
+.cdx-combat-name-input {
+    flex: 1 1 120px;
+    min-width: 0;
+    max-width: 240px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--cdx-combatant-color, var(--cdx-text-primary));
+    font-size: 13px;
+    text-align: left;
+
+    &:hover,
+    &:focus {
+        border-color: var(--cdx-border);
+        background: var(--cdx-surface-1);
+    }
 }
 
 .cdx-combat-kind {
@@ -189,6 +245,27 @@
 
 .cdx-combat-condition-described {
     cursor: help;
+}
+
+.cdx-combat-condition-edit {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: inherit;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
 }
 
 .cdx-combat-condition-info {

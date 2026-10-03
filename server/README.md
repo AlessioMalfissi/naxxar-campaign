@@ -158,7 +158,9 @@ Every route below also requires a valid session cookie.
 | `PUT` | `/api/combat` | Replace the encounter. `combatants` must be a list of at most 100, each with a unique non-blank `id` and `name`; anything else fails with `400`. |
 
 Each combatant carries `kind` (`"player"` or `"enemy"`, defaulting to `"enemy"`), `entryId` (the
-`players` entry it was added from, or `null`), an integer `initiative`, nullable non-negative integers
+`players` entry it was added from, or `null`), an integer `initiative`, an integer `initiativeNudge`
+(breaks initiative ties, higher first; defaults to 0), a `color` (`#rrggbb`, or `null` for the default
+colour of its kind - anything else is stored as `null`), a `name` capped at 100 characters, nullable non-negative integers
 `hp`, `maxHp` and `ac` (players only - they are always stored as `null` for an enemy), and `conditions` - a list of `{ name, rounds }`, where `rounds` is the number of
 rounds left (at least 1) or `null` for a condition that lasts until removed. `round` is clamped to 0 or
 more, and a `turnId` that doesn't match a combatant is stored as `null`.

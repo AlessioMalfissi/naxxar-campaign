@@ -19,6 +19,12 @@ export const COMBAT_CONDITIONS: readonly string[] = [
     'Unconscious'
 ];
 
+// Row colours used when a combatant has no colour of its own.
+export const DEFAULT_COMBATANT_COLORS: Readonly<Record<CombatantKind, string>> = {
+    [CombatantKind.Player]: '#85b7eb',
+    [CombatantKind.Enemy]: '#ef9f27'
+};
+
 export interface ICombatCondition {
     name: string;
     // Rounds left, counted down at the end of the affected combatant's turn; null lasts until removed.
@@ -34,6 +40,10 @@ export interface ICombatant {
     // `players:<slug>` for a combatant added from the codex, null for a custom enemy.
     entryId: string | null;
     initiative: number;
+    // Breaks initiative ties: among equal initiatives the higher nudge acts first.
+    initiativeNudge: number;
+    // #rrggbb row colour; null uses the default colour for the combatant's kind.
+    color: string | null;
     // Hit points and armour class are tracked for players only; always null for an enemy.
     hp: number | null;
     maxHp: number | null;
@@ -44,6 +54,8 @@ export interface ICombatant {
 export interface ICombatantChanges {
     name?: string;
     initiative?: number;
+    initiativeNudge?: number;
+    color?: string | null;
     hp?: number | null;
     maxHp?: number | null;
     ac?: number | null;

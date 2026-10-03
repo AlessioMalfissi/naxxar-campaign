@@ -1,9 +1,10 @@
-import { CombatantKind } from '@core/models';
+import { CombatantKind, DEFAULT_COMBATANT_COLORS } from '@core/models';
 import { buildCombatant, buildEncounter, buildPlayerCombatant } from '@testing/combat.fixtures';
 import {
     addCombatants,
     addCondition,
     adjustHp,
+    colorOf,
     advanceTurn,
     createCombatantId,
     describeHealth,
@@ -14,8 +15,10 @@ import {
     revertTurn,
     rollD20,
     sortByInitiative,
+    sortConditions,
     startCombat,
-    updateCombatant
+    updateCombatant,
+    updateCondition
 } from './combat.util';
 
 const ORC = buildCombatant({ id: 'orc', name: 'Orc', initiative: 5 });
@@ -32,6 +35,33 @@ describe('combat util', () => {
 
             // Assert
             expect(order).toEqual(['tessaly', 'goblin-1', 'goblin-2', 'orc']);
+        });
+
+        it('should break initiative ties by the higher nudge', () => {
+            // Arrange
+            const nudged = buildCombatant({ id: 'goblin-2', name: 'Goblin 2', initiativeNudge: 1 });
+            const lowered = buildCombatant({ id: 'goblin-3', name: 'Goblin 3', initiativeNudge: -1 });
+            const combatants = [lowered, buildCombatant(), ORC, nudged, buildPlayerCombatant()];
+
+            // Act
+            const order = sortByInitiative(combatants).map((combatant) => combatant.id);
+
+            // Assert
+            expect(order).toEqual(['tessaly', 'goblin-2', 'goblin-1', 'goblin-3', 'orc']);
+        });
+    });
+
+    describe('colorOf', () => {
+        it('should use the combatant colour or fall back to the default for its kind', () => {
+            // Act
+            const own = colorOf(buildCombatant({ color: '#aa00cc' }));
+            const enemy = colorOf(buildCombatant());
+            const player = colorOf(buildPlayerCombatant());
+
+            // Assert
+            expect(own).toBe('#aa00cc');
+            expect(enemy).toBe(DEFAULT_COMBATANT_COLORS[CombatantKind.Enemy]);
+            expect(player).toBe(DEFAULT_COMBATANT_COLORS[CombatantKind.Player]);
         });
     });
 
@@ -377,6 +407,105 @@ describe('combat util', () => {
 
             // Assert
             expect(updated.combatants[0].conditions).toEqual([{ name: 'poisoned', rounds: 10 }]);
+        });
+
+        it('should keep conditions sorted alphabetically when one is added', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                combatants: [
+                    buildCombatant({
+                        conditions: [
+                            { name: 'Grappled', rounds: null },
+                            { name: 'Prone', rounds: null }
+                        ]
+                    })
+                ]
+            });
+
+            // Act
+            const first = addCondition(encounter, 'goblin-1', { name: 'blinded', rounds: 2 });
+            const middle = addCondition(first, 'goblin-1', { name: 'Hexed', rounds: null });
+
+            // Assert
+            expect(middle.combatants[0].conditions.map((condition) => condition.name)).toEqual([
+                'blinded',
+                'Grappled',
+                'Hexed',
+                'Prone'
+            ]);
+        });
+
+        it('should sort conditions alphabetically ignoring case', () => {
+            // Arrange
+            const conditions = [
+                { name: 'Prone', rounds: null },
+                { name: 'charmed', rounds: null },
+                { name: 'Blinded', rounds: null }
+            ];
+
+            // Act
+            const sorted = sortConditions(conditions);
+
+            // Assert
+            expect(sorted.map((condition) => condition.name)).toEqual(['Blinded', 'charmed', 'Prone']);
+            expect(conditions[0].name).toBe('Prone');
+        });
+
+        it('should update a condition in place of the old one', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                combatants: [
+                    buildCombatant({
+                        conditions: [
+                            { name: 'Grappled', rounds: null },
+                            { name: 'Prone', rounds: 2 }
+                        ]
+                    })
+                ]
+            });
+
+            // Act
+            const updated = updateCondition(encounter, 'goblin-1', 'Prone', {
+                name: 'Prone',
+                rounds: 5,
+                description: 'Stand up costs half movement.'
+            });
+
+            // Assert
+            expect(updated.combatants[0].conditions).toEqual([
+                { name: 'Grappled', rounds: null },
+                { name: 'Prone', rounds: 5, description: 'Stand up costs half movement.' }
+            ]);
+        });
+
+        it('should re-sort a renamed condition and merge it with one of the same name', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                combatants: [
+                    buildCombatant({
+                        conditions: [
+                            { name: 'Blinded', rounds: null },
+                            { name: 'Grappled', rounds: 1 },
+                            { name: 'Prone', rounds: null }
+                        ]
+                    })
+                ]
+            });
+
+            // Act
+            const renamed = updateCondition(encounter, 'goblin-1', 'Blinded', { name: 'Restrained', rounds: 3 });
+            const merged = updateCondition(renamed, 'goblin-1', 'Restrained', { name: 'grappled', rounds: 4 });
+
+            // Assert
+            expect(renamed.combatants[0].conditions.map((condition) => condition.name)).toEqual([
+                'Grappled',
+                'Prone',
+                'Restrained'
+            ]);
+            expect(merged.combatants[0].conditions).toEqual([
+                { name: 'grappled', rounds: 4 },
+                { name: 'Prone', rounds: null }
+            ]);
         });
 
         it('should remove a condition by name', () => {

@@ -13,12 +13,17 @@ const MAX_CONDITIONS = 30;
 
 const MAX_CONDITION_DESCRIPTION = 500;
 
+const MAX_NAME_LENGTH = 100;
+
+const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+
 const EMPTY_ENCOUNTER = { round: 0, turnId: null, combatants: [] };
 
+// Encounters saved before colours and nudges existed read back with their defaults.
 const toPublicEncounter = (doc) => ({
     round: doc.round,
     turnId: doc.turnId,
-    combatants: doc.combatants
+    combatants: doc.combatants.map((combatant) => ({ initiativeNudge: 0, color: null, ...combatant }))
 });
 
 const normalizeInteger = (value, fallback) => {
@@ -37,6 +42,9 @@ const normalizeOptionalInteger = (value, min) => {
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
+// A colour is a #rrggbb hex; anything else falls back to null, the default colour for the combatant's kind.
+const normalizeColor = (value) => (typeof value === 'string' && COLOR_PATTERN.test(value) ? value.toLowerCase() : null);
+
 const normalizeCondition = (value) => {
     const name = normalizeText(value?.name);
     if (name === '') {
@@ -50,7 +58,7 @@ const normalizeCondition = (value) => {
 
 const normalizeCombatant = (value) => {
     const id = normalizeText(value?.id);
-    const name = normalizeText(value?.name);
+    const name = normalizeText(value?.name).slice(0, MAX_NAME_LENGTH);
     if (id === '' || name === '') {
         throw new HttpError(400, 'Every combatant needs an id and a name.');
     }
@@ -67,6 +75,8 @@ const normalizeCombatant = (value) => {
         kind,
         entryId: entryId === '' ? null : entryId,
         initiative: normalizeInteger(value.initiative, 0),
+        initiativeNudge: normalizeInteger(value.initiativeNudge, 0),
+        color: normalizeColor(value.color),
         hp: tracksStats ? normalizeOptionalInteger(value.hp, 0) : null,
         maxHp: tracksStats ? normalizeOptionalInteger(value.maxHp, 0) : null,
         ac: tracksStats ? normalizeOptionalInteger(value.ac, 0) : null,

@@ -108,13 +108,16 @@ to a markdown file, front matter included, for archiving or diffing outside the 
 The Combat tab, under Inventory in the sidebar, is a turn tracker for one fight at a time. Players are
 added from the codex's `players` entries; enemies are typed in with a name, an optional count (copies are
 numbered, "Goblin 1", "Goblin 2") and an initiative - a blank initiative rolls a d20 per copy. Enemies
-carry no HP or AC; only players do. The turn order sorts by initiative, highest first, and initiative
-plus each player's HP and AC are editable in place.
+carry no HP or AC; only players do. The turn order sorts by initiative, highest first; among equal
+initiatives the higher **nudge** (the small field beside initiative) acts first, so tied monsters can be
+ordered. Names, initiative and nudge are editable in place. Each row has a colour - players and enemies
+default to two different colours, and the swatch beside the name picks another.
 
 **Start combat** begins round 1 on the highest initiative; **Next turn** walks down the order and starts a
 new round after the last combatant, and **Previous** steps back. Each combatant carries conditions - the
 fifteen 2024 PHB conditions are suggested, any custom name works - with an optional duration in rounds,
-counted down at the end of that combatant's turn. **End combat** clears the enemies and resets the
+counted down at the end of that combatant's turn. Clicking a condition reopens it for editing, and a
+combatant's conditions stay sorted alphabetically. **End combat** clears the enemies and resets the
 round; the party stays with its hit points and conditions.
 
 The encounter is saved to the API after every change, so it survives a reload and the sidebar shows the

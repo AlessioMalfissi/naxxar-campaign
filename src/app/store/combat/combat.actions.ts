@@ -31,6 +31,12 @@ export const conditionAdded = createAction(
     props<{ id: string; condition: ICombatCondition }>()
 );
 
+// `name` is the condition's name before the edit, so a rename still finds it.
+export const conditionUpdated = createAction(
+    `[${SOURCE}] condition updated`,
+    props<{ id: string; name: string; condition: ICombatCondition }>()
+);
+
 export const conditionRemoved = createAction(`[${SOURCE}] condition removed`, props<{ id: string; name: string }>());
 
 export const combatStarted = createAction(`[${SOURCE}] combat started`);
@@ -48,6 +54,7 @@ export const ENCOUNTER_MUTATIONS = [
     combatantRemoved,
     hpAdjusted,
     conditionAdded,
+    conditionUpdated,
     conditionRemoved,
     combatStarted,
     turnAdvanced,

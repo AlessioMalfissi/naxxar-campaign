@@ -6,6 +6,8 @@ export const buildCombatant = (overrides: Partial<ICombatant> = {}): ICombatant 
     kind: CombatantKind.Enemy,
     entryId: null,
     initiative: 12,
+    initiativeNudge: 0,
+    color: null,
     hp: null,
     maxHp: null,
     ac: null,
