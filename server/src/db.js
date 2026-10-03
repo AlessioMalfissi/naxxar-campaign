@@ -15,5 +15,7 @@ export const connectToMongo = async ({ uri, dbName }) => {
 
     const pursesCollection = db.collection('purses');
 
-    return { client, collection, inventoryCollection, pursesCollection };
+    const combatCollection = db.collection('combat');
+
+    return { client, collection, inventoryCollection, pursesCollection, combatCollection };
 };

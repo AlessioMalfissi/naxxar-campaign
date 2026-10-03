@@ -8,6 +8,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { CodexSection } from '@core/models';
 import * as CodexActions from '@store/codex/codex.actions';
 import { selectActiveSection, selectSidebarCollapsed } from '@store/codex/codex.selectors';
+import * as CombatActions from '@store/combat/combat.actions';
 import * as InventoryActions from '@store/inventory/inventory.actions';
 import { CampaignShellComponent } from './campaign-shell.component';
 import { CodexHeaderComponent } from './codex-header.component';
@@ -67,6 +68,17 @@ describe('CampaignShellComponent', () => {
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(InventoryActions.loadItems.request({}));
+    });
+
+    it('should request the combat encounter on init so the sidebar can show the round', () => {
+        // Arrange
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.loadEncounter.request({}));
     });
 
     it('should start the sidebar collapsed on tablet and phone viewports', () => {

@@ -60,6 +60,20 @@
                 <span class="cdx-sidebar-count">{{ inventoryCount() }}</span>
             }
         </a>
+        <a
+            class="cdx-sidebar-item"
+            [class.cdx-sidebar-item-active]="isCombatActive()"
+            [routerLink]="['/campaign', 'combat']"
+            [matTooltip]="collapsed() ? 'Combat' : ''"
+        >
+            <mat-icon>sports_kabaddi</mat-icon>
+            @if (!collapsed()) {
+                <span class="cdx-sidebar-label">Combat</span>
+                @if (combatInProgress()) {
+                    <span class="cdx-sidebar-count">Round {{ combatRound() }}</span>
+                }
+            }
+        </a>
     </nav>
 
     @if (!collapsed() && recentEntries().length > 0) {

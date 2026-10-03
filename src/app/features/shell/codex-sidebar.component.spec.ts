@@ -15,6 +15,7 @@ import {
     selectSectionCounts,
     selectSidebarCollapsed
 } from '@store/codex/codex.selectors';
+import { selectCombatInProgress, selectCombatRound } from '@store/combat/combat.selectors';
 import { selectInventoryItemCount } from '@store/inventory/inventory.selectors';
 import { CodexSidebarComponent } from './codex-sidebar.component';
 
@@ -57,13 +58,15 @@ describe('CodexSidebarComponent', () => {
         store.overrideSelector(selectSectionCounts, { npcs: 3 });
         store.overrideSelector(selectRecentEntries, [buildSummary()]);
         store.overrideSelector(selectInventoryItemCount, 2);
+        store.overrideSelector(selectCombatInProgress, false);
+        store.overrideSelector(selectCombatRound, 0);
 
         fixture = TestBed.createComponent(CodexSidebarComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });
 
-    it('should render a nav item per section plus the inventory link, with its count', () => {
+    it('should render a nav item per section plus the inventory and combat links', () => {
         // Arrange
         const items = fixture.nativeElement.querySelectorAll('.cdx-sidebar-item') as NodeListOf<HTMLElement>;
 
@@ -71,7 +74,7 @@ describe('CodexSidebarComponent', () => {
         const activeItem = fixture.nativeElement.querySelector('.cdx-sidebar-item-active') as HTMLElement;
 
         // Assert
-        expect(items.length).toBe(6);
+        expect(items.length).toBe(7);
         expect((activeItem.textContent ?? '').includes('3')).toBe(true);
     });
 
@@ -152,6 +155,57 @@ describe('CodexSidebarComponent', () => {
         // Assert
         expect(activeSectionItems.length).toBe(0);
         expect(activeInventoryItems.length).toBe(1);
+    });
+
+    it('should render the combat link below inventory', () => {
+        // Arrange
+        const partyLinks = fixture.nativeElement.querySelectorAll(
+            '[aria-label="Party"] .cdx-sidebar-item'
+        ) as NodeListOf<HTMLElement>;
+
+        // Act
+        const labels = [...partyLinks].map((link) => (link.textContent ?? '').trim());
+
+        // Assert
+        expect(labels.length).toBe(2);
+        expect(labels[0].startsWith('inventory_2')).toBe(true);
+        expect(labels[1].includes('Combat')).toBe(true);
+        expect(labels[1].includes('Round')).toBe(false);
+    });
+
+    it('should show the current round on the combat link while a fight is running', () => {
+        // Arrange
+        store.overrideSelector(selectCombatInProgress, true);
+        store.overrideSelector(selectCombatRound, 4);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+        const partyLinks = fixture.nativeElement.querySelectorAll(
+            '[aria-label="Party"] .cdx-sidebar-item'
+        ) as NodeListOf<HTMLElement>;
+
+        // Assert
+        expect((partyLinks[1].textContent ?? '').includes('Round 4')).toBe(true);
+    });
+
+    it('should mark only the combat link active on the combat route', async () => {
+        // Arrange
+        const router = TestBed.inject(Router);
+
+        // Act
+        await router.navigateByUrl('/campaign/combat');
+        fixture.detectChanges();
+        const activeItems = fixture.nativeElement.querySelectorAll(
+            '.cdx-sidebar-item-active'
+        ) as NodeListOf<HTMLElement>;
+
+        // Assert
+        expect(component['isCombatActive']()).toBe(true);
+        expect(component['isInventoryActive']()).toBe(false);
+        expect(component['isSectionActive'](CodexSection.Npcs)).toBe(false);
+        expect(activeItems.length).toBe(1);
+        expect((activeItems[0].textContent ?? '').includes('Combat')).toBe(true);
     });
 
     it('should report zero for a section without entries', () => {

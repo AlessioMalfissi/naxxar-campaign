@@ -1,0 +1,20 @@
+<form class="cdx-modal" [formGroup]="form" (ngSubmit)="confirm()">
+    <h2 class="cdx-modal-title">{{ data.title }}</h2>
+    <mat-form-field appearance="outline" class="cdx-modal-field">
+        <mat-label>Condition</mat-label>
+        <input matInput formControlName="name" placeholder="Prone" [matAutocomplete]="conditionOptions" />
+    </mat-form-field>
+    <mat-autocomplete #conditionOptions="matAutocomplete">
+        @for (suggestion of suggestions(); track suggestion) {
+            <mat-option [value]="suggestion">{{ suggestion }}</mat-option>
+        }
+    </mat-autocomplete>
+    <mat-form-field appearance="outline" class="cdx-modal-field">
+        <mat-label>Duration in rounds</mat-label>
+        <input matInput type="number" min="1" formControlName="rounds" placeholder="Until removed" />
+    </mat-form-field>
+    <div class="cdx-modal-actions">
+        <button mat-button type="button" (click)="cancel()">Cancel</button>
+        <button mat-flat-button type="submit">Add condition</button>
+    </div>
+</form>

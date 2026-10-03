@@ -3,12 +3,13 @@ import express from 'express';
 import { join, resolve } from 'node:path';
 
 import { createAuthRouter, requireAuth } from './auth.js';
+import { createCombatRouter } from './combat.js';
 import { createEntriesRouter } from './entries.js';
 import { createInventoryRouter } from './inventory.js';
 import { createPursesRouter } from './purses.js';
 import { HttpError } from './http-error.js';
 
-export const createApp = ({ entries, inventory, purses }, { staticDir = null, appPassword, sessionSecret } = {}) => {
+export const createApp = ({ entries, inventory, purses, combat }, { staticDir = null, appPassword, sessionSecret } = {}) => {
     if (typeof appPassword !== 'string' || appPassword === '') {
         throw new Error('createApp requires a non-empty appPassword.');
     }
@@ -24,6 +25,7 @@ export const createApp = ({ entries, inventory, purses }, { staticDir = null, ap
     app.use('/api/entries', requireAuth(secret), createEntriesRouter(entries));
     app.use('/api/inventory', requireAuth(secret), createInventoryRouter(inventory));
     app.use('/api/purses', requireAuth(secret), createPursesRouter(purses));
+    app.use('/api/combat', requireAuth(secret), createCombatRouter(combat));
 
     if (staticDir !== null) {
         const absoluteStaticDir = resolve(staticDir);

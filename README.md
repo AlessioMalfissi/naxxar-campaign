@@ -103,25 +103,45 @@ Saves go through `CodexApiService` to the Express API in `server/`, which persis
 else in the app reaches for storage. The overflow menu on any entry additionally exports its current state
 to a markdown file, front matter included, for archiving or diffing outside the app.
 
+### Combat
+
+The Combat tab, under Inventory in the sidebar, is a turn tracker for one fight at a time. Players are
+added from the codex's `players` entries; enemies are typed in with an optional count (copies are
+numbered, "Goblin 1", "Goblin 2"), initiative, HP and AC - a blank initiative rolls a d20 per copy. The
+turn order sorts by initiative, highest first, and every score, HP and AC value is editable in place.
+
+**Start combat** begins round 1 on the highest initiative; **Next turn** walks down the order and starts a
+new round after the last combatant, and **Previous** steps back. Each combatant carries conditions - the
+fifteen 2024 PHB conditions are suggested, any custom name works - with an optional duration in rounds,
+counted down at the end of that combatant's turn. **End combat** clears the enemies and resets the
+round; the party stays with its hit points and conditions.
+
+The encounter is saved to the API after every change, so it survives a reload and the sidebar shows the
+current round. In player view the tracker is read-only and enemy HP and AC are replaced by Healthy /
+Bloodied / Down.
+
 ## Layout
 
 ```
 src/app/
 ├── core/
 │   ├── models/            enums, I-prefixed interfaces, section definitions
-│   ├── services/          codex api, markdown render / command / export
-│   └── utils/             front matter parsing, entry ids, slugs
+│   ├── services/          codex, inventory, purse and combat api, markdown render / command / export
+│   └── utils/             front matter parsing, entry ids, slugs, combat turn rules
 ├── shared/
 │   ├── datatable/         DataTableComponent - read-only tables
-│   └── modal/             ModalService over the CDK Dialog, confirm/prompt/create-entry modals
+│   └── modal/             ModalService over the CDK Dialog, confirm/prompt/create-entry/condition modals
 ├── store/
 │   ├── create-api-action.ts
 │   ├── codex/             entries, index, filters, active section, player mode
+│   ├── combat/            encounter, turn order, round, saves the encounter after every change
 │   └── editor/            draft body, dirty flag, save status, view mode, autosave
 └── features/
     ├── shell/             campaign shell, header, tab bar, sidebar
     ├── section-list/      table and card views with status and tag filters
-    └── entry-detail/      entry header, markdown toolbar, markdown editor
+    ├── entry-detail/      entry header, markdown toolbar, markdown editor
+    ├── inventory/         party and per-player items and gold
+    └── combat/            initiative tracker: turn order, rounds, enemies, hit points, conditions
 
 server/
 ├── src/                   Express app, MongoDB access, routes (see server/README.md)

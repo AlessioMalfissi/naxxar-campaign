@@ -1,10 +1,12 @@
 # naxxar-campaign-server
 
-Express + MongoDB API backing the Naxxar campaign codex. Three collections: `entries`, one document per
+Express + MongoDB API backing the Naxxar campaign codex. Four collections: `entries`, one document per
 codex entry, shaped like `ICodexEntry` (see `../src/app/core/models/i-codex-entry.ts`); `inventory`, one
 document per inventory item, shaped like `IInventoryItem` (see
-`../src/app/core/models/i-inventory-item.ts`); and `purses`, one document per gold-tracking owner (the
-party, or a player), shaped like `IPurse` (see `../src/app/core/models/i-purse.ts`).
+`../src/app/core/models/i-inventory-item.ts`); `purses`, one document per gold-tracking owner (the
+party, or a player), shaped like `IPurse` (see `../src/app/core/models/i-purse.ts`); and `combat`, a
+single document holding the running encounter, shaped like `IEncounter` (see
+`../src/app/core/models/i-encounter.ts`).
 
 ## Setup
 
@@ -145,13 +147,43 @@ curl -X PUT http://localhost:8000/api/purses/party \
   -d '{ "gold": 120 }'
 ```
 
+## Combat endpoints
+
+The combat tracker is one encounter document (`_id: "current"`) that the app reads and writes whole.
+Every route below also requires a valid session cookie.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/combat` | The current encounter. Before anything has been saved this is `{ "round": 0, "turnId": null, "combatants": [] }`. |
+| `PUT` | `/api/combat` | Replace the encounter. `combatants` must be a list of at most 100, each with a unique non-blank `id` and `name`; anything else fails with `400`. |
+
+Each combatant carries `kind` (`"player"` or `"enemy"`, defaulting to `"enemy"`), `entryId` (the
+`players` entry it was added from, or `null`), an integer `initiative`, nullable non-negative integers
+`hp`, `maxHp` and `ac`, and `conditions` - a list of `{ name, rounds }`, where `rounds` is the number of
+rounds left (at least 1) or `null` for a condition that lasts until removed. `round` is clamped to 0 or
+more, and a `turnId` that doesn't match a combatant is stored as `null`.
+
+```bash
+curl -X PUT http://localhost:8000/api/combat \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "round": 1,
+    "turnId": "goblin-1",
+    "combatants": [
+      { "id": "goblin-1", "name": "Goblin 1", "kind": "enemy", "initiative": 14, "hp": 7, "maxHp": 7, "ac": 15,
+        "conditions": [{ "name": "Prone", "rounds": null }] }
+    ]
+  }'
+```
+
 ## Layout
 
 ```
 server/
 ├── src/
-│   ├── app.js          Express app factory - takes { entries, inventory, purses } Mongo collections as a dependency
+│   ├── app.js          Express app factory - takes { entries, inventory, purses, combat } Mongo collections as a dependency
 │   ├── auth.js           the /api/auth router and the requireAuth middleware
+│   ├── combat.js         the /api/combat router
 │   ├── config.js        reads PORT / MONGODB_URI / MONGODB_DB / STATIC_DIR / APP_PASSWORD / SESSION_SECRET
 │   ├── db.js             connects to MongoDB, ensures indexes
 │   ├── entries.js        the /api/entries router

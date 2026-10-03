@@ -1,0 +1,236 @@
+:host {
+    display: block;
+    min-width: 0;
+}
+
+.cdx-combat {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cdx-section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.cdx-section-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--cdx-text-primary);
+}
+
+.cdx-section-count {
+    font-size: 11px;
+    color: var(--cdx-text-muted);
+}
+
+.cdx-section-empty {
+    color: var(--cdx-text-muted);
+    font-size: 13px;
+}
+
+.cdx-combat-round {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--cdx-primary-tint);
+    color: var(--cdx-primary-text);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.cdx-combat-head-spacer {
+    flex: 1;
+}
+
+.cdx-combat-error {
+    margin: 0;
+    color: var(--cdx-danger);
+    font-size: 12px;
+}
+
+.cdx-combat-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+// Material's own `.mat-mdc-button:not(:disabled)` colour rule outranks a plain class, so the
+// label colour goes through its token instead.
+.cdx-combat-end {
+    --mdc-text-button-label-text-color: var(--cdx-danger);
+}
+
+.cdx-combat-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 12px;
+    background: var(--cdx-surface-1);
+}
+
+.cdx-combat-field-name {
+    flex: 1 1 200px;
+}
+
+.cdx-combat-field-number {
+    flex: 0 1 100px;
+}
+
+.cdx-combat-add-button {
+    align-self: center;
+}
+
+.cdx-combat-order {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cdx-combat-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 8px;
+    background: var(--cdx-surface-2);
+}
+
+.cdx-combat-row-active {
+    border-color: var(--cdx-primary);
+    background: var(--cdx-primary-tint);
+}
+
+.cdx-combat-row-down {
+    opacity: 0.6;
+
+    .cdx-combat-name {
+        text-decoration: line-through;
+    }
+}
+
+.cdx-combat-marker {
+    display: flex;
+    flex: none;
+    width: 20px;
+    color: var(--cdx-primary);
+
+    mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.cdx-combat-input {
+    width: 56px;
+    padding: 4px 8px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 6px;
+    background: var(--cdx-surface-1);
+    color: var(--cdx-text-primary);
+    font: inherit;
+    text-align: right;
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 1px;
+    }
+
+    &:disabled {
+        border-color: transparent;
+        background: transparent;
+        color: var(--cdx-text-primary);
+    }
+}
+
+.cdx-combat-initiative {
+    font-weight: 500;
+}
+
+.cdx-combat-identity {
+    display: flex;
+    flex: 1 1 160px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.cdx-combat-name {
+    color: var(--cdx-text-primary);
+    font-size: 13px;
+}
+
+.cdx-combat-kind {
+    padding: 0 6px;
+    border-radius: 4px;
+    background: rgb(255 255 255 / 6%);
+    color: var(--cdx-info);
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.cdx-combat-kind-enemy {
+    color: var(--cdx-warning);
+}
+
+.cdx-combat-health {
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+}
+
+.cdx-combat-stats {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 12px;
+}
+
+.cdx-combat-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cdx-combat-stat-label {
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+}
+
+.cdx-combat-hp-change {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+}
+
+.cdx-combat-conditions {
+    display: flex;
+    flex: 1 1 200px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.cdx-combat-condition-rounds {
+    margin-left: 4px;
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+}
+
+.cdx-combat-add-condition {
+    font-size: 12px;
+}
