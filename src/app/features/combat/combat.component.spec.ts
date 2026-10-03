@@ -154,7 +154,7 @@ describe('CombatComponent', () => {
 
     it('should mark a combatant at 0 HP as down', () => {
         // Arrange
-        setTurnOrder([buildCombatant({ hp: 0 })]);
+        setTurnOrder([buildPlayerCombatant({ hp: 0 })]);
 
         // Act
         fixture.detectChanges();
@@ -213,12 +213,12 @@ describe('CombatComponent', () => {
         expect(dispatchSpy).not.toHaveBeenCalled();
     });
 
-    it('should add a single enemy with the entered stats', () => {
+    it('should add a single enemy without hit points or armour class', () => {
         // Arrange
         setTurnOrder([]);
         fixture.detectChanges();
         const dispatchSpy = jest.spyOn(store, 'dispatch');
-        component['enemyForm'].setValue({ name: ' Ogre ', count: 1, initiative: 8, hp: 59, ac: 11 });
+        component['enemyForm'].setValue({ name: ' Ogre ', count: 1, initiative: 8 });
 
         // Act
         component['addEnemies']();
@@ -233,9 +233,9 @@ describe('CombatComponent', () => {
                         kind: CombatantKind.Enemy,
                         entryId: null,
                         initiative: 8,
-                        hp: 59,
-                        maxHp: 59,
-                        ac: 11,
+                        hp: null,
+                        maxHp: null,
+                        ac: null,
                         conditions: []
                     }
                 ]
@@ -250,7 +250,7 @@ describe('CombatComponent', () => {
         fixture.detectChanges();
         const dispatchSpy = jest.spyOn(store, 'dispatch');
         const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
-        component['enemyForm'].setValue({ name: 'Goblin', count: 2, initiative: null, hp: null, ac: null });
+        component['enemyForm'].setValue({ name: 'Goblin', count: 2, initiative: null });
 
         // Act
         component['addEnemies']();
@@ -269,7 +269,7 @@ describe('CombatComponent', () => {
         setTurnOrder([buildCombatant({ name: 'Ogre' })]);
         fixture.detectChanges();
         const dispatchSpy = jest.spyOn(store, 'dispatch');
-        component['enemyForm'].setValue({ name: 'ogre', count: 1, initiative: 3, hp: null, ac: null });
+        component['enemyForm'].setValue({ name: 'ogre', count: 1, initiative: 3 });
 
         // Act
         component['addEnemies']();
@@ -282,7 +282,7 @@ describe('CombatComponent', () => {
     it('should clear the submitted state after adding through the form', () => {
         // Arrange
         fixture.detectChanges();
-        component['enemyForm'].setValue({ name: 'Ogre', count: 1, initiative: 8, hp: null, ac: null });
+        component['enemyForm'].setValue({ name: 'Ogre', count: 1, initiative: 8 });
         const form = fixture.nativeElement.querySelector('.cdx-combat-form') as HTMLFormElement;
 
         // Act
@@ -343,36 +343,34 @@ describe('CombatComponent', () => {
         // Arrange
         fixture.detectChanges();
         const dispatchSpy = jest.spyOn(store, 'dispatch');
-        const goblin = buildCombatant();
+        const tessaly = buildPlayerCombatant();
 
         // Act
-        component['changeStat'](goblin, 'ac', changeEvent(''));
-        component['changeStat'](goblin, 'hp', changeEvent('-3'));
-        component['changeStat'](goblin, 'maxHp', changeEvent('7'));
+        component['changeStat'](tessaly, 'ac', changeEvent(''));
+        component['changeStat'](tessaly, 'hp', changeEvent('-3'));
+        component['changeStat'](tessaly, 'maxHp', changeEvent('24'));
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledTimes(2);
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            CombatActions.combatantUpdated({ id: 'goblin-1', changes: { ac: null } })
-        );
-        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.combatantUpdated({ id: 'goblin-1', changes: { hp: 0 } }));
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.combatantUpdated({ id: 'tessaly', changes: { ac: null } }));
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.combatantUpdated({ id: 'tessaly', changes: { hp: 0 } }));
     });
 
     it('should apply damage and healing from the amount field, then clear it', () => {
         // Arrange
         fixture.detectChanges();
         const dispatchSpy = jest.spyOn(store, 'dispatch');
-        const goblin = buildCombatant();
+        const tessaly = buildPlayerCombatant();
         const damageInput = inputWithValue('4');
         const healInput = inputWithValue('2');
 
         // Act
-        component['damage'](goblin, damageInput);
-        component['heal'](goblin, healInput);
+        component['damage'](tessaly, damageInput);
+        component['heal'](tessaly, healInput);
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.hpAdjusted({ id: 'goblin-1', delta: -4 }));
-        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.hpAdjusted({ id: 'goblin-1', delta: 2 }));
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.hpAdjusted({ id: 'tessaly', delta: -4 }));
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.hpAdjusted({ id: 'tessaly', delta: 2 }));
         expect(damageInput.value).toBe('');
         expect(healInput.value).toBe('');
     });
@@ -383,8 +381,8 @@ describe('CombatComponent', () => {
         const dispatchSpy = jest.spyOn(store, 'dispatch');
 
         // Act
-        component['damage'](buildCombatant(), inputWithValue(''));
-        component['heal'](buildCombatant(), inputWithValue('-5'));
+        component['damage'](buildPlayerCombatant(), inputWithValue(''));
+        component['heal'](buildPlayerCombatant(), inputWithValue('-5'));
 
         // Assert
         expect(dispatchSpy).not.toHaveBeenCalled();
@@ -552,7 +550,7 @@ describe('CombatComponent', () => {
         expect(dispatchSpy).not.toHaveBeenCalled();
     });
 
-    it('should hide the controls and enemy stats in player view', () => {
+    it('should hide the controls in player view', () => {
         // Arrange
         fixture.detectChanges();
 
@@ -565,9 +563,8 @@ describe('CombatComponent', () => {
         expect(fixture.nativeElement.querySelector('.cdx-combat-controls') === null).toBe(true);
         expect(fixture.nativeElement.querySelector('.cdx-combat-form') === null).toBe(true);
         expect(rows[0].querySelector('.cdx-combat-stats') !== null).toBe(true);
-        expect(rows[1].querySelector('.cdx-combat-stats') === null).toBe(true);
+        expect(rows[0].querySelector('.cdx-combat-hp-change') === null).toBe(true);
         expect(rows[1].querySelector('[aria-label="Remove from combat"]') === null).toBe(true);
-        expect((rows[1].textContent ?? '').includes('Healthy')).toBe(true);
     });
 
     it('should hide a player stat that is not tracked in player view', () => {
@@ -584,13 +581,28 @@ describe('CombatComponent', () => {
         expect(row.querySelector('[aria-label="Tessaly Oakhand armour class"]') !== null).toBe(true);
     });
 
-    it('should show every stat outside player view', () => {
+    it('should give players hit points and armour class but never enemies', () => {
         // Act
         fixture.detectChanges();
-        const shown = component['showsStats'](buildCombatant());
+        const rows = fixture.nativeElement.querySelectorAll('.cdx-combat-row') as NodeListOf<HTMLElement>;
 
         // Assert
-        expect(shown).toBe(true);
+        expect(rows[0].querySelector('.cdx-combat-stats') !== null).toBe(true);
+        expect(rows[0].querySelector('.cdx-combat-hp-change') !== null).toBe(true);
+        expect(rows[1].querySelector('.cdx-combat-stats') === null).toBe(true);
+        expect(rows[1].querySelector('.cdx-combat-hp-change') === null).toBe(true);
+        expect(rows[1].querySelector('.cdx-combat-health') === null).toBe(true);
+    });
+
+    it('should not offer HP or AC fields when adding an enemy', () => {
+        // Act
+        fixture.detectChanges();
+        const form = fixture.nativeElement.querySelector('.cdx-combat-form') as HTMLFormElement;
+
+        // Assert
+        expect(form.querySelector('[formcontrolname="hp"]') === null).toBe(true);
+        expect(form.querySelector('[formcontrolname="ac"]') === null).toBe(true);
+        expect(Object.keys(component['enemyForm'].controls)).toEqual(['name', 'count', 'initiative']);
     });
 
     it('should re-render when the turn order changes', () => {

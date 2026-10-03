@@ -32,6 +32,7 @@ export interface ICombatant {
     // `players:<slug>` for a combatant added from the codex, null for a custom enemy.
     entryId: string | null;
     initiative: number;
+    // Hit points and armour class are tracked for players only; always null for an enemy.
     hp: number | null;
     maxHp: number | null;
     ac: number | null;

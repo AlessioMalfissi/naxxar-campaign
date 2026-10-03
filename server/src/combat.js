@@ -53,16 +53,19 @@ const normalizeCombatant = (value) => {
 
     const conditions = Array.isArray(value.conditions) ? value.conditions : [];
     const entryId = normalizeText(value.entryId);
+    const kind = COMBATANT_KINDS.includes(value.kind) ? value.kind : 'enemy';
+    // Only players track hit points and armour class; enemies never carry them.
+    const tracksStats = kind === 'player';
 
     return {
         id,
         name,
-        kind: COMBATANT_KINDS.includes(value.kind) ? value.kind : 'enemy',
+        kind,
         entryId: entryId === '' ? null : entryId,
         initiative: normalizeInteger(value.initiative, 0),
-        hp: normalizeOptionalInteger(value.hp, 0),
-        maxHp: normalizeOptionalInteger(value.maxHp, 0),
-        ac: normalizeOptionalInteger(value.ac, 0),
+        hp: tracksStats ? normalizeOptionalInteger(value.hp, 0) : null,
+        maxHp: tracksStats ? normalizeOptionalInteger(value.maxHp, 0) : null,
+        ac: tracksStats ? normalizeOptionalInteger(value.ac, 0) : null,
         conditions: conditions
             .slice(0, MAX_CONDITIONS)
             .map(normalizeCondition)

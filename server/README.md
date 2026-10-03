@@ -159,7 +159,7 @@ Every route below also requires a valid session cookie.
 
 Each combatant carries `kind` (`"player"` or `"enemy"`, defaulting to `"enemy"`), `entryId` (the
 `players` entry it was added from, or `null`), an integer `initiative`, nullable non-negative integers
-`hp`, `maxHp` and `ac`, and `conditions` - a list of `{ name, rounds }`, where `rounds` is the number of
+`hp`, `maxHp` and `ac` (players only - they are always stored as `null` for an enemy), and `conditions` - a list of `{ name, rounds }`, where `rounds` is the number of
 rounds left (at least 1) or `null` for a condition that lasts until removed. `round` is clamped to 0 or
 more, and a `turnId` that doesn't match a combatant is stored as `null`.
 
@@ -170,7 +170,7 @@ curl -X PUT http://localhost:8000/api/combat \
     "round": 1,
     "turnId": "goblin-1",
     "combatants": [
-      { "id": "goblin-1", "name": "Goblin 1", "kind": "enemy", "initiative": 14, "hp": 7, "maxHp": 7, "ac": 15,
+      { "id": "goblin-1", "name": "Goblin 1", "kind": "enemy", "initiative": 14,
         "conditions": [{ "name": "Prone", "rounds": null }] }
     ]
   }'

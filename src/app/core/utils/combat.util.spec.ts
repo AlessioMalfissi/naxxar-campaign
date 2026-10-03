@@ -306,40 +306,40 @@ describe('combat util', () => {
     describe('adjustHp', () => {
         it('should floor damage at 0', () => {
             // Act
-            const updated = adjustHp(buildEncounter(), 'goblin-1', -50);
+            const updated = adjustHp(buildEncounter(), 'tessaly', -50);
 
             // Assert
-            expect(updated.combatants[1].hp).toBe(0);
+            expect(updated.combatants[0].hp).toBe(0);
         });
 
         it('should cap healing at max HP', () => {
             // Arrange
-            const encounter = buildEncounter({ combatants: [buildCombatant({ hp: 3 })] });
+            const encounter = buildEncounter({ combatants: [buildPlayerCombatant({ hp: 20 })] });
 
             // Act
-            const updated = adjustHp(encounter, 'goblin-1', 10);
+            const updated = adjustHp(encounter, 'tessaly', 10);
 
             // Assert
-            expect(updated.combatants[0].hp).toBe(7);
+            expect(updated.combatants[0].hp).toBe(24);
         });
 
         it('should not lower hit points already above max when healing', () => {
             // Arrange
-            const encounter = buildEncounter({ combatants: [buildCombatant({ hp: 12 })] });
+            const encounter = buildEncounter({ combatants: [buildPlayerCombatant({ hp: 30 })] });
 
             // Act
-            const updated = adjustHp(encounter, 'goblin-1', 4);
+            const updated = adjustHp(encounter, 'tessaly', 4);
 
             // Assert
-            expect(updated.combatants[0].hp).toBe(12);
+            expect(updated.combatants[0].hp).toBe(30);
         });
 
         it('should heal without a cap when max HP is unknown', () => {
             // Arrange
-            const encounter = buildEncounter({ combatants: [buildCombatant({ hp: 3, maxHp: null })] });
+            const encounter = buildEncounter({ combatants: [buildPlayerCombatant({ hp: 3, maxHp: null })] });
 
             // Act
-            const updated = adjustHp(encounter, 'goblin-1', 10);
+            const updated = adjustHp(encounter, 'tessaly', 10);
 
             // Assert
             expect(updated.combatants[0].hp).toBe(13);
@@ -347,7 +347,7 @@ describe('combat util', () => {
 
         it('should ignore a combatant without tracked hit points', () => {
             // Arrange
-            const encounter = buildEncounter({ combatants: [buildCombatant({ hp: null })] });
+            const encounter = buildEncounter({ combatants: [buildCombatant()] });
 
             // Act
             const updated = adjustHp(encounter, 'goblin-1', -3);
@@ -403,11 +403,11 @@ describe('combat util', () => {
     describe('describeHealth', () => {
         it('should describe each health band', () => {
             // Act
-            const untracked = describeHealth(buildCombatant({ hp: null }));
-            const down = describeHealth(buildCombatant({ hp: 0 }));
-            const bloodied = describeHealth(buildCombatant({ hp: 3 }));
-            const healthy = describeHealth(buildCombatant({ hp: 6 }));
-            const unknownMax = describeHealth(buildCombatant({ hp: 1, maxHp: null }));
+            const untracked = describeHealth(buildCombatant());
+            const down = describeHealth(buildPlayerCombatant({ hp: 0 }));
+            const bloodied = describeHealth(buildPlayerCombatant({ hp: 12 }));
+            const healthy = describeHealth(buildPlayerCombatant({ hp: 13 }));
+            const unknownMax = describeHealth(buildPlayerCombatant({ hp: 1, maxHp: null }));
 
             // Assert
             expect(untracked).toBe('');

@@ -33,7 +33,7 @@ import {
 } from '@store/combat/combat.selectors';
 
 const MAX_ENEMY_COUNT = 20;
-const EMPTY_ENEMY_FORM = { name: '', count: 1, initiative: null, hp: null, ac: null };
+const EMPTY_ENEMY_FORM = { name: '', count: 1, initiative: null };
 
 type NumericField = 'hp' | 'maxHp' | 'ac';
 
@@ -76,9 +76,7 @@ export class CombatComponent implements OnInit {
             nonNullable: true,
             validators: [Validators.required, Validators.min(1), Validators.max(MAX_ENEMY_COUNT)]
         }),
-        initiative: new FormControl<number | null>(null),
-        hp: new FormControl<number | null>(null, { validators: [Validators.min(0)] }),
-        ac: new FormControl<number | null>(null, { validators: [Validators.min(0)] })
+        initiative: new FormControl<number | null>(null)
     });
 
     // Players from the codex who are not in the turn order yet.
@@ -109,11 +107,6 @@ export class CombatComponent implements OnInit {
 
     protected healthLabel(combatant: ICombatant): string {
         return describeHealth(combatant);
-    }
-
-    // Enemy hit points and armour class stay hidden from the table in player view.
-    protected showsStats(combatant: ICombatant): boolean {
-        return !this.playerMode() || combatant.kind === CombatantKind.Player;
     }
 
     protected addPlayers(players: ICodexEntrySummary[]): void {
@@ -149,7 +142,7 @@ export class CombatComponent implements OnInit {
             return;
         }
 
-        const { count, initiative, hp, ac } = this.enemyForm.getRawValue();
+        const { count, initiative } = this.enemyForm.getRawValue();
         const firstNumber = this.nextNumberFor(name);
         const combatants: ICombatant[] = Array.from({ length: count }, (_, index) => ({
             id: createCombatantId(),
@@ -157,9 +150,9 @@ export class CombatComponent implements OnInit {
             kind: CombatantKind.Enemy,
             entryId: null,
             initiative: initiative ?? rollD20(),
-            hp: hp == null ? null : Math.floor(hp),
-            maxHp: hp == null ? null : Math.floor(hp),
-            ac: ac == null ? null : Math.floor(ac),
+            hp: null,
+            maxHp: null,
+            ac: null,
             conditions: []
         }));
 

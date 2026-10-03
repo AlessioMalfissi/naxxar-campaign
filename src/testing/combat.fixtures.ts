@@ -6,9 +6,9 @@ export const buildCombatant = (overrides: Partial<ICombatant> = {}): ICombatant 
     kind: CombatantKind.Enemy,
     entryId: null,
     initiative: 12,
-    hp: 7,
-    maxHp: 7,
-    ac: 15,
+    hp: null,
+    maxHp: null,
+    ac: null,
     conditions: [],
     ...overrides
 });

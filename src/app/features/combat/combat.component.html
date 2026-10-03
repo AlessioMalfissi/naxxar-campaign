@@ -76,16 +76,6 @@
                 <input matInput type="number" formControlName="initiative" placeholder="d20" />
             </mat-form-field>
 
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-combat-field-number">
-                <mat-label>HP</mat-label>
-                <input matInput type="number" min="0" formControlName="hp" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-combat-field-number">
-                <mat-label>AC</mat-label>
-                <input matInput type="number" min="0" formControlName="ac" />
-            </mat-form-field>
-
             <button mat-flat-button type="submit" class="cdx-combat-add-button">
                 <mat-icon>add</mat-icon>
                 Add enemy
@@ -130,7 +120,7 @@
                         }
                     </div>
 
-                    @if (showsStats(combatant)) {
+                    @if (combatant.kind === combatantKind.Player) {
                         <div class="cdx-combat-stats">
                             @if (!playerMode() || combatant.hp !== null) {
                                 <label class="cdx-combat-stat">
@@ -173,7 +163,7 @@
                         </div>
                     }
 
-                    @if (!playerMode() && combatant.hp !== null) {
+                    @if (!playerMode() && combatant.kind === combatantKind.Player && combatant.hp !== null) {
                         <div class="cdx-combat-hp-change">
                             <input
                                 #hpAmount

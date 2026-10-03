@@ -106,9 +106,10 @@ to a markdown file, front matter included, for archiving or diffing outside the 
 ### Combat
 
 The Combat tab, under Inventory in the sidebar, is a turn tracker for one fight at a time. Players are
-added from the codex's `players` entries; enemies are typed in with an optional count (copies are
-numbered, "Goblin 1", "Goblin 2"), initiative, HP and AC - a blank initiative rolls a d20 per copy. The
-turn order sorts by initiative, highest first, and every score, HP and AC value is editable in place.
+added from the codex's `players` entries; enemies are typed in with a name, an optional count (copies are
+numbered, "Goblin 1", "Goblin 2") and an initiative - a blank initiative rolls a d20 per copy. Enemies
+carry no HP or AC; only players do. The turn order sorts by initiative, highest first, and initiative
+plus each player's HP and AC are editable in place.
 
 **Start combat** begins round 1 on the highest initiative; **Next turn** walks down the order and starts a
 new round after the last combatant, and **Previous** steps back. Each combatant carries conditions - the
@@ -117,8 +118,7 @@ counted down at the end of that combatant's turn. **End combat** clears the enem
 round; the party stays with its hit points and conditions.
 
 The encounter is saved to the API after every change, so it survives a reload and the sidebar shows the
-current round. In player view the tracker is read-only and enemy HP and AC are replaced by Healthy /
-Bloodied / Down.
+current round. In player view the tracker is read-only.
 
 ## Layout
 

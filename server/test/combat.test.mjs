@@ -34,9 +34,9 @@ const goblin = (overrides = {}) => ({
     kind: 'enemy',
     entryId: null,
     initiative: 12,
-    hp: 7,
-    maxHp: 7,
-    ac: 15,
+    hp: null,
+    maxHp: null,
+    ac: null,
     conditions: [],
     ...overrides
 });
@@ -96,10 +96,10 @@ test('PUT /api/combat normalizes combatant fields and drops blank conditions', a
         turnId: 'missing',
         combatants: [
             {
-                id: ' goblin-1 ',
-                name: '  Goblin 1 ',
-                kind: 'dragon',
-                entryId: '',
+                id: ' tessaly ',
+                name: '  Tessaly Oakhand ',
+                kind: 'player',
+                entryId: ' players:tessaly-oakhand ',
                 initiative: '14.7',
                 hp: -4,
                 maxHp: '',
@@ -115,10 +115,10 @@ test('PUT /api/combat normalizes combatant fields and drops blank conditions', a
         turnId: null,
         combatants: [
             {
-                id: 'goblin-1',
-                name: 'Goblin 1',
-                kind: 'enemy',
-                entryId: null,
+                id: 'tessaly',
+                name: 'Tessaly Oakhand',
+                kind: 'player',
+                entryId: 'players:tessaly-oakhand',
                 initiative: 14,
                 hp: 0,
                 maxHp: null,
@@ -130,6 +130,28 @@ test('PUT /api/combat normalizes combatant fields and drops blank conditions', a
             }
         ]
     });
+});
+
+test('PUT /api/combat keeps player stats', async () => {
+    const { app } = buildApp();
+    const agent = await authedAgent(app);
+    const player = goblin({ id: 'tessaly', name: 'Tessaly Oakhand', kind: 'player', hp: 20, maxHp: 24, ac: 16 });
+    const response = await agent.put('/api/combat').send({ round: 0, combatants: [player] });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.combatants[0], player);
+});
+
+test('PUT /api/combat stores enemies without hit points or armour class', async () => {
+    const { app } = buildApp();
+    const agent = await authedAgent(app);
+    const response = await agent.put('/api/combat').send({
+        round: 0,
+        combatants: [goblin({ kind: 'dragon', hp: 7, maxHp: 7, ac: 15 })]
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.combatants[0], goblin());
 });
 
 test('PUT /api/combat rejects a body without a combatant list', async () => {

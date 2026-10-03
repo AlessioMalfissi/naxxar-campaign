@@ -124,10 +124,10 @@ describe('combatReducer', () => {
 
     it('should adjust hit points', () => {
         // Act
-        const state = combatReducer(withEncounter(), CombatActions.hpAdjusted({ id: 'goblin-1', delta: -4 }));
+        const state = combatReducer(withEncounter(), CombatActions.hpAdjusted({ id: 'tessaly', delta: -4 }));
 
         // Assert
-        expect(state.encounter.combatants[1].hp).toBe(3);
+        expect(state.encounter.combatants[0].hp).toBe(20);
     });
 
     it('should add and remove conditions', () => {
