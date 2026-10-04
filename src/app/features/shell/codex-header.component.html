@@ -2,6 +2,7 @@
     <button
         mat-icon-button
         type="button"
+        class="cdx-header-icon"
         aria-label="Toggle sidebar"
         matTooltip="Toggle sidebar"
         data-help="sidebar-toggle"
@@ -17,10 +18,11 @@
     <button
         mat-icon-button
         type="button"
-        class="cdx-header-help"
+        class="cdx-header-icon cdx-header-help"
         [class.cdx-header-help-active]="helpOpen()"
         aria-label="Help"
         matTooltip="How to use this page"
+        [matTooltipDisabled]="helpOpen()"
         [attr.aria-pressed]="helpOpen()"
         (click)="toggleHelp()"
     >
@@ -50,7 +52,7 @@
     <button
         mat-icon-button
         type="button"
-        class="cdx-header-avatar"
+        class="cdx-header-icon cdx-header-avatar"
         aria-label="Account menu"
         data-help="account-menu"
         [matMenuTriggerFor]="accountMenu"

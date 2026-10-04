@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatTooltip } from '@angular/material/tooltip';
+import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
@@ -135,6 +137,19 @@ describe('CodexHeaderComponent', () => {
         const button: HTMLButtonElement = fixture.nativeElement.querySelector('.cdx-header-help');
         expect(button.classList.contains('cdx-header-help-active')).toBe(true);
         expect(button.getAttribute('aria-pressed') === 'true').toBe(true);
+    });
+
+    it('should disable the help tooltip while help is open', () => {
+        // Arrange
+        store.overrideSelector(selectHelpOpen, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        const tooltip = fixture.debugElement.query(By.css('.cdx-header-help')).injector.get(MatTooltip);
+        expect(tooltip.disabled).toBe(true);
     });
 
     it('should dispatch the player mode toggle', () => {
