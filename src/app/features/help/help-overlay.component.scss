@@ -1,0 +1,205 @@
+:host {
+    position: fixed;
+    z-index: 1001;
+    inset: 0;
+    pointer-events: none;
+
+    --cdx-help-color: var(--cdx-primary);
+}
+
+.cdx-help-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 45%);
+    pointer-events: auto;
+}
+
+.cdx-help-highlight {
+    position: absolute;
+    box-sizing: content-box;
+    margin: -6px 0 0 -6px;
+    padding: 4px;
+    border: 2px solid var(--cdx-help-color);
+    border-radius: 8px;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--cdx-help-color) 20%, transparent);
+}
+
+.cdx-help-dot {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    padding: 0;
+    border: 2px solid var(--cdx-surface-0);
+    border-radius: 50%;
+    background: var(--cdx-help-color);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--cdx-help-color) 60%, transparent);
+    color: var(--cdx-surface-0);
+    font: 500 11px / 1 var(--cdx-font-sans);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: cdx-help-pulse 2s ease-out infinite;
+
+    &:hover,
+    &:focus-visible {
+        transform: scale(1.15);
+    }
+}
+
+.cdx-help-dot-active {
+    z-index: 1;
+    transform: scale(1.2);
+    animation: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--cdx-help-color) 35%, transparent);
+}
+
+@keyframes cdx-help-pulse {
+    0% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--cdx-help-color) 60%, transparent);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px color-mix(in srgb, var(--cdx-help-color) 0%, transparent);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--cdx-help-color) 0%, transparent);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cdx-help-dot {
+        animation: none;
+    }
+}
+
+.cdx-help-card {
+    position: absolute;
+    z-index: 2;
+    padding: 14px 16px 10px;
+    border: 1px solid var(--cdx-border-strong);
+    border-top: 3px solid var(--cdx-help-color);
+    border-radius: 10px;
+    background: var(--cdx-surface-3);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+    pointer-events: auto;
+}
+
+.cdx-help-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+.cdx-help-card-category {
+    color: var(--cdx-help-color);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.cdx-help-card-step {
+    color: var(--cdx-text-muted);
+}
+
+.cdx-help-card-title {
+    margin: 0 0 6px;
+    color: var(--cdx-text-primary);
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.cdx-help-card-body {
+    margin: 0 0 8px;
+    color: var(--cdx-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.cdx-help-card-actions {
+    display: flex;
+    align-items: center;
+}
+
+.cdx-help-card-spacer {
+    flex: 1;
+}
+
+.cdx-help-banner {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 8px 8px 8px 16px;
+    border: 1px solid var(--cdx-border-strong);
+    border-radius: 10px;
+    background: var(--cdx-surface-2);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+    transform: translateX(-50%);
+    pointer-events: auto;
+}
+
+.cdx-help-banner-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cdx-help-banner-title {
+    color: var(--cdx-text-primary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.cdx-help-banner-hint {
+    color: var(--cdx-text-muted);
+    font-size: 12px;
+}
+
+.cdx-help-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cdx-help-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--cdx-text-secondary);
+    font-size: 12px;
+}
+
+.cdx-help-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--cdx-help-color);
+}
+
+.cdx-help-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+@media (width <= 599px) {
+    .cdx-help-banner {
+        bottom: 8px;
+        width: calc(100vw - 16px);
+        max-width: none;
+    }
+}

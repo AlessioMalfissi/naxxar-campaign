@@ -97,6 +97,16 @@ export const codexReducer = createReducer<ICodexState>(
         playerMode: !state.playerMode
     })),
 
+    on(CodexActions.helpToggled, (state): ICodexState => ({
+        ...state,
+        helpOpen: !state.helpOpen
+    })),
+
+    on(CodexActions.helpClosed, (state): ICodexState => ({
+        ...state,
+        helpOpen: false
+    })),
+
     on(CodexActions.favouriteToggled, (state, { id }): ICodexState => ({
         ...state,
         entries: state.entries.map((entry) =>

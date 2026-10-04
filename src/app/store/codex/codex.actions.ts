@@ -38,6 +38,10 @@ export const sidebarCollapsedSet = createAction(
 
 export const playerModeToggled = createAction(`[${SOURCE}] player mode toggled`);
 
+export const helpToggled = createAction(`[${SOURCE}] help toggled`);
+
+export const helpClosed = createAction(`[${SOURCE}] help closed`);
+
 export const favouriteToggled = createAction(`[${SOURCE}] favourite toggled`, props<{ id: string }>());
 
 export const filtersChanged = createAction(

@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatTooltip } from '@angular/material/tooltip';
+import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
@@ -6,7 +8,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { buildSummary } from '@testing/entry.fixtures';
 import * as AuthActions from '@store/auth/auth.actions';
 import * as CodexActions from '@store/codex/codex.actions';
-import { selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
+import { selectHelpOpen, selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
 import { CodexHeaderComponent } from './codex-header.component';
 
 describe('CodexHeaderComponent', () => {
@@ -33,6 +35,7 @@ describe('CodexHeaderComponent', () => {
 
         store = TestBed.inject(MockStore);
         store.overrideSelector(selectPlayerMode, false);
+        store.overrideSelector(selectHelpOpen, false);
         store.overrideSelector(selectVisibleEntries, [
             buildSummary(),
             buildSummary({
@@ -108,6 +111,45 @@ describe('CodexHeaderComponent', () => {
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.sidebarToggled());
+    });
+
+    it('should dispatch the help toggle when the help button is clicked', () => {
+        // Arrange
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const button: HTMLButtonElement = fixture.nativeElement.querySelector('.cdx-header-help');
+
+        // Act
+        button.click();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.helpToggled());
+    });
+
+    it('should mark the help button as pressed while help is open', () => {
+        // Arrange
+        store.overrideSelector(selectHelpOpen, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        const button: HTMLButtonElement = fixture.nativeElement.querySelector('.cdx-header-help');
+        expect(button.classList.contains('cdx-header-help-active')).toBe(true);
+        expect(button.getAttribute('aria-pressed') === 'true').toBe(true);
+    });
+
+    it('should disable the help tooltip while help is open', () => {
+        // Arrange
+        store.overrideSelector(selectHelpOpen, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        const tooltip = fixture.debugElement.query(By.css('.cdx-header-help')).injector.get(MatTooltip);
+        expect(tooltip.disabled).toBe(true);
     });
 
     it('should dispatch the player mode toggle', () => {

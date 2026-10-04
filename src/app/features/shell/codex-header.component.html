@@ -2,8 +2,10 @@
     <button
         mat-icon-button
         type="button"
+        class="cdx-header-icon"
         aria-label="Toggle sidebar"
         matTooltip="Toggle sidebar"
+        data-help="sidebar-toggle"
         (click)="toggleSidebar()"
     >
         <mat-icon>menu</mat-icon>
@@ -13,7 +15,21 @@
 
     <span class="cdx-header-spacer"></span>
 
-    <mat-form-field appearance="outline" class="cdx-header-search" subscriptSizing="dynamic">
+    <button
+        mat-icon-button
+        type="button"
+        class="cdx-header-icon cdx-header-help"
+        [class.cdx-header-help-active]="helpOpen()"
+        aria-label="Help"
+        matTooltip="How to use this page"
+        [matTooltipDisabled]="helpOpen()"
+        [attr.aria-pressed]="helpOpen()"
+        (click)="toggleHelp()"
+    >
+        <mat-icon>help_outline</mat-icon>
+    </button>
+
+    <mat-form-field appearance="outline" class="cdx-header-search" subscriptSizing="dynamic" data-help="search">
         <mat-icon matPrefix>search</mat-icon>
         <input
             matInput
@@ -36,9 +52,10 @@
     <button
         mat-icon-button
         type="button"
+        class="cdx-header-icon cdx-header-avatar"
         aria-label="Account menu"
+        data-help="account-menu"
         [matMenuTriggerFor]="accountMenu"
-        class="cdx-header-avatar"
     >
         <span>DM</span>
     </button>

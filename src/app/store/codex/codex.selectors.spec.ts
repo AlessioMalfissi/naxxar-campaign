@@ -6,6 +6,7 @@ import {
     selectEntryTitles,
     selectError,
     selectFilters,
+    selectHelpOpen,
     selectIndexLoading,
     selectOpenEntry,
     selectPlayerEntries,
@@ -51,6 +52,7 @@ describe('codexSelectors', () => {
         const state = buildState({
             playerMode: true,
             sidebarCollapsed: true,
+            helpOpen: true,
             error: 'offline',
             filters: { status: 'Alive', tags: [], query: '' }
         });
@@ -59,6 +61,7 @@ describe('codexSelectors', () => {
         const projected = {
             playerMode: selectPlayerMode.projector(state),
             collapsed: selectSidebarCollapsed.projector(state),
+            helpOpen: selectHelpOpen.projector(state),
             section: selectActiveSection.projector(state),
             filters: selectFilters.projector(state),
             error: selectError.projector(state)
@@ -67,6 +70,7 @@ describe('codexSelectors', () => {
         // Assert
         expect(projected.playerMode).toBe(true);
         expect(projected.collapsed).toBe(true);
+        expect(projected.helpOpen).toBe(true);
         expect(projected.section).toBe(CodexSection.Npcs);
         expect(projected.filters.status).toBe('Alive');
         expect(projected.error).toBe('offline');

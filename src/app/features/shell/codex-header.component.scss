@@ -27,6 +27,20 @@
     flex: 1;
 }
 
+// Icon buttons keep their size on narrow screens; the campaign name and search field give way instead.
+.cdx-header-icon {
+    flex: none;
+}
+
+.cdx-header-help {
+    color: var(--cdx-text-secondary);
+}
+
+.cdx-header-help-active {
+    background: var(--cdx-primary-tint);
+    color: var(--cdx-primary-text);
+}
+
 .cdx-header-search {
     --mat-form-field-container-height: 40px;
     --mat-form-field-container-vertical-padding: 8px;

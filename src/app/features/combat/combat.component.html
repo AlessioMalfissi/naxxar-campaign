@@ -6,7 +6,14 @@
             <span class="cdx-combat-round">Round {{ round() }}</span>
         }
         <span class="cdx-combat-head-spacer"></span>
-        <button mat-icon-button type="button" aria-label="Refresh" matTooltip="Refresh" (click)="refresh()">
+        <button
+            mat-icon-button
+            type="button"
+            aria-label="Refresh"
+            matTooltip="Refresh"
+            data-help="combat-refresh"
+            (click)="refresh()"
+        >
             <mat-icon>refresh</mat-icon>
         </button>
     </div>
@@ -16,7 +23,7 @@
     }
 
     @if (!playerMode()) {
-        <div class="cdx-combat-controls">
+        <div class="cdx-combat-controls" data-help="combat-controls">
             @if (inProgress()) {
                 <button mat-button type="button" [disabled]="!canRevert()" (click)="previousTurn()">
                     <mat-icon>skip_previous</mat-icon>
@@ -46,6 +53,7 @@
             <button
                 mat-button
                 type="button"
+                data-help="combat-add-player"
                 [disabled]="availablePlayers().length === 0"
                 [matMenuTriggerFor]="playerMenu"
             >
@@ -59,7 +67,7 @@
             </mat-menu>
         </div>
 
-        <form class="cdx-combat-form" [formGroup]="enemyForm" (ngSubmit)="addEnemies()">
+        <form class="cdx-combat-form" data-help="combat-add-enemy" [formGroup]="enemyForm" (ngSubmit)="addEnemies()">
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-combat-field-name">
                 <mat-label>Enemy name</mat-label>
                 <input matInput formControlName="name" placeholder="Goblin" />
@@ -100,6 +108,7 @@
                     <input
                         type="number"
                         class="cdx-combat-input cdx-combat-initiative"
+                        data-help="combat-initiative"
                         [value]="combatant.initiative"
                         [attr.aria-label]="combatant.name + ' initiative'"
                         [disabled]="playerMode()"
@@ -117,7 +126,7 @@
                         />
                     }
 
-                    <div class="cdx-combat-identity">
+                    <div class="cdx-combat-identity" data-help="combat-identity">
                         @if (playerMode()) {
                             <span class="cdx-combat-name">{{ combatant.name }}</span>
                         } @else {
@@ -146,7 +155,7 @@
                         </span>
                     </div>
 
-                    <div class="cdx-combat-conditions">
+                    <div class="cdx-combat-conditions" data-help="combat-conditions">
                         <mat-chip-set [attr.aria-label]="combatant.name + ' conditions'">
                             @for (condition of combatant.conditions; track condition.name) {
                                 <mat-chip
