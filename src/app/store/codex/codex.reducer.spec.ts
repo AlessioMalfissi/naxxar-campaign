@@ -214,6 +214,30 @@ describe('codexReducer', () => {
         expect(state.playerMode).toBe(true);
     });
 
+    it('should toggle the help overlay', () => {
+        // Arrange
+        const action = CodexActions.helpToggled();
+
+        // Act
+        const opened = codexReducer(INITIAL_CODEX_STATE, action);
+        const closed = codexReducer(opened, action);
+
+        // Assert
+        expect(opened.helpOpen).toBe(true);
+        expect(closed.helpOpen).toBe(false);
+    });
+
+    it('should close the help overlay', () => {
+        // Arrange
+        const opened = { ...INITIAL_CODEX_STATE, helpOpen: true };
+
+        // Act
+        const state = codexReducer(opened, CodexActions.helpClosed());
+
+        // Assert
+        expect(state.helpOpen).toBe(false);
+    });
+
     it('should toggle the favourite flag on the list and the open entry', () => {
         // Arrange
         const entry = buildEntry('npcs:vaelith-corrun', 'Vaelith Corrun');

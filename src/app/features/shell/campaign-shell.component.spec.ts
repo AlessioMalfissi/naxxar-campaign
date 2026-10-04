@@ -6,8 +6,9 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 
 import { CodexSection } from '@core/models';
+import { HelpOverlayComponent } from '@features/help/help-overlay.component';
 import * as CodexActions from '@store/codex/codex.actions';
-import { selectActiveSection, selectSidebarCollapsed } from '@store/codex/codex.selectors';
+import { selectActiveSection, selectHelpOpen, selectSidebarCollapsed } from '@store/codex/codex.selectors';
 import * as CombatActions from '@store/combat/combat.actions';
 import * as InventoryActions from '@store/inventory/inventory.actions';
 import { CampaignShellComponent } from './campaign-shell.component';
@@ -19,6 +20,9 @@ class CodexHeaderMockComponent {}
 
 @Component({ selector: 'cdx-codex-sidebar', standalone: true, template: '' })
 class CodexSidebarMockComponent {}
+
+@Component({ selector: 'cdx-help-overlay', standalone: true, template: '' })
+class HelpOverlayMockComponent {}
 
 describe('CampaignShellComponent', () => {
     let fixture: ComponentFixture<CampaignShellComponent>;
@@ -32,14 +36,15 @@ describe('CampaignShellComponent', () => {
             providers: [provideRouter([]), provideMockStore({ initialState: {} })]
         })
             .overrideComponent(CampaignShellComponent, {
-                remove: { imports: [CodexHeaderComponent, CodexSidebarComponent] },
-                add: { imports: [CodexHeaderMockComponent, CodexSidebarMockComponent] }
+                remove: { imports: [CodexHeaderComponent, CodexSidebarComponent, HelpOverlayComponent] },
+                add: { imports: [CodexHeaderMockComponent, CodexSidebarMockComponent, HelpOverlayMockComponent] }
             })
             .compileComponents();
 
         store = TestBed.inject(MockStore);
         store.overrideSelector(selectActiveSection, CodexSection.Npcs);
         store.overrideSelector(selectSidebarCollapsed, false);
+        store.overrideSelector(selectHelpOpen, false);
 
         // BreakpointObserver is also used internally by Angular Material (HighContrastModeDetector),
         // so the real service is spied on rather than swapped for a bare mock.
@@ -116,5 +121,29 @@ describe('CampaignShellComponent', () => {
 
         // Assert
         expect(fixture.nativeElement.querySelector('cdx-codex-sidebar.cdx-sidebar-collapsed') !== null).toBe(true);
+    });
+
+    it('should not render the help overlay while help is closed', () => {
+        // Arrange
+        store.overrideSelector(selectHelpOpen, false);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('cdx-help-overlay') === null).toBe(true);
+    });
+
+    it('should render the help overlay while help is open', () => {
+        // Arrange
+        store.overrideSelector(selectHelpOpen, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('cdx-help-overlay') !== null).toBe(true);
     });
 });

@@ -15,7 +15,7 @@ import { debounceTime, map, startWith } from 'rxjs';
 import { ICodexEntrySummary } from '@core/models';
 import * as AuthActions from '@store/auth/auth.actions';
 import * as CodexActions from '@store/codex/codex.actions';
-import { selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
+import { selectHelpOpen, selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
 
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
@@ -45,6 +45,7 @@ export class CodexHeaderComponent {
     protected readonly campaignName = signal<string>('Naxxar campaign');
     protected readonly searchControl = new FormControl<string>('', { nonNullable: true });
     protected readonly playerMode = toSignal(this.store.select(selectPlayerMode), { initialValue: false });
+    protected readonly helpOpen = toSignal(this.store.select(selectHelpOpen), { initialValue: false });
 
     private readonly entries = toSignal(this.store.select(selectVisibleEntries), { initialValue: [] });
     private readonly query = toSignal(
@@ -74,6 +75,10 @@ export class CodexHeaderComponent {
 
     protected toggleSidebar(): void {
         this.store.dispatch(CodexActions.sidebarToggled());
+    }
+
+    protected toggleHelp(): void {
+        this.store.dispatch(CodexActions.helpToggled());
     }
 
     protected togglePlayerMode(): void {

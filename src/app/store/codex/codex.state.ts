@@ -18,6 +18,7 @@ export interface ICodexState {
     filters: ICodexFilters;
     sidebarCollapsed: boolean;
     playerMode: boolean;
+    helpOpen: boolean;
     error: string | null;
 }
 
@@ -31,5 +32,6 @@ export const INITIAL_CODEX_STATE: ICodexState = {
     filters: { status: null, tags: [], query: '' },
     sidebarCollapsed: false,
     playerMode: false,
+    helpOpen: false,
     error: null
 };

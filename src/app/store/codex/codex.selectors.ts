@@ -21,6 +21,8 @@ export const selectPlayerMode = createSelector(selectCodexState, (state) => stat
 
 export const selectSidebarCollapsed = createSelector(selectCodexState, (state) => state.sidebarCollapsed);
 
+export const selectHelpOpen = createSelector(selectCodexState, (state) => state.helpOpen);
+
 export const selectActiveSection = createSelector(selectCodexState, (state) => state.activeSection);
 
 export const selectFilters = createSelector(selectCodexState, (state) => state.filters);

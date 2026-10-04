@@ -136,7 +136,7 @@ src/app/
 │   └── modal/             ModalService over the CDK Dialog, confirm/prompt/create-entry/condition modals
 ├── store/
 │   ├── create-api-action.ts
-│   ├── codex/             entries, index, filters, active section, player mode
+│   ├── codex/             entries, index, filters, active section, player mode, help overlay
 │   ├── combat/            encounter, turn order, round, saves the encounter after every change
 │   └── editor/            draft body, dirty flag, save status, view mode, autosave
 └── features/
@@ -144,7 +144,8 @@ src/app/
     ├── section-list/      table and card views with status and tag filters
     ├── entry-detail/      entry header, markdown toolbar, markdown editor
     ├── inventory/         party and per-player items and gold
-    └── combat/            initiative tracker: turn order, rounds, enemies, hit points, conditions
+    ├── combat/            initiative tracker: turn order, rounds, enemies, hit points, conditions
+    └── help/              "?" overlay: coloured tutorial dots for the current page
 
 server/
 ├── src/                   Express app, MongoDB access, routes (see server/README.md)
@@ -155,6 +156,18 @@ server/
 
 Routes are lazy: `/campaign/:section` for a list, `/campaign/:section/:slug` for an entry. Both are
 bookmarkable and restore the correct tab and sidebar selection.
+
+## Help overlay
+
+The `?` button left of the search bar opens an overlay that drops a numbered, colour-coded dot on each
+feature of the current page (blue navigation, green editing, amber filtering, purple actions). Clicking a
+dot, or **Start tour**, opens a short tutorial card; Next/Back (or the arrow keys) step through, Escape or
+the backdrop closes it.
+
+Topics live in `features/help/help-topics.ts`, grouped per page (section list, entry, inventory, combat)
+plus shell topics shown everywhere. Each topic's `id` matches a `data-help="..."` attribute on the element
+it points at; topics whose element isn't rendered (e.g. DM-only controls in player view) are skipped. A
+spec fails if a topic has no matching `data-help` anchor in any template.
 
 ## Conventions
 

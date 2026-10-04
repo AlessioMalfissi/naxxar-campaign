@@ -8,8 +8,9 @@
                 mat-icon-button
                 type="button"
                 aria-label="Toggle favourite"
-                matTooltip="Favourite"
                 [class.cdx-entry-favourite]="openEntry.favourite"
+                matTooltip="Favourite"
+                data-help="entry-favourite"
                 (click)="toggleFavourite()"
             >
                 <mat-icon>star</mat-icon>
@@ -22,6 +23,7 @@
                 mat-icon-button
                 type="button"
                 aria-label="Entry actions"
+                data-help="entry-actions"
                 [matMenuTriggerFor]="entryMenu"
             >
                 <mat-icon>more_vert</mat-icon>
@@ -37,6 +39,7 @@
                     class="cdx-entry-chip-status cdx-entry-status-trigger"
                     aria-label="Change status"
                     matTooltip="Change status"
+                    data-help="entry-status"
                     [matMenuTriggerFor]="statusMenu"
                 >
                     {{ openEntry.status }}
@@ -61,7 +64,7 @@
         </mat-chip-set>
 
         @if (fields().length > 0) {
-            <dl class="cdx-entry-fields">
+            <dl class="cdx-entry-fields" data-help="entry-fields">
                 @for (field of fields(); track field.label) {
                     <div class="cdx-entry-field">
                         <dt>{{ field.label }}</dt>
@@ -73,6 +76,7 @@
 
         @if (!playerMode()) {
             <cdx-markdown-toolbar
+                data-help="entry-toolbar"
                 [activeCommands]="activeCommands()"
                 [viewMode]="viewMode()"
                 (commandRequested)="onCommand($event)"
@@ -81,6 +85,7 @@
         }
 
         <cdx-markdown-editor
+            data-help="entry-editor"
             [value]="draftBody()"
             [html]="renderedHtml()"
             [showEditor]="showEditor() && !playerMode()"
@@ -112,12 +117,14 @@
                 }
                 <span class="cdx-entry-spacer"></span>
                 <button mat-button type="button" [disabled]="!isDirty()" (click)="cancel()">Cancel</button>
-                <button mat-flat-button type="button" class="cdx-entry-save" (click)="save()">Save entry</button>
+                <button mat-flat-button type="button" class="cdx-entry-save" data-help="entry-save" (click)="save()">
+                    Save entry
+                </button>
             </div>
         }
 
         @if (referencedEntries().length > 0) {
-            <section class="cdx-entry-references">
+            <section class="cdx-entry-references" data-help="entry-references">
                 <h2 class="cdx-entry-references-title">References</h2>
                 @for (reference of referencedEntries(); track reference.id) {
                     <button mat-button type="button" (click)="onEntryLink(reference.id)">
@@ -128,7 +135,7 @@
         }
 
         @if (referencingEntries().length > 0) {
-            <section class="cdx-entry-references">
+            <section class="cdx-entry-references" data-help="entry-references">
                 <h2 class="cdx-entry-references-title">Referenced by</h2>
                 @for (reference of referencingEntries(); track reference.id) {
                     <button mat-button type="button" (click)="onEntryLink(reference.id)">

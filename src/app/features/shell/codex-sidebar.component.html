@@ -9,18 +9,19 @@
             aria-label="New entry"
             matTooltip="New entry"
             class="cdx-sidebar-new-icon"
+            data-help="new-entry"
             (click)="createEntry()"
         >
             <mat-icon>add</mat-icon>
         </button>
     } @else {
-        <button mat-flat-button type="button" class="cdx-sidebar-new" (click)="createEntry()">
+        <button mat-flat-button type="button" class="cdx-sidebar-new" data-help="new-entry" (click)="createEntry()">
             <mat-icon>add</mat-icon>
             New entry
         </button>
     }
 
-    <nav class="cdx-sidebar-nav" aria-label="Codex sections">
+    <nav class="cdx-sidebar-nav" aria-label="Codex sections" data-help="sections-nav">
         @if (!collapsed()) {
             <p class="cdx-sidebar-caption">Sections</p>
         }
@@ -44,7 +45,7 @@
 
     <div class="cdx-sidebar-divider"></div>
 
-    <nav class="cdx-sidebar-nav" aria-label="Party">
+    <nav class="cdx-sidebar-nav" aria-label="Party" data-help="party-nav">
         @if (!collapsed()) {
             <p class="cdx-sidebar-caption">Party</p>
         }
@@ -78,7 +79,7 @@
 
     @if (!collapsed() && recentEntries().length > 0) {
         <div class="cdx-sidebar-divider"></div>
-        <p class="cdx-sidebar-caption">{{ activeSectionLabel() }} · recent</p>
+        <p class="cdx-sidebar-caption" data-help="recent-entries">{{ activeSectionLabel() }} · recent</p>
         @for (entry of recentEntries(); track entry.id) {
             <a
                 class="cdx-sidebar-recent"

@@ -1,0 +1,89 @@
+<div class="cdx-help-backdrop" (click)="close()"></div>
+
+@if (activeMarker(); as marker) {
+    <div
+        class="cdx-help-highlight"
+        [style.top.px]="marker.target.top"
+        [style.left.px]="marker.target.left"
+        [style.width.px]="marker.target.width"
+        [style.height.px]="marker.target.height"
+        [style.--cdx-help-color]="marker.color"
+    ></div>
+}
+
+@for (marker of markers(); let index = $index; track marker.topic.id) {
+    <button
+        type="button"
+        class="cdx-help-dot"
+        [class.cdx-help-dot-active]="index === activeIndex()"
+        [style.top.px]="marker.dotTop"
+        [style.left.px]="marker.dotLeft"
+        [style.--cdx-help-color]="marker.color"
+        [attr.aria-label]="'Step ' + marker.step + ': ' + marker.topic.title"
+        [attr.aria-expanded]="index === activeIndex()"
+        (click)="select(index)"
+    >
+        {{ marker.step }}
+    </button>
+}
+
+@if (activeMarker(); as marker) {
+    @if (cardPosition(); as position) {
+        <section
+            class="cdx-help-card"
+            role="dialog"
+            aria-live="polite"
+            [attr.aria-label]="marker.topic.title"
+            [style.left.px]="position.left"
+            [style.width.px]="position.width"
+            [style.top.px]="position.top"
+            [style.bottom.px]="position.bottom"
+            [style.--cdx-help-color]="marker.color"
+        >
+            <div class="cdx-help-card-head">
+                <span class="cdx-help-card-category">{{ labelFor(marker.topic.category) }}</span>
+                <span class="cdx-help-card-step">{{ marker.step }} of {{ markers().length }}</span>
+            </div>
+            <h2 class="cdx-help-card-title">{{ marker.topic.title }}</h2>
+            <p class="cdx-help-card-body">{{ marker.topic.body }}</p>
+            <div class="cdx-help-card-actions">
+                <button mat-button type="button" [disabled]="activeIndex() === 0" (click)="previous()">Back</button>
+                <span class="cdx-help-card-spacer"></span>
+                @if (isLast()) {
+                    <button mat-flat-button type="button" (click)="close()">Done</button>
+                } @else {
+                    <button mat-flat-button type="button" (click)="next()">Next</button>
+                }
+            </div>
+        </section>
+    }
+}
+
+<aside class="cdx-help-banner" aria-label="Help">
+    <div class="cdx-help-banner-text">
+        <span class="cdx-help-banner-title">{{ pageLabel() }} guide</span>
+        <span class="cdx-help-banner-hint">
+            @if (markers().length > 0) {
+                Click a dot to learn about that feature, or take the tour.
+            } @else {
+                Nothing to point out on this page.
+            }
+        </span>
+    </div>
+    <ul class="cdx-help-legend" aria-label="Dot colours">
+        @for (category of categories; track category.category) {
+            <li class="cdx-help-legend-item" [style.--cdx-help-color]="category.color">
+                <span class="cdx-help-legend-dot"></span>
+                {{ category.label }}
+            </li>
+        }
+    </ul>
+    <div class="cdx-help-banner-actions">
+        @if (markers().length > 0 && activeIndex() === null) {
+            <button mat-flat-button type="button" (click)="next()">Start tour</button>
+        }
+        <button mat-icon-button type="button" aria-label="Close help" (click)="close()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+</aside>

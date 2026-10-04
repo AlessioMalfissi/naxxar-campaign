@@ -4,7 +4,7 @@
         <span class="cdx-section-count">{{ items().length }} items</span>
     </div>
 
-    <div class="cdx-inventory-filters" [formGroup]="filterForm">
+    <div class="cdx-inventory-filters" data-help="inventory-filters" [formGroup]="filterForm">
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-filter-query">
             <mat-icon matPrefix>search</mat-icon>
             <input matInput formControlName="query" placeholder="Search items" aria-label="Search items" />
@@ -59,7 +59,7 @@
     </div>
 
     @if (!playerMode()) {
-        <form class="cdx-inventory-form" [formGroup]="form" (ngSubmit)="addItem()">
+        <form class="cdx-inventory-form" data-help="inventory-add" [formGroup]="form" (ngSubmit)="addItem()">
             <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-field-name">
                 <mat-label>Item name</mat-label>
                 <input matInput formControlName="name" placeholder="Potion of healing" />
@@ -132,7 +132,7 @@
             <h2 class="cdx-inventory-group-title">
                 <span class="cdx-inventory-group-name">{{ group.label }}</span>
                 <span class="cdx-inventory-group-count">{{ group.items.length }}</span>
-                <span class="cdx-inventory-gold">
+                <span class="cdx-inventory-gold" data-help="inventory-gold">
                     <input
                         type="number"
                         min="0"
@@ -149,7 +149,7 @@
             @if (group.items.length > 0) {
                 <div class="cdx-inventory-rows">
                     @for (item of group.items; track item.id) {
-                        <div class="cdx-inventory-row">
+                        <div class="cdx-inventory-row" data-help="inventory-row">
                             <div class="cdx-inventory-row-main">
                                 <span class="cdx-inventory-name">{{ item.name }}</span>
                                 @if (item.description !== '') {
@@ -225,7 +225,7 @@
                             </mat-form-field>
 
                             @if (item.owner === partyOwner) {
-                                <div class="cdx-inventory-flags">
+                                <div class="cdx-inventory-flags" data-help="inventory-flags">
                                     <mat-checkbox
                                         [checked]="item.forSale"
                                         [disabled]="playerMode()"

@@ -6,9 +6,10 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngrx/store';
 
 import { CodexSection, SECTION_DEFINITIONS } from '@core/models';
+import { HelpOverlayComponent } from '@features/help/help-overlay.component';
 import * as CodexActions from '@store/codex/codex.actions';
 import * as CombatActions from '@store/combat/combat.actions';
-import { selectActiveSection, selectSidebarCollapsed } from '@store/codex/codex.selectors';
+import { selectActiveSection, selectHelpOpen, selectSidebarCollapsed } from '@store/codex/codex.selectors';
 import * as InventoryActions from '@store/inventory/inventory.actions';
 import { CodexHeaderComponent } from './codex-header.component';
 import { CodexSidebarComponent } from './codex-sidebar.component';
@@ -20,7 +21,7 @@ export const TABLET_AND_BELOW_QUERY = '(max-width: 1023px)';
 @Component({
     selector: 'cdx-campaign-shell',
     standalone: true,
-    imports: [RouterOutlet, MatTabsModule, CodexHeaderComponent, CodexSidebarComponent],
+    imports: [RouterOutlet, MatTabsModule, CodexHeaderComponent, CodexSidebarComponent, HelpOverlayComponent],
     templateUrl: './campaign-shell.component.html',
     styleUrl: './campaign-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -36,6 +37,7 @@ export class CampaignShellComponent implements OnInit {
     protected readonly sidebarCollapsed = toSignal(this.store.select(selectSidebarCollapsed), {
         initialValue: false
     });
+    protected readonly helpOpen = toSignal(this.store.select(selectHelpOpen), { initialValue: false });
 
     ngOnInit(): void {
         this.store.dispatch(CodexActions.loadIndex.request({}));

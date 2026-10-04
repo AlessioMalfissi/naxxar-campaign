@@ -27,6 +27,15 @@
     flex: 1;
 }
 
+.cdx-header-help {
+    color: var(--cdx-text-secondary);
+}
+
+.cdx-header-help-active {
+    background: var(--cdx-primary-tint);
+    color: var(--cdx-primary-text);
+}
+
 .cdx-header-search {
     --mat-form-field-container-height: 40px;
     --mat-form-field-container-vertical-padding: 8px;
