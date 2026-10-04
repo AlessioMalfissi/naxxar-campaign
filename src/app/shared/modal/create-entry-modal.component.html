@@ -49,7 +49,18 @@
             @for (field of data.fields; track field.key) {
                 <mat-form-field appearance="outline" class="cdx-modal-field">
                     <mat-label>{{ field.label }}</mat-label>
-                    <input matInput [formControlName]="field.key" [type]="field.kind === 'date' ? 'date' : 'text'" />
+                    <input
+                        matInput
+                        [formControlName]="field.key"
+                        [placeholder]="field.kind === 'date' ? 'DD/MM/YYYY' : ''"
+                        [attr.inputmode]="field.kind === 'date' ? 'numeric' : null"
+                    />
+                    @if (field.kind === 'date') {
+                        <mat-hint>DD/MM/YYYY</mat-hint>
+                    }
+                    @if (field.kind === 'date') {
+                        <mat-error>Use the format DD/MM/YYYY</mat-error>
+                    }
                 </mat-form-field>
             }
         </div>

@@ -104,7 +104,7 @@
                         <span class="cdx-entry-status cdx-entry-status-danger">Couldn't save. Retry</span>
                     }
                     @default {
-                        <span class="cdx-entry-status" aria-live="polite">
+                        <span class="cdx-entry-status" [matTooltip]="savedTooltip()" aria-live="polite">
                             <mat-icon class="cdx-entry-status-icon">check</mat-icon>
                             {{ savedLabel() }}
                         </span>

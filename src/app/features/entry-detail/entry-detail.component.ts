@@ -21,6 +21,7 @@ import {
 import { MarkdownExportService } from '@core/services/markdown-export.service';
 import { MarkdownCommand } from '@core/services/markdown-command.service';
 import { MarkdownRendererService } from '@core/services/markdown-renderer.service';
+import { formatEuropeanDate, formatEuropeanDateTime } from '@core/utils/date-format.util';
 import { buildEntryId, formatReferenceValue, parseEntryId } from '@core/utils/entry-id.util';
 import { ICreateEntryResult } from '@shared/modal/i-modal';
 import { ModalService } from '@shared/modal/modal.service';
@@ -301,12 +302,23 @@ export class EntryDetailComponent {
         return `Saved ${this.relativeTime(savedAt)} · edited by ${this.lastSavedBy() ?? 'DM'}`;
     }
 
+    protected savedTooltip(): string {
+        const savedAt = this.lastSavedAt();
+        return savedAt === null ? '' : formatEuropeanDateTime(savedAt);
+    }
+
     private displayFieldValue(kind: SectionFieldKind, value: string): string {
-        if (kind !== 'reference' || value === '') {
+        if (value === '') {
             return value;
         }
+        if (kind === 'reference') {
+            return formatReferenceValue(value, this.titles());
+        }
+        if (kind === 'date') {
+            return formatEuropeanDate(value);
+        }
 
-        return formatReferenceValue(value, this.titles());
+        return value;
     }
 
     private relativeTime(isoDate: string): string {
@@ -322,6 +334,6 @@ export class EntryDetailComponent {
             return `${Math.round(minutes / 60)} h ago`;
         }
 
-        return `${Math.round(minutes / 1440)} days ago`;
+        return `on ${formatEuropeanDateTime(isoDate)}`;
     }
 }

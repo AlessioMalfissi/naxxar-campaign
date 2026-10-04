@@ -8,7 +8,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { map } from 'rxjs';
 
-import { CodexSection, findSectionDefinition, ICodexEntrySummary } from '@core/models';
+import { CodexSection, findSectionDefinition, ICodexEntrySummary, SectionFieldKind } from '@core/models';
+import { formatEuropeanDate } from '@core/utils/date-format.util';
 import { formatReferenceValue } from '@core/utils/entry-id.util';
 import { DataTableComponent } from '@shared/datatable/data-table.component';
 import { IDataTableColumn, IDataTableRow } from '@shared/datatable/i-data-table';
@@ -72,12 +73,11 @@ export class SectionListComponent {
             tags: entry.tags,
             cells: {
                 title: entry.title,
-                updated: new Date(entry.updatedAt).toLocaleDateString(),
+                updated: formatEuropeanDate(entry.updatedAt),
                 ...definition.listColumns.reduce<Record<string, string>>((cells, key) => {
                     const value = entry.fields[key] ?? '';
                     const field = definition.fields.find((item) => item.key === key);
-                    const formatted =
-                        field?.kind === 'reference' && value !== '' ? formatReferenceValue(value, titles) : value;
+                    const formatted = this.formatFieldValue(field?.kind, value, titles);
                     return { ...cells, [key]: formatted === '' ? '—' : formatted };
                 }, {})
             }
@@ -137,5 +137,23 @@ export class SectionListComponent {
 
     protected openSummary(entry: ICodexEntrySummary): void {
         this.openEntry(entry.id);
+    }
+
+    private formatFieldValue(
+        kind: SectionFieldKind | undefined,
+        value: string,
+        titles: Record<string, string>
+    ): string {
+        if (value === '') {
+            return value;
+        }
+        if (kind === 'reference') {
+            return formatReferenceValue(value, titles);
+        }
+        if (kind === 'date') {
+            return formatEuropeanDate(value);
+        }
+
+        return value;
     }
 }
