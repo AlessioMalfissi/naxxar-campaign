@@ -115,6 +115,34 @@ describe('SectionListComponent', () => {
         expect(rows[0].chip).toBe('Alive');
     });
 
+    it('should show the updated date as day, month and year', () => {
+        // Arrange
+        store.overrideSelector(selectSectionEntries, [buildSummary({ updatedAt: '2026-08-25T23:30:00.000Z' })]);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(component['rows']()[0].cells['updated']).toBe('26/08/2026');
+    });
+
+    it('should show a date field as day, month and year', () => {
+        // Arrange
+        store.overrideSelector(selectSectionEntries, [
+            buildSummary({ section: CodexSection.Story, fields: { session: '14', realDate: '2026-08-25' } })
+        ]);
+        store.refreshState();
+        paramMap$.next(convertToParamMap({ section: CodexSection.Story }));
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(component['rows']()[0].cells['realDate']).toBe('25/08/2026');
+        expect(component['rows']()[0].cells['session']).toBe('14');
+    });
+
     it('should fall back to a dash for a missing field', () => {
         // Arrange
         store.overrideSelector(selectSectionEntries, [buildSummary({ fields: {} })]);

@@ -642,13 +642,28 @@ describe('EntryDetailComponent', () => {
         expect(fixture.nativeElement.querySelector('.pane-is-loading') !== null).toBe(true);
     });
 
+    it('should show a date field as day, month and year', () => {
+        // Arrange
+        store.overrideSelector(
+            selectOpenEntry,
+            buildEntry({ section: CodexSection.Story, fields: { realDate: '2026-08-25' } })
+        );
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(component['fields']().find((field) => field.label === 'Real date')?.value).toBe('25/08/2026');
+    });
+
     it('should describe the save time in words', () => {
         // Arrange
         const cases = [
             new Date().toISOString(),
             new Date(Date.now() - 5 * 60000).toISOString(),
             new Date(Date.now() - 3 * 3600000).toISOString(),
-            new Date(Date.now() - 4 * 86400000).toISOString()
+            '2026-08-25T13:05:00.000Z'
         ];
         fixture.detectChanges();
 
@@ -664,7 +679,31 @@ describe('EntryDetailComponent', () => {
         expect(labels[0]).toBe('Saved just now · edited by DM');
         expect(labels[1]).toBe('Saved 5 min ago · edited by DM');
         expect(labels[2]).toBe('Saved 3 h ago · edited by DM');
-        expect(labels[3]).toBe('Saved 4 days ago · edited by DM');
+        expect(labels[3]).toBe('Saved on 25/08/2026 15:05 · edited by DM');
+    });
+
+    it('should give the exact save time in Malta time as a tooltip', () => {
+        // Arrange
+        store.overrideSelector(selectLastSavedAt, '2026-01-10T18:45:00.000Z');
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(component['savedTooltip']()).toBe('10/01/2026 19:45');
+    });
+
+    it('should give no save tooltip before the first save', () => {
+        // Arrange
+        store.overrideSelector(selectLastSavedAt, null);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(component['savedTooltip']()).toBe('');
     });
 
     it('should show no save label before the first save', () => {

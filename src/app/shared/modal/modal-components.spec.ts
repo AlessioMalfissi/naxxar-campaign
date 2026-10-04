@@ -275,6 +275,97 @@ describe('CreateEntryModalComponent', () => {
     });
 });
 
+describe('CreateEntryModalComponent with a date field', () => {
+    let fixture: ComponentFixture<CreateEntryModalComponent>;
+    let component: CreateEntryModalComponent;
+    let dialogRef: { close: jest.Mock };
+
+    const DATE_ENTRY_DATA: ICreateEntryModalData = {
+        title: 'Edit Session 14',
+        statuses: ['Draft', 'Published'],
+        fields: [
+            { key: 'session', label: 'Session', kind: 'text' },
+            { key: 'realDate', label: 'Real date', kind: 'date' }
+        ],
+        confirmLabel: 'Save changes',
+        values: {
+            title: 'Session 14',
+            status: 'Draft',
+            tags: [],
+            visibility: EntryVisibility.Dm,
+            fields: { session: '14', realDate: '2026-08-25' }
+        }
+    };
+
+    beforeEach(async () => {
+        // Arrange
+        dialogRef = { close: jest.fn() };
+        await TestBed.configureTestingModule({
+            imports: [CreateEntryModalComponent, NoopAnimationsModule],
+            providers: [
+                { provide: DIALOG_DATA, useValue: DATE_ENTRY_DATA },
+                { provide: DialogRef, useValue: dialogRef }
+            ]
+        }).compileComponents();
+        fixture = TestBed.createComponent(CreateEntryModalComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+    });
+
+    it('should prefill the date as day, month and year', () => {
+        // Arrange
+        const input = fixture.nativeElement.querySelectorAll('.cdx-modal-fields input')[1] as HTMLInputElement;
+
+        // Act
+        const value = component['fieldsGroup'].controls['realDate'].value;
+
+        // Assert
+        expect(value).toBe('25/08/2026');
+        expect(input.type).toBe('text');
+        expect(input.placeholder).toBe('DD/MM/YYYY');
+    });
+
+    it('should close with the date converted back to an iso date', () => {
+        // Arrange
+        component['fieldsGroup'].controls['realDate'].setValue('1/9/2026');
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        expect(dialogRef.close).toHaveBeenCalledWith(
+            expect.objectContaining({ fields: { session: '14', realDate: '2026-09-01' } })
+        );
+    });
+
+    it('should accept an empty date', () => {
+        // Arrange
+        component['fieldsGroup'].controls['realDate'].setValue('');
+
+        // Act
+        component['confirm']();
+
+        // Assert
+        expect(dialogRef.close).toHaveBeenCalledWith(
+            expect.objectContaining({ fields: { session: '14', realDate: '' } })
+        );
+    });
+
+    it('should keep the modal open and show the error for a date in another format', () => {
+        // Arrange
+        component['fieldsGroup'].controls['realDate'].setValue('2026-09-01');
+
+        // Act
+        component['confirm']();
+        fixture.detectChanges();
+
+        // Assert
+        expect(dialogRef.close).not.toHaveBeenCalled();
+        expect(component['fieldsGroup'].controls['realDate'].touched).toBe(true);
+        expect(fixture.nativeElement.querySelector('mat-error') !== null).toBe(true);
+    });
+});
+
 describe('CreateEntryModalComponent in edit mode', () => {
     let fixture: ComponentFixture<CreateEntryModalComponent>;
     let component: CreateEntryModalComponent;

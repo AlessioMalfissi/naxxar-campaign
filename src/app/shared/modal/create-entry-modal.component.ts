@@ -1,7 +1,15 @@
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
-import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    AbstractControl,
+    FormControl,
+    FormRecord,
+    ReactiveFormsModule,
+    ValidationErrors,
+    ValidatorFn,
+    Validators
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,7 +19,11 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 
 import { EntryVisibility } from '@core/models';
-import { ICreateEntryModalData, ICreateEntryResult } from './i-modal';
+import { formatEuropeanDate, isEuropeanDate, toIsoDate } from '@core/utils/date-format.util';
+import { ICreateEntryFieldConfig, ICreateEntryModalData, ICreateEntryResult } from './i-modal';
+
+const europeanDateValidator: ValidatorFn = (control: AbstractControl<string>): ValidationErrors | null =>
+    control.value.trim() === '' || isEuropeanDate(control.value) ? null : { europeanDate: true };
 
 @Component({
     selector: 'cdx-create-entry-modal',
@@ -48,12 +60,7 @@ export class CreateEntryModalComponent {
         { nonNullable: true }
     );
     protected readonly fieldsGroup = new FormRecord<FormControl<string>>(
-        Object.fromEntries(
-            this.data.fields.map((field) => [
-                field.key,
-                new FormControl(this.data.values?.fields[field.key] ?? '', { nonNullable: true })
-            ])
-        )
+        Object.fromEntries(this.data.fields.map((field) => [field.key, this.createFieldControl(field)]))
     );
 
     protected readonly tags = signal<string[]>(this.data.values?.tags ?? []);
@@ -74,8 +81,9 @@ export class CreateEntryModalComponent {
     }
 
     protected confirm(): void {
-        if (this.titleControl.invalid) {
+        if (this.titleControl.invalid || this.fieldsGroup.invalid) {
             this.titleControl.markAsTouched();
+            this.fieldsGroup.markAllAsTouched();
             return;
         }
 
@@ -86,8 +94,30 @@ export class CreateEntryModalComponent {
             status: this.statusControl.value,
             tags: this.tags(),
             visibility: this.visibilityControl.value,
-            fields: this.fieldsGroup.getRawValue()
+            fields: this.collectFieldValues()
         });
+    }
+
+    private createFieldControl(field: ICreateEntryFieldConfig): FormControl<string> {
+        const value = this.data.values?.fields[field.key] ?? '';
+        if (field.kind !== 'date') {
+            return new FormControl(value, { nonNullable: true });
+        }
+
+        return new FormControl(formatEuropeanDate(value), {
+            nonNullable: true,
+            validators: [europeanDateValidator]
+        });
+    }
+
+    private collectFieldValues(): Record<string, string> {
+        const values = this.fieldsGroup.getRawValue();
+        return Object.fromEntries(
+            this.data.fields.map((field) => [
+                field.key,
+                field.kind === 'date' ? toIsoDate(values[field.key] ?? '') : (values[field.key] ?? '')
+            ])
+        );
     }
 
     private flushPendingTag(): void {
