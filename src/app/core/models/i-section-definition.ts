@@ -43,6 +43,7 @@ export const SECTION_DEFINITIONS: readonly ISectionDefinition[] = [
             { key: 'character', label: 'Character', kind: 'text' },
             { key: 'class', label: 'Class and level', kind: 'text' },
             { key: 'race', label: 'Race', kind: 'text' },
+            { key: 'gender', label: 'Gender', kind: 'text' },
             { key: 'background', label: 'Background', kind: 'text' },
             { key: 'ties', label: 'Ties', kind: 'reference' }
         ],

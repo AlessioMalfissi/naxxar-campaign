@@ -11,6 +11,7 @@ fields:
   character: Tessaly Oakhand
   class: Cleric (light) 6
   race: Half-elf
+  gender: Female
   background: Acolyte
   ties: organizations:ashen-choir
 ---

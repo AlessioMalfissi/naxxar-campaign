@@ -11,6 +11,7 @@ fields:
   character: Serrik Vane
   class: Rogue (soulknife) 6
   race: Human
+  gender: Male
   background: Criminal
   ties: npcs:vaelith-corrun
 ---
