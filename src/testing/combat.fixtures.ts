@@ -29,6 +29,7 @@ export const buildPlayerCombatant = (overrides: Partial<ICombatant> = {}): IComb
     });
 
 export const buildEncounter = (overrides: Partial<IEncounter> = {}): IEncounter => ({
+    revision: 0,
     round: 0,
     turnId: null,
     combatants: [buildPlayerCombatant(), buildCombatant()],

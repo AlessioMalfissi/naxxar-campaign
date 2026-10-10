@@ -13,6 +13,7 @@ import {
     selectActiveTurnId,
     selectCombatError,
     selectCombatInProgress,
+    selectCombatLive,
     selectCombatLoading,
     selectCombatRound,
     selectTurnOrder
@@ -79,6 +80,7 @@ describe('CombatComponent', () => {
         store.overrideSelector(selectCombatInProgress, false);
         store.overrideSelector(selectCombatLoading, false);
         store.overrideSelector(selectCombatError, null);
+        store.overrideSelector(selectCombatLive, false);
         store.overrideSelector(selectPlayerEntries, [TESSALY, SERRIK]);
         store.overrideSelector(selectPlayerMode, false);
 
@@ -95,6 +97,53 @@ describe('CombatComponent', () => {
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.loadEncounter.request({}));
+    });
+
+    it('should start live sync on init', () => {
+        // Arrange
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.liveSyncStarted());
+    });
+
+    it('should stop live sync when destroyed', () => {
+        // Arrange
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        fixture.destroy();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.liveSyncStopped());
+    });
+
+    it('should show the tracker as offline while the live socket is down', () => {
+        // Act
+        fixture.detectChanges();
+        const indicator = fixture.nativeElement.querySelector('.cdx-combat-live') as HTMLElement;
+
+        // Assert
+        expect(indicator.textContent?.trim()).toBe('Offline');
+        expect(indicator.classList.contains('cdx-combat-live-connected')).toBe(false);
+    });
+
+    it('should show the tracker as live while the live socket is connected', () => {
+        // Arrange
+        store.overrideSelector(selectCombatLive, true);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+        const indicator = fixture.nativeElement.querySelector('.cdx-combat-live') as HTMLElement;
+
+        // Assert
+        expect(indicator.textContent?.trim()).toBe('Live');
+        expect(indicator.classList.contains('cdx-combat-live-connected')).toBe(true);
     });
 
     it('should reload the encounter on refresh', () => {

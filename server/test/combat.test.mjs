@@ -49,7 +49,7 @@ test('GET /api/combat returns an empty encounter when none was saved', async () 
     const response = await agent.get('/api/combat');
 
     assert.equal(response.status, 200);
-    assert.deepEqual(response.body, { round: 0, turnId: null, combatants: [] });
+    assert.deepEqual(response.body, { revision: 0, round: 0, turnId: null, combatants: [] });
 });
 
 test('GET /api/combat requires a session', async () => {
@@ -63,6 +63,7 @@ test('GET /api/combat returns the saved encounter without internal fields', asyn
     const { app } = buildApp([
         {
             _id: ENCOUNTER_ID,
+            revision: 4,
             round: 2,
             turnId: 'goblin-1',
             combatants: [goblin()],
@@ -73,7 +74,7 @@ test('GET /api/combat returns the saved encounter without internal fields', asyn
     const response = await agent.get('/api/combat');
 
     assert.equal(response.status, 200);
-    assert.deepEqual(response.body, { round: 2, turnId: 'goblin-1', combatants: [goblin()] });
+    assert.deepEqual(response.body, { revision: 4, round: 2, turnId: 'goblin-1', combatants: [goblin()] });
 });
 
 test('GET /api/combat fills in the nudge and colour of encounters saved without them', async () => {
@@ -93,11 +94,75 @@ test('PUT /api/combat stores the encounter and returns it', async () => {
     const response = await agent.put('/api/combat').send(encounter);
 
     assert.equal(response.status, 200);
-    assert.deepEqual(response.body, encounter);
+    assert.deepEqual(response.body, { revision: 1, ...encounter });
     assert.equal(combat.dump().length, 1);
 
     const listed = await agent.get('/api/combat');
-    assert.deepEqual(listed.body, encounter);
+    assert.deepEqual(listed.body, { revision: 1, ...encounter });
+});
+
+test('PUT /api/combat bumps the revision on every save and ignores a client-sent revision', async () => {
+    const { app } = buildApp([{ _id: ENCOUNTER_ID, revision: 7, round: 0, turnId: null, combatants: [] }]);
+    const agent = await authedAgent(app);
+    const encounter = { revision: 100, round: 0, turnId: null, combatants: [goblin()] };
+
+    const [first, second] = await Promise.all([
+        agent.put('/api/combat').send(encounter),
+        agent.put('/api/combat').send(encounter)
+    ]);
+
+    assert.deepEqual([first.body.revision, second.body.revision].sort(), [8, 9]);
+    assert.equal((await agent.get('/api/combat')).body.revision, 9);
+});
+
+test('PUT /api/combat reports every saved encounter to onSaved in revision order', async () => {
+    const combat = createFakeCollection([]);
+    const saved = [];
+    const app = createApp(
+        {
+            entries: createFakeCollection([]),
+            inventory: createFakeCollection([]),
+            purses: createFakeCollection([]),
+            combat
+        },
+        {
+            appPassword: PASSWORD,
+            sessionSecret: 'test-secret',
+            combatLive: { publish: (encounter) => saved.push(encounter) }
+        }
+    );
+    const agent = await authedAgent(app);
+
+    await Promise.all([
+        agent.put('/api/combat').send({ round: 0, combatants: [] }),
+        agent.put('/api/combat').send({ round: 1, combatants: [goblin()], turnId: 'goblin-1' })
+    ]);
+
+    assert.deepEqual(saved.map((encounter) => encounter.revision), [1, 2]);
+    assert.equal(saved.some((encounter) => '_id' in encounter || 'updatedAt' in encounter), false);
+});
+
+test('PUT /api/combat does not report a rejected encounter to onSaved', async () => {
+    const combat = createFakeCollection([]);
+    const saved = [];
+    const app = createApp(
+        {
+            entries: createFakeCollection([]),
+            inventory: createFakeCollection([]),
+            purses: createFakeCollection([]),
+            combat
+        },
+        {
+            appPassword: PASSWORD,
+            sessionSecret: 'test-secret',
+            combatLive: { publish: (encounter) => saved.push(encounter) }
+        }
+    );
+    const agent = await authedAgent(app);
+    const response = await agent.put('/api/combat').send({ round: 1 });
+
+    assert.equal(response.status, 400);
+    assert.equal(saved.length, 0);
 });
 
 test('PUT /api/combat normalizes combatant fields, drops blank conditions and caps descriptions', async () => {
@@ -130,6 +195,7 @@ test('PUT /api/combat normalizes combatant fields, drops blank conditions and ca
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, {
+        revision: 1,
         round: 0,
         turnId: null,
         combatants: [

@@ -126,7 +126,13 @@ const COMBAT_TOPICS: readonly IHelpTopic[] = [
         id: 'combat-refresh',
         category: HelpCategory.Actions,
         title: 'Refresh',
-        body: 'Reload the encounter, e.g. to pick up changes the DM made on another device.'
+        body: 'Reload the encounter by hand. Live sync normally does this for you.'
+    },
+    {
+        id: 'combat-live',
+        category: HelpCategory.Navigation,
+        title: 'Live sync',
+        body: 'Every change made on any device shows up here straight away. Offline means the connection dropped; it reconnects on its own.'
     },
     {
         id: 'combat-controls',

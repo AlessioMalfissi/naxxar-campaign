@@ -28,6 +28,7 @@ import {
     selectActiveTurnId,
     selectCombatError,
     selectCombatInProgress,
+    selectCombatLive,
     selectCombatLoading,
     selectCombatRound,
     selectTurnOrder
@@ -68,6 +69,7 @@ export class CombatComponent implements OnInit {
     protected readonly inProgress = toSignal(this.store.select(selectCombatInProgress), { initialValue: false });
     protected readonly loading = toSignal(this.store.select(selectCombatLoading), { initialValue: false });
     protected readonly error = toSignal(this.store.select(selectCombatError), { initialValue: null });
+    protected readonly live = toSignal(this.store.select(selectCombatLive), { initialValue: false });
     protected readonly players = toSignal(this.store.select(selectPlayerEntries), { initialValue: [] });
     protected readonly playerMode = toSignal(this.store.select(selectPlayerMode), { initialValue: false });
 
@@ -94,8 +96,11 @@ export class CombatComponent implements OnInit {
 
     private readonly enemyFormDirective = viewChild(FormGroupDirective);
 
+    // The live socket pushes every saved change, so the tracker stays in sync across devices while open.
     ngOnInit(): void {
         this.store.dispatch(CombatActions.loadEncounter.request({}));
+        this.store.dispatch(CombatActions.liveSyncStarted());
+        this.destroyRef.onDestroy(() => this.store.dispatch(CombatActions.liveSyncStopped()));
     }
 
     protected refresh(): void {

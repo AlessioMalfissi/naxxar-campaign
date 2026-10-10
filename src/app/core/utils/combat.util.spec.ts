@@ -238,12 +238,13 @@ describe('combat util', () => {
     describe('endCombat', () => {
         it('should reset the round and keep only the party', () => {
             // Arrange
-            const encounter = buildEncounter({ round: 4, turnId: 'goblin-1' });
+            const encounter = buildEncounter({ revision: 6, round: 4, turnId: 'goblin-1' });
 
             // Act
             const ended = endCombat(encounter);
 
             // Assert
+            expect(ended.revision).toBe(6);
             expect(ended.round).toBe(0);
             expect(ended.turnId === null).toBe(true);
             expect(ended.combatants.every((combatant) => combatant.kind === CombatantKind.Player)).toBe(true);
@@ -281,6 +282,7 @@ describe('combat util', () => {
         it('should pass the turn on when the acting combatant is removed', () => {
             // Arrange
             const encounter = buildEncounter({
+                revision: 2,
                 round: 1,
                 turnId: 'tessaly',
                 combatants: [buildPlayerCombatant(), buildCombatant(), ORC]
@@ -290,6 +292,7 @@ describe('combat util', () => {
             const updated = removeCombatant(encounter, 'tessaly');
 
             // Assert
+            expect(updated.revision).toBe(2);
             expect(updated.turnId).toBe('goblin-1');
             expect(updated.round).toBe(1);
         });
@@ -308,13 +311,18 @@ describe('combat util', () => {
 
         it('should reset the encounter when the only combatant is removed', () => {
             // Arrange
-            const encounter = buildEncounter({ round: 3, turnId: 'tessaly', combatants: [buildPlayerCombatant()] });
+            const encounter = buildEncounter({
+                revision: 5,
+                round: 3,
+                turnId: 'tessaly',
+                combatants: [buildPlayerCombatant()]
+            });
 
             // Act
             const updated = removeCombatant(encounter, 'tessaly');
 
             // Assert
-            expect(updated).toEqual(EMPTY_ENCOUNTER);
+            expect(updated).toEqual({ ...EMPTY_ENCOUNTER, revision: 5 });
         });
     });
 

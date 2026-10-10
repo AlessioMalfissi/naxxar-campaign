@@ -123,13 +123,21 @@ round; the party stays with its hit points and conditions.
 The encounter is saved to the API after every change, so it survives a reload and the sidebar shows the
 current round. In player view the tracker is read-only.
 
+The tracker syncs live: while it is open it holds a websocket to the API, and every change saved from any
+device shows up on every other open tracker straight away - the DM runs the fight on a laptop and the
+players follow on their phones without refreshing. A **Live** / **Offline** marker next to the refresh
+button shows the connection; a dropped connection reconnects on its own (backing off up to 15 seconds)
+and picks up the current encounter as soon as it is back. Edits still save over HTTP, and each saved
+encounter carries a server-side revision, so a stale snapshot never overwrites a newer one whichever
+channel delivers it first. When two devices edit at once, the last save wins.
+
 ## Layout
 
 ```
 src/app/
 ├── core/
 │   ├── models/            enums, I-prefixed interfaces, section definitions
-│   ├── services/          codex, inventory, purse and combat api, markdown render / command / export
+│   ├── services/          codex, inventory, purse and combat api, combat live socket, markdown render / command / export
 │   └── utils/             front matter parsing, entry ids, slugs, combat turn rules
 ├── shared/
 │   ├── datatable/         DataTableComponent - read-only tables
@@ -137,7 +145,7 @@ src/app/
 ├── store/
 │   ├── create-api-action.ts
 │   ├── codex/             entries, index, filters, active section, player mode, help overlay
-│   ├── combat/            encounter, turn order, round, saves the encounter after every change
+│   ├── combat/            encounter, turn order, round, saves after every change, live sync
 │   └── editor/            draft body, dirty flag, save status, view mode, autosave
 └── features/
     ├── shell/             campaign shell, header, tab bar, sidebar

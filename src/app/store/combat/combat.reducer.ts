@@ -19,6 +19,33 @@ import { ICombatState, INITIAL_COMBAT_STATE } from './combat.state';
 
 const withEncounter = (state: ICombatState, encounter: IEncounter): ICombatState => ({ ...state, encounter });
 
+const newest = (held: IEncounter | null, incoming: IEncounter): IEncounter =>
+    held !== null && held.revision > incoming.revision ? held : incoming;
+
+/*
+ * Takes in a server snapshot, from a load, a save response or the live socket. While saves are in
+ * flight the local encounter is ahead of the server, so the snapshot is held back; otherwise it
+ * replaces the encounter unless it is older than the one already shown.
+ */
+const receive = (state: ICombatState, encounter: IEncounter): ICombatState => {
+    if (state.pendingSaves > 0) {
+        return { ...state, heldEncounter: newest(state.heldEncounter, encounter) };
+    }
+
+    return encounter.revision >= state.encounter.revision ? { ...state, encounter, heldEncounter: null } : state;
+};
+
+// Once the last save settles, the newest snapshot the server sent meanwhile becomes the encounter.
+const settle = (state: ICombatState): ICombatState => {
+    if (state.pendingSaves > 0 || state.heldEncounter === null) {
+        return state;
+    }
+
+    return receive({ ...state, heldEncounter: null }, state.heldEncounter);
+};
+
+const releaseSave = (state: ICombatState): number => Math.max(0, state.pendingSaves - 1);
+
 export const combatReducer = createReducer<ICombatState>(
     INITIAL_COMBAT_STATE,
 
@@ -28,10 +55,8 @@ export const combatReducer = createReducer<ICombatState>(
         error: null
     })),
 
-    // A load that lands while local edits are still saving would roll them back, so it is ignored.
     on(CombatActions.loadEncounter.success, (state, { encounter }): ICombatState => ({
-        ...state,
-        encounter: state.pendingSaves > 0 ? state.encounter : encounter,
+        ...receive(state, encounter),
         loadStatus: ApiCallStatus.Success
     })),
 
@@ -47,16 +72,20 @@ export const combatReducer = createReducer<ICombatState>(
         error: null
     })),
 
-    on(CombatActions.saveEncounter.success, (state): ICombatState => ({
-        ...state,
-        pendingSaves: Math.max(0, state.pendingSaves - 1)
-    })),
+    on(CombatActions.saveEncounter.success, (state, { encounter }): ICombatState =>
+        settle({ ...state, pendingSaves: releaseSave(state), heldEncounter: newest(state.heldEncounter, encounter) })
+    ),
 
-    on(CombatActions.saveEncounter.failure, (state, { error }): ICombatState => ({
-        ...state,
-        pendingSaves: Math.max(0, state.pendingSaves - 1),
-        error
-    })),
+    // A failed save leaves the local edits unsaved; a newer server snapshot, if one arrived, still wins.
+    on(CombatActions.saveEncounter.failure, (state, { error }): ICombatState =>
+        settle({ ...state, pendingSaves: releaseSave(state), error })
+    ),
+
+    on(CombatActions.encounterReceived, (state, { encounter }): ICombatState => receive(state, encounter)),
+
+    on(CombatActions.liveStatusChanged, (state, { connected }): ICombatState => ({ ...state, live: connected })),
+
+    on(CombatActions.liveSyncStopped, (state): ICombatState => ({ ...state, live: false })),
 
     on(CombatActions.combatantsAdded, (state, { combatants }): ICombatState =>
         withEncounter(state, addCombatants(state.encounter, combatants))

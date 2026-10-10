@@ -1,9 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { catchError, concatMap, map, of, switchMap, withLatestFrom } from 'rxjs';
+import { catchError, concatMap, map, of, switchMap, takeUntil, withLatestFrom } from 'rxjs';
 
+import { CombatLiveEventType } from '@core/models';
 import { CombatApiService } from '@core/services/combat-api.service';
+import { CombatLiveService } from '@core/services/combat-live.service';
 import * as CombatActions from './combat.actions';
 import { selectEncounter } from './combat.selectors';
 
@@ -12,6 +14,7 @@ export class CombatEffects {
     private readonly actions$ = inject(Actions);
     private readonly store = inject(Store);
     private readonly combatApi = inject(CombatApiService);
+    private readonly combatLive = inject(CombatLiveService);
 
     readonly loadEncounter$ = createEffect(() =>
         this.actions$.pipe(
@@ -22,6 +25,25 @@ export class CombatEffects {
                     catchError(() =>
                         of(CombatActions.loadEncounter.failure({ error: "Couldn't load the combat tracker. Retry." }))
                     )
+                )
+            )
+        )
+    );
+
+    // Keeps the encounter in sync with every other open tracker until live sync is stopped.
+    readonly liveSync$ = createEffect(() =>
+        this.actions$.pipe(
+            ofType(CombatActions.liveSyncStarted),
+            switchMap(() =>
+                this.combatLive.connect().pipe(
+                    map((event) =>
+                        event.type === CombatLiveEventType.Encounter
+                            ? CombatActions.encounterReceived({ encounter: event.encounter })
+                            : CombatActions.liveStatusChanged({
+                                  connected: event.type === CombatLiveEventType.Connected
+                              })
+                    ),
+                    takeUntil(this.actions$.pipe(ofType(CombatActions.liveSyncStopped)))
                 )
             )
         )

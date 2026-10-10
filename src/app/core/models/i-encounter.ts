@@ -62,6 +62,9 @@ export interface ICombatantChanges {
 }
 
 export interface IEncounter {
+    // Bumped by the server on every save; 0 until the encounter is first saved. Orders snapshots that
+    // arrive over HTTP and the live socket, so a stale one never overwrites a newer one.
+    revision: number;
     // 0 while no fight is running.
     round: number;
     // Id of the combatant whose turn it is, null while no fight is running.

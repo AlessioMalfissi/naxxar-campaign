@@ -6,6 +6,16 @@
             <span class="cdx-combat-round">Round {{ round() }}</span>
         }
         <span class="cdx-combat-head-spacer"></span>
+        <span
+            class="cdx-combat-live"
+            role="status"
+            data-help="combat-live"
+            [class.cdx-combat-live-connected]="live()"
+            [matTooltip]="live() ? 'Changes sync to every open tracker' : 'Reconnecting - changes may be out of date'"
+        >
+            <span class="cdx-combat-live-dot" aria-hidden="true"></span>
+            {{ live() ? 'Live' : 'Offline' }}
+        </span>
         <button
             mat-icon-button
             type="button"

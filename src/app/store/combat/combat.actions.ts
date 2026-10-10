@@ -15,6 +15,16 @@ export const saveEncounter = createApiAction<{ encounter: IEncounter }, { encoun
     'save encounter'
 );
 
+// Opens the live socket that keeps the encounter in sync across devices; stopped when the tracker closes.
+export const liveSyncStarted = createAction(`[${SOURCE}] live sync started`);
+
+export const liveSyncStopped = createAction(`[${SOURCE}] live sync stopped`);
+
+export const liveStatusChanged = createAction(`[${SOURCE}] live status changed`, props<{ connected: boolean }>());
+
+// An encounter the server pushed over the live socket.
+export const encounterReceived = createAction(`[${SOURCE}] encounter received`, props<{ encounter: IEncounter }>());
+
 export const combatantsAdded = createAction(`[${SOURCE}] combatants added`, props<{ combatants: ICombatant[] }>());
 
 export const combatantUpdated = createAction(

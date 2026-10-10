@@ -99,6 +99,9 @@ importers:
       mongodb:
         specifier: ^6.10.0
         version: 6.21.0(socks@2.8.9)
+      ws:
+        specifier: ^8.21.3
+        version: 8.21.3
     devDependencies:
       supertest:
         specifier: ^7.0.0

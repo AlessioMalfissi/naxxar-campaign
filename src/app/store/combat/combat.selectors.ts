@@ -24,3 +24,5 @@ export const selectCombatLoading = createSelector(
 );
 
 export const selectCombatError = createSelector(selectCombatState, (state) => state.error);
+
+export const selectCombatLive = createSelector(selectCombatState, (state) => state.live);
