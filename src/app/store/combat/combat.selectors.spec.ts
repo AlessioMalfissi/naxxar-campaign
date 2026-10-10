@@ -4,6 +4,7 @@ import {
     selectActiveTurnId,
     selectCombatError,
     selectCombatInProgress,
+    selectCombatLive,
     selectCombatLoading,
     selectCombatRound,
     selectEncounter,
@@ -75,5 +76,16 @@ describe('combatSelectors', () => {
 
         // Assert
         expect(error).toBe('offline');
+    });
+
+    it('should expose whether live sync is connected', () => {
+        // Arrange
+        const state: ICombatState = { ...INITIAL_COMBAT_STATE, live: true };
+
+        // Act
+        const live = selectCombatLive.projector(state);
+
+        // Assert
+        expect(live).toBe(true);
     });
 });

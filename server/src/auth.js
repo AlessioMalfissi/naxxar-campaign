@@ -80,8 +80,12 @@ export const createAuthRouter = ({ appPassword, sessionSecret }) => {
     return router;
 };
 
+// Also used to gate websocket upgrades, which never pass through the express middleware chain.
+export const isAuthenticatedRequest = (req, sessionSecret) =>
+    isValidCookie(parseCookies(req.headers.cookie)[COOKIE_NAME], sessionSecret);
+
 export const requireAuth = (sessionSecret) => (req, res, next) => {
-    if (!isValidCookie(parseCookies(req.headers.cookie)[COOKIE_NAME], sessionSecret)) {
+    if (!isAuthenticatedRequest(req, sessionSecret)) {
         next(new HttpError(401, 'Sign in required.'));
         return;
     }

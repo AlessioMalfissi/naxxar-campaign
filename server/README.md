@@ -154,8 +154,8 @@ Every route below also requires a valid session cookie.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/api/combat` | The current encounter. Before anything has been saved this is `{ "round": 0, "turnId": null, "combatants": [] }`. |
-| `PUT` | `/api/combat` | Replace the encounter. `combatants` must be a list of at most 100, each with a unique non-blank `id` and `name`; anything else fails with `400`. |
+| `GET` | `/api/combat` | The current encounter. Before anything has been saved this is `{ "revision": 0, "round": 0, "turnId": null, "combatants": [] }`. |
+| `PUT` | `/api/combat` | Replace the encounter. `combatants` must be a list of at most 100, each with a unique non-blank `id` and `name`; anything else fails with `400`. Returns the saved encounter with its new `revision`. |
 
 Each combatant carries `kind` (`"player"` or `"enemy"`, defaulting to `"enemy"`), `entryId` (the
 `players` entry it was added from, or `null`), an integer `initiative`, an integer `initiativeNudge`
@@ -178,6 +178,26 @@ curl -X PUT http://localhost:8000/api/combat \
   }'
 ```
 
+`revision` is set by the server - any value a client sends is ignored. Saves run one at a time, and each
+one stores the previous revision plus one, so a higher revision is always the newer encounter.
+
+### Live sync
+
+`GET /api/combat/live` upgrades to a websocket that keeps every open tracker in sync. The upgrade needs
+the same session cookie as the REST routes (`401` without it); websocket upgrades on any other path get
+`404`. On connect the server sends the current encounter, then the encounter saved by every `PUT`, in
+revision order:
+
+```json
+{ "type": "encounter", "encounter": { "revision": 8, "round": 1, "turnId": "goblin-1", "combatants": [] } }
+```
+
+The socket is push-only: writes still go through `PUT /api/combat`, and anything a client sends is
+ignored. The server pings every 30 seconds and drops connections that stop answering. Clients compare
+`revision`s to discard a snapshot older than the one they already show, since a save's HTTP response and
+its broadcast can arrive in either order. Behind a reverse proxy, forward websocket upgrades on
+`/api/combat/live` (the Angular dev proxy in `proxy.conf.json` already does, via `"ws": true`).
+
 ## Layout
 
 ```
@@ -186,11 +206,12 @@ server/
 │   ├── app.js          Express app factory - takes { entries, inventory, purses, combat } Mongo collections as a dependency
 │   ├── auth.js           the /api/auth router and the requireAuth middleware
 │   ├── combat.js         the /api/combat router
+│   ├── combat-live.js    the /api/combat/live websocket that pushes every saved encounter
 │   ├── config.js        reads PORT / MONGODB_URI / MONGODB_DB / STATIC_DIR / APP_PASSWORD / SESSION_SECRET
 │   ├── db.js             connects to MongoDB, ensures indexes
 │   ├── entries.js        the /api/entries router
 │   ├── http-error.js     HttpError(status, message) used for 4xx responses
-│   ├── index.js           entry point: connect, then listen
+│   ├── index.js           entry point: connect, listen, attach the combat websocket
 │   ├── inventory.js       the /api/inventory router
 │   ├── purses.js          the /api/purses router
 │   ├── query.js           builds the MongoDB filter for GET /api/entries

@@ -2,9 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Action } from '@ngrx/store';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { Observable, of, ReplaySubject, throwError } from 'rxjs';
+import { Observable, of, ReplaySubject, Subject, throwError, toArray } from 'rxjs';
 
+import { CombatLiveEvent, CombatLiveEventType } from '@core/models';
 import { CombatApiService } from '@core/services/combat-api.service';
+import { CombatLiveService } from '@core/services/combat-live.service';
 import { buildEncounter } from '@testing/combat.fixtures';
 import * as CombatActions from './combat.actions';
 import { CombatEffects } from './combat.effects';
@@ -15,6 +17,8 @@ describe('CombatEffects', () => {
     let effects: CombatEffects;
     let store: MockStore;
     let combatApi: jest.Mocked<Pick<CombatApiService, 'loadEncounter' | 'saveEncounter'>>;
+    let combatLive: jest.Mocked<Pick<CombatLiveService, 'connect'>>;
+    let liveEvents: Subject<CombatLiveEvent>;
 
     const dispatched = <T>(source: Observable<T>): Promise<T> =>
         new Promise<T>((resolve) => source.subscribe((action) => resolve(action)));
@@ -23,13 +27,16 @@ describe('CombatEffects', () => {
         // Arrange
         actions$ = new ReplaySubject<Action>(1);
         combatApi = { loadEncounter: jest.fn(), saveEncounter: jest.fn() };
+        liveEvents = new Subject<CombatLiveEvent>();
+        combatLive = { connect: jest.fn(() => liveEvents.asObservable()) };
 
         TestBed.configureTestingModule({
             providers: [
                 CombatEffects,
                 provideMockActions(() => actions$),
                 provideMockStore({ initialState: {} }),
-                { provide: CombatApiService, useValue: combatApi }
+                { provide: CombatApiService, useValue: combatApi },
+                { provide: CombatLiveService, useValue: combatLive }
             ]
         });
 
@@ -102,5 +109,30 @@ describe('CombatEffects', () => {
 
         // Assert
         expect(result).toEqual(CombatActions.saveEncounter.failure({ error: 'invalid' }));
+    });
+
+    it('should map live socket events onto status and encounter actions until sync stops', async () => {
+        // Arrange
+        const encounter = buildEncounter({ revision: 3 });
+        const collected = new Promise<Action[]>((resolve) => effects.liveSync$.pipe(toArray()).subscribe(resolve));
+        actions$.next(CombatActions.liveSyncStarted());
+
+        // Act
+        liveEvents.next({ type: CombatLiveEventType.Connected });
+        liveEvents.next({ type: CombatLiveEventType.Encounter, encounter });
+        liveEvents.next({ type: CombatLiveEventType.Disconnected });
+        actions$.next(CombatActions.liveSyncStopped());
+        liveEvents.next({ type: CombatLiveEventType.Connected });
+        actions$.complete();
+        const result = await collected;
+
+        // Assert
+        expect(combatLive.connect).toHaveBeenCalledTimes(1);
+        expect(result).toEqual([
+            CombatActions.liveStatusChanged({ connected: true }),
+            CombatActions.encounterReceived({ encounter }),
+            CombatActions.liveStatusChanged({ connected: false })
+        ]);
+        expect(liveEvents.observed).toBe(false);
     });
 });

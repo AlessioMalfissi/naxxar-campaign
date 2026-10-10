@@ -1,5 +1,6 @@
 export * from './api-call-status.enum';
 export * from './codex-section.enum';
+export * from './combat-live-event-type.enum';
 export * from './combatant-kind.enum';
 export * from './entry-visibility.enum';
 export * from './help-category.enum';
@@ -9,6 +10,7 @@ export * from './item-status.enum';
 export * from './save-status.enum';
 export * from './view-mode.enum';
 export * from './i-codex-entry';
+export * from './i-combat-live-event';
 export * from './i-encounter';
 export * from './i-help-topic';
 export * from './i-inventory-item';

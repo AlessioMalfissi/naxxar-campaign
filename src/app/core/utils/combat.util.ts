@@ -9,7 +9,7 @@ import {
 
 const D20_SIDES = 20;
 
-export const EMPTY_ENCOUNTER: IEncounter = { round: 0, turnId: null, combatants: [] };
+export const EMPTY_ENCOUNTER: IEncounter = { revision: 0, round: 0, turnId: null, combatants: [] };
 
 /*
  * Highest initiative acts first, then the highest nudge among equal initiatives. toSorted is stable,
@@ -93,6 +93,7 @@ export const revertTurn = (encounter: IEncounter): IEncounter => {
 
 // Ends the fight: enemies leave the tracker, the party stays with its current hit points and conditions.
 export const endCombat = (encounter: IEncounter): IEncounter => ({
+    ...encounter,
     round: 0,
     turnId: null,
     combatants: encounter.combatants.filter((combatant) => combatant.kind === CombatantKind.Player)
@@ -110,13 +111,14 @@ export const removeCombatant = (encounter: IEncounter, id: string): IEncounter =
         return { ...encounter, combatants: remaining };
     }
     if (remaining.length === 0) {
-        return EMPTY_ENCOUNTER;
+        return { ...EMPTY_ENCOUNTER, revision: encounter.revision };
     }
 
     const order = sortByInitiative(encounter.combatants);
     const index = order.findIndex((combatant) => combatant.id === id);
     const wraps = index === order.length - 1;
     return {
+        ...encounter,
         round: wraps ? encounter.round + 1 : encounter.round,
         turnId: order[wraps ? 0 : index + 1].id,
         combatants: remaining

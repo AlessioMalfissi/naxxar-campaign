@@ -17,10 +17,11 @@ const MAX_NAME_LENGTH = 100;
 
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
-const EMPTY_ENCOUNTER = { round: 0, turnId: null, combatants: [] };
+const EMPTY_ENCOUNTER = { revision: 0, round: 0, turnId: null, combatants: [] };
 
-// Encounters saved before colours and nudges existed read back with their defaults.
-const toPublicEncounter = (doc) => ({
+// Encounters saved before colours, nudges and revisions existed read back with their defaults.
+export const toPublicEncounter = (doc) => ({
+    revision: doc.revision ?? 0,
     round: doc.round,
     turnId: doc.turnId,
     combatants: doc.combatants.map((combatant) => ({ initiativeNudge: 0, color: null, ...combatant }))
@@ -109,13 +110,34 @@ export const normalizeEncounter = (body) => {
     };
 };
 
-export const createCombatRouter = (collection) => {
+export const readEncounter = async (collection) => {
+    const doc = await collection.findOne({ _id: ENCOUNTER_ID });
+    return doc === null ? EMPTY_ENCOUNTER : toPublicEncounter(doc);
+};
+
+// Runs tasks one after another, so each save reads the revision the previous one wrote.
+const createSerialQueue = () => {
+    let tail = Promise.resolve();
+
+    return (task) => {
+        const run = tail.then(task, task);
+        tail = run.catch(() => undefined);
+        return run;
+    };
+};
+
+/*
+ * Every save bumps the encounter's revision, so clients can tell a newer snapshot from a stale one
+ * whichever channel (HTTP response or live socket) delivers it first. `onSaved` receives each saved
+ * encounter in revision order.
+ */
+export const createCombatRouter = (collection, { onSaved = () => undefined } = {}) => {
     const router = Router();
+    const enqueue = createSerialQueue();
 
     router.get('/', async (req, res, next) => {
         try {
-            const doc = await collection.findOne({ _id: ENCOUNTER_ID });
-            res.json(doc === null ? EMPTY_ENCOUNTER : toPublicEncounter(doc));
+            res.json(await readEncounter(collection));
         } catch (error) {
             next(error);
         }
@@ -123,14 +145,23 @@ export const createCombatRouter = (collection) => {
 
     router.put('/', async (req, res, next) => {
         try {
-            const encounter = {
-                _id: ENCOUNTER_ID,
-                ...normalizeEncounter(req.body ?? {}),
-                updatedAt: new Date().toISOString()
-            };
+            const normalized = normalizeEncounter(req.body ?? {});
+            const saved = await enqueue(async () => {
+                const current = await readEncounter(collection);
+                const encounter = {
+                    _id: ENCOUNTER_ID,
+                    ...normalized,
+                    revision: current.revision + 1,
+                    updatedAt: new Date().toISOString()
+                };
 
-            await collection.replaceOne({ _id: ENCOUNTER_ID }, encounter, { upsert: true });
-            res.json(toPublicEncounter(encounter));
+                await collection.replaceOne({ _id: ENCOUNTER_ID }, encounter, { upsert: true });
+                const published = toPublicEncounter(encounter);
+                onSaved(published);
+                return published;
+            });
+
+            res.json(saved);
         } catch (error) {
             next(error);
         }
