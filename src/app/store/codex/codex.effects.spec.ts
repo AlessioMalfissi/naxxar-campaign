@@ -16,7 +16,9 @@ describe('CodexEffects', () => {
     let actions$: ReplaySubject<Action>;
     let effects: CodexEffects;
     let store: MockStore;
-    let codexApi: jest.Mocked<Pick<CodexApiService, 'loadIndex' | 'loadEntry' | 'saveEntry' | 'createEntry' | 'deleteEntry'>>;
+    let codexApi: jest.Mocked<
+        Pick<CodexApiService, 'loadIndex' | 'loadEntry' | 'saveEntry' | 'createEntry' | 'deleteEntry'>
+    >;
 
     const dispatched = <T>(source: Observable<T>): Promise<T> =>
         new Promise<T>((resolve) => source.subscribe((action) => resolve(action)));

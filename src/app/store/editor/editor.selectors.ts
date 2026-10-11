@@ -17,15 +17,9 @@ export const selectLastSavedBy = createSelector(selectEditorState, (state) => st
 
 export const selectEditorError = createSelector(selectEditorState, (state) => state.error);
 
-export const selectIsDirty = createSelector(
-    selectEditorState,
-    (state) => state.draftBody !== state.baselineBody
-);
+export const selectIsDirty = createSelector(selectEditorState, (state) => state.draftBody !== state.baselineBody);
 
-export const selectIsSaving = createSelector(
-    selectSaveStatus,
-    (status) => status === SaveStatus.Saving
-);
+export const selectIsSaving = createSelector(selectSaveStatus, (status) => status === SaveStatus.Saving);
 
 export const selectShowEditor = createSelector(selectViewMode, (mode) => mode !== ViewMode.Preview);
 

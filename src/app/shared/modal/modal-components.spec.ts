@@ -209,9 +209,7 @@ describe('CreateEntryModalComponent', () => {
         component['confirm']();
 
         // Assert
-        expect(dialogRef.close).toHaveBeenCalledWith(
-            expect.objectContaining({ tags: ['merchant', 'ally'] })
-        );
+        expect(dialogRef.close).toHaveBeenCalledWith(expect.objectContaining({ tags: ['merchant', 'ally'] }));
     });
 
     it('should ignore a blank or duplicate pending tag when confirming', () => {

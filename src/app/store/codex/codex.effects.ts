@@ -39,9 +39,7 @@ export class CodexEffects {
 
                 return this.codexApi.loadEntry(summary).pipe(
                     map((entry) => CodexActions.loadEntry.success({ entry })),
-                    catchError(() =>
-                        of(CodexActions.loadEntry.failure({ error: "Couldn't load that entry. Retry." }))
-                    )
+                    catchError(() => of(CodexActions.loadEntry.failure({ error: "Couldn't load that entry. Retry." })))
                 );
             })
         )

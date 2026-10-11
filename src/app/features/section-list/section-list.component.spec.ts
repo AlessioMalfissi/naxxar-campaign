@@ -176,9 +176,7 @@ describe('SectionListComponent', () => {
         component['toggleStatus']('Alive');
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            CodexActions.filtersChanged({ status: 'Alive', tags: [], query: '' })
-        );
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.filtersChanged({ status: 'Alive', tags: [], query: '' }));
     });
 
     it('should clear a status filter that is already applied', () => {
@@ -192,9 +190,7 @@ describe('SectionListComponent', () => {
         component['toggleStatus']('Alive');
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            CodexActions.filtersChanged({ status: null, tags: [], query: '' })
-        );
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.filtersChanged({ status: null, tags: [], query: '' }));
     });
 
     it('should add and remove a tag filter', () => {
@@ -209,9 +205,7 @@ describe('SectionListComponent', () => {
         component['toggleTag']('silver-ledger');
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            CodexActions.filtersChanged({ status: null, tags: [], query: '' })
-        );
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.filtersChanged({ status: null, tags: [], query: '' }));
         expect(dispatchSpy).toHaveBeenCalledWith(
             CodexActions.filtersChanged({ status: null, tags: ['ally', 'silver-ledger'], query: '' })
         );

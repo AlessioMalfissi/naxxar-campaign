@@ -16,7 +16,9 @@ export class PursesEffects {
             switchMap(() =>
                 this.purseApi.loadPurses().pipe(
                     map((purses) => PursesActions.loadPurses.success({ purses })),
-                    catchError(() => of(PursesActions.loadPurses.failure({ error: "Couldn't load party gold. Retry." })))
+                    catchError(() =>
+                        of(PursesActions.loadPurses.failure({ error: "Couldn't load party gold. Retry." }))
+                    )
                 )
             )
         )

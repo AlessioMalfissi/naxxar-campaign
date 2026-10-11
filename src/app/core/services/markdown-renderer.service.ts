@@ -10,11 +10,7 @@ export interface IRenderOptions {
 const DEFAULT_OPTIONS: IRenderOptions = { titles: {}, showDmBlocks: true };
 
 const escapeHtml = (value: string): string =>
-    value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 @Injectable({ providedIn: 'root' })
 export class MarkdownRendererService {
@@ -110,7 +106,11 @@ export class MarkdownRendererService {
             }
 
             const paragraph: string[] = [];
-            while (index < lines.length && lines[index].trim() !== '' && !/^(#{1,3}\s|>|:::|\s*([-*]|\d+\.)\s)/.test(lines[index])) {
+            while (
+                index < lines.length &&
+                lines[index].trim() !== '' &&
+                !/^(#{1,3}\s|>|:::|\s*([-*]|\d+\.)\s)/.test(lines[index])
+            ) {
                 paragraph.push(lines[index]);
                 index += 1;
             }
@@ -173,7 +173,10 @@ export class MarkdownRendererService {
         return text
             .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img class="codex-image" src="$2" alt="$1" />')
             .replace(/\[\[([a-z]+:[a-z0-9-]+)\]\]/g, (match, id: string) => this.entityLink(match, id, options))
-            .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a class="codex-link" href="$2" target="_blank" rel="noopener">$1</a>')
+            .replace(
+                /\[([^\]]+)\]\(([^)\s]+)\)/g,
+                '<a class="codex-link" href="$2" target="_blank" rel="noopener">$1</a>'
+            )
             .replace(/`([^`]+)`/g, '<code class="codex-code">$1</code>')
             .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
             .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')

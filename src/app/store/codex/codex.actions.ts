@@ -5,7 +5,10 @@ import { createApiAction } from '../create-api-action';
 
 const SOURCE = 'Codex';
 
-export const loadIndex = createApiAction<Record<string, never>, { entries: ICodexEntrySummary[] }>(SOURCE, 'load index');
+export const loadIndex = createApiAction<Record<string, never>, { entries: ICodexEntrySummary[] }>(
+    SOURCE,
+    'load index'
+);
 
 export const loadEntry = createApiAction<{ id: string }, { entry: ICodexEntry }>(SOURCE, 'load entry');
 
@@ -31,10 +34,7 @@ export const entryClosed = createAction(`[${SOURCE}] entry closed`);
 
 export const sidebarToggled = createAction(`[${SOURCE}] sidebar toggled`);
 
-export const sidebarCollapsedSet = createAction(
-    `[${SOURCE}] sidebar collapsed set`,
-    props<{ collapsed: boolean }>()
-);
+export const sidebarCollapsedSet = createAction(`[${SOURCE}] sidebar collapsed set`, props<{ collapsed: boolean }>());
 
 export const playerModeToggled = createAction(`[${SOURCE}] player mode toggled`);
 

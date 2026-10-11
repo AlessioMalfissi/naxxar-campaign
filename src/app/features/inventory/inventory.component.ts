@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Store } from '@ngrx/store';
 import { filter } from 'rxjs';
 
@@ -44,7 +45,8 @@ interface IInventoryGroup {
         MatFormFieldModule,
         MatIconModule,
         MatInputModule,
-        MatSelectModule
+        MatSelectModule,
+        MatTooltipModule
     ],
     templateUrl: './inventory.component.html',
     styleUrl: './inventory.component.scss',
@@ -77,7 +79,10 @@ export class InventoryComponent implements OnInit {
             validators: [Validators.required, Validators.minLength(1)]
         }),
         description: new FormControl<string>('', { nonNullable: true }),
-        quantity: new FormControl<number>(1, { nonNullable: true, validators: [Validators.required, Validators.min(0)] }),
+        quantity: new FormControl<number>(1, {
+            nonNullable: true,
+            validators: [Validators.required, Validators.min(0)]
+        }),
         owner: new FormControl<string>(PARTY_OWNER_ID, { nonNullable: true }),
         rarity: new FormControl<ItemRarity>(ItemRarity.None, { nonNullable: true }),
         status: new FormControl<ItemStatus>(ItemStatus.Mundane, { nonNullable: true }),
@@ -274,9 +279,7 @@ export class InventoryComponent implements OnInit {
     }
 
     protected changeForSale(item: IInventoryItem, event: MatCheckboxChange): void {
-        this.store.dispatch(
-            InventoryActions.updateItem.request({ id: item.id, changes: { forSale: event.checked } })
-        );
+        this.store.dispatch(InventoryActions.updateItem.request({ id: item.id, changes: { forSale: event.checked } }));
     }
 
     protected changeImp(item: IInventoryItem, event: MatCheckboxChange): void {

@@ -93,11 +93,7 @@ export class HelpOverlayComponent {
 
         const { width, height } = this.viewport();
         const cardWidth = Math.min(CARD_WIDTH_PX, width - VIEWPORT_MARGIN_PX * 2);
-        const left = clamp(
-            marker.dotLeft - cardWidth / 2,
-            VIEWPORT_MARGIN_PX,
-            width - VIEWPORT_MARGIN_PX - cardWidth
-        );
+        const left = clamp(marker.dotLeft - cardWidth / 2, VIEWPORT_MARGIN_PX, width - VIEWPORT_MARGIN_PX - cardWidth);
         const below = marker.dotTop + CARD_GAP_PX;
         const fitsBelow = below + CARD_ESTIMATED_HEIGHT_PX <= height - VIEWPORT_MARGIN_PX;
 

@@ -153,7 +153,9 @@
                             <div class="cdx-inventory-row-main">
                                 <span class="cdx-inventory-name">{{ item.name }}</span>
                                 @if (item.description !== '') {
-                                    <span class="cdx-inventory-description">{{ item.description }}</span>
+                                    <span class="cdx-inventory-description" [matTooltip]="item.description">
+                                        {{ item.description }}
+                                    </span>
                                 }
                             </div>
 

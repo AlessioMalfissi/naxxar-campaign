@@ -23,7 +23,9 @@ const isValidCookie = (raw, secret) => {
     }
 
     const [value, signature] = raw.split('.');
-    return value === SESSION_VALUE && typeof signature === 'string' && safeEqual(signature, sign(SESSION_VALUE, secret));
+    return (
+        value === SESSION_VALUE && typeof signature === 'string' && safeEqual(signature, sign(SESSION_VALUE, secret))
+    );
 };
 
 const parseCookies = (header) => {

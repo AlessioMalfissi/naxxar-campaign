@@ -7,13 +7,13 @@ Built to the specification in `naxxar-campaign-dashboard-spec.pdf`.
 
 ## Stack
 
-| Package | Version |
-| --- | --- |
-| Angular | 19.2.25 |
-| Angular Material / CDK | 19.2.19 |
-| NgRx store / effects | 19.2.1 |
-| TypeScript | 5.7 |
-| Jest + jest-preset-angular | 29 / 14.5 |
+| Package                              | Version     |
+| ------------------------------------ | ----------- |
+| Angular                              | 19.2.25     |
+| Angular Material / CDK               | 19.2.19     |
+| NgRx store / effects                 | 19.2.1      |
+| TypeScript                           | 5.7         |
+| Jest + jest-preset-angular           | 29 / 14.5   |
 | Express + MongoDB driver (`server/`) | 4.21 / 6.10 |
 
 ## Running it
@@ -38,6 +38,8 @@ pn run build       # production Angular bundle in dist/naxxar-campaign/browser
 pn test            # Angular specs
 pn run test:coverage
 pn run server:test # API specs (no live MongoDB needed - routes are tested against an in-memory fake)
+pn run lint        # Prettier check (fails on unformatted files)
+pn run format      # Prettier rewrite of every file
 ```
 
 See `server/README.md` for the API's endpoints, environment variables, and how to point it at a real
@@ -183,6 +185,11 @@ Standalone components throughout; signal `input()` / `output()` / `viewChild()`;
 members; new control flow (`@if`, `@for`, `@switch`); `takeUntilDestroyed()` or the async pipe for
 subscriptions; interfaces prefixed `I`; observables suffixed `$`; explicit return types; 4-space indent in
 `.ts`, `.html` and `.scss`.
+
+Formatting is owned by Prettier (`.prettierrc.json`): 120-column lines, 4-space indent (2 for JSON, Markdown
+and YAML), single quotes, no trailing commas, Angular parser for templates. `pn run lint` checks it,
+`pn run format` applies it. Seed lore in `server/seed-data` and the generated `src/_theme-colors.scss` are
+excluded via `.prettierignore`.
 
 All HTTP goes through NgRx effects — no `HttpClient` in a component. API actions are built with
 `createApiAction()` so request/success/failure and status tracking come for free. Material Select, Dialog

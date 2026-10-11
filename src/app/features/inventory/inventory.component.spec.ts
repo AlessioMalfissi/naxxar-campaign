@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatCheckboxChange } from '@angular/material/checkbox';
+import { MatTooltip } from '@angular/material/tooltip';
 import { MatSelectChange } from '@angular/material/select';
+import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of } from 'rxjs';
@@ -82,6 +84,24 @@ describe('InventoryComponent', () => {
             items: [expect.objectContaining({ id: 'player-item' })],
             totalCount: 1
         });
+    });
+
+    it('should show the full item description as a tooltip', () => {
+        // Arrange
+        const description = 'A long coil of hempen rope, knotted every foot, smelling faintly of tar and the sea.';
+        store.overrideSelector(selectInventoryItems, [
+            buildInventoryItem({ id: 'party-item', owner: PARTY_OWNER_ID, description })
+        ]);
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+        const element = fixture.debugElement.query(By.css('.cdx-inventory-description'));
+        const tooltip = element.injector.get(MatTooltip);
+
+        // Assert
+        expect(tooltip.message).toBe(description);
+        expect(element.nativeElement.textContent.trim()).toBe(description);
     });
 
     it('should report gold from the store, defaulting to zero for an owner without a purse', () => {
@@ -207,10 +227,11 @@ describe('InventoryComponent', () => {
         component['filterForm'].controls.forSale.setValue('yes');
 
         // Assert
-        expect(component['groups']()[0].items.map((item) => item.id).toSorted()).toEqual([
-            'for-sale-imp',
-            'for-sale-only'
-        ]);
+        expect(
+            component['groups']()[0]
+                .items.map((item) => item.id)
+                .toSorted()
+        ).toEqual(['for-sale-imp', 'for-sale-only']);
         expect(component['hasActiveFilters']()).toBe(true);
 
         // Act
@@ -218,7 +239,11 @@ describe('InventoryComponent', () => {
         component['filterForm'].controls.imp.setValue('no');
 
         // Assert
-        expect(component['groups']()[0].items.map((item) => item.id).toSorted()).toEqual(['for-sale-only', 'neither']);
+        expect(
+            component['groups']()[0]
+                .items.map((item) => item.id)
+                .toSorted()
+        ).toEqual(['for-sale-only', 'neither']);
     });
 
     it('should not add an item when the form is invalid', () => {

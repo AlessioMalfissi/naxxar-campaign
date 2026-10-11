@@ -40,9 +40,7 @@ export const selectEntryLoading = createSelector(
 );
 
 export const selectVisibleEntries = createSelector(selectCodexState, (state) =>
-    state.playerMode
-        ? state.entries.filter((entry) => entry.visibility === EntryVisibility.Revealed)
-        : state.entries
+    state.playerMode ? state.entries.filter((entry) => entry.visibility === EntryVisibility.Revealed) : state.entries
 );
 
 export const selectEntryTitles = createSelector(selectVisibleEntries, (entries) =>
@@ -71,7 +69,11 @@ export const selectSectionEntries = createSelector(
             .filter((entry) => filters.tags.length === 0 || filters.tags.every((tag) => entry.tags.includes(tag)))
             .filter((entry) => {
                 const query = filters.query.trim().toLowerCase();
-                return query === '' || entry.title.toLowerCase().includes(query) || entry.excerpt.toLowerCase().includes(query);
+                return (
+                    query === '' ||
+                    entry.title.toLowerCase().includes(query) ||
+                    entry.excerpt.toLowerCase().includes(query)
+                );
             })
 );
 
@@ -87,20 +89,12 @@ export const selectRecentEntries = createSelector(selectCodexState, selectVisibl
 
 export const selectOpenEntry = createSelector(selectCodexState, (state) => state.openEntry);
 
-export const selectReferencingEntries = createSelector(
-    selectVisibleEntries,
-    selectOpenEntry,
-    (entries, openEntry) =>
-        openEntry === null
-            ? []
-            : entries.filter((entry) => entry.id !== openEntry.id && mentionsEntry(entry, openEntry))
+export const selectReferencingEntries = createSelector(selectVisibleEntries, selectOpenEntry, (entries, openEntry) =>
+    openEntry === null ? [] : entries.filter((entry) => entry.id !== openEntry.id && mentionsEntry(entry, openEntry))
 );
 
-export const selectReferencedEntries = createSelector(
-    selectVisibleEntries,
-    selectOpenEntry,
-    (entries, openEntry) =>
-        openEntry === null
-            ? []
-            : entries.filter((entry) => entry.id !== openEntry.id && isMentionedByEntry(openEntry, entry))
+export const selectReferencedEntries = createSelector(selectVisibleEntries, selectOpenEntry, (entries, openEntry) =>
+    openEntry === null
+        ? []
+        : entries.filter((entry) => entry.id !== openEntry.id && isMentionedByEntry(openEntry, entry))
 );

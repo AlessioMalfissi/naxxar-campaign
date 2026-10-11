@@ -11,7 +11,4 @@ export const selectAuthChecked = createSelector(selectAuthState, (state) => stat
 
 export const selectAuthError = createSelector(selectAuthState, (state) => state.error);
 
-export const selectAuthPending = createSelector(
-    selectAuthState,
-    (state) => state.status === ApiCallStatus.Pending
-);
+export const selectAuthPending = createSelector(selectAuthState, (state) => state.status === ApiCallStatus.Pending);

@@ -32,9 +32,7 @@ export class InventoryEffects {
                     .createItem(name, description, quantity, owner, rarity, status, forSale, imp, impTag)
                     .pipe(
                         map((item) => InventoryActions.createItem.success({ item })),
-                        catchError((error: Error) =>
-                            of(InventoryActions.createItem.failure({ error: error.message }))
-                        )
+                        catchError((error: Error) => of(InventoryActions.createItem.failure({ error: error.message })))
                     )
             )
         )

@@ -27,7 +27,13 @@ describe('CombatLiveService', () => {
                 {
                     provide: WEB_SOCKET_FACTORY,
                     useValue: (url: string) => {
-                        const socket: IFakeSocket = { url, onopen: null, onmessage: null, onclose: null, close: jest.fn() };
+                        const socket: IFakeSocket = {
+                            url,
+                            onopen: null,
+                            onmessage: null,
+                            onclose: null,
+                            close: jest.fn()
+                        };
                         sockets.push(socket);
                         return socket as unknown as WebSocket;
                     }
@@ -128,7 +134,10 @@ describe('CombatLiveService', () => {
         jest.advanceTimersByTime(1);
 
         // Assert
-        expect(events).toEqual([{ type: CombatLiveEventType.Disconnected }, { type: CombatLiveEventType.Disconnected }]);
+        expect(events).toEqual([
+            { type: CombatLiveEventType.Disconnected },
+            { type: CombatLiveEventType.Disconnected }
+        ]);
         expect(beforeDelay).toBe(1);
         expect(afterFirstDelay).toBe(2);
         expect(beforeSecondDelay).toBe(2);

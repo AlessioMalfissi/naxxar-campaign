@@ -72,7 +72,9 @@ test('GET /api/entries requires a session and rejects a tampered cookie', async 
     assert.equal(anonymous.status, 401);
     assert.equal(anonymous.body.error, 'Sign in required.');
 
-    const tampered = await request(app).get('/api/entries').set('Cookie', 'naxxar_session=authenticated.not-a-real-signature');
+    const tampered = await request(app)
+        .get('/api/entries')
+        .set('Cookie', 'naxxar_session=authenticated.not-a-real-signature');
     assert.equal(tampered.status, 401);
 });
 

@@ -104,7 +104,11 @@ describe('ConditionModalComponent', () => {
         component['confirm']();
 
         // Assert
-        expect(dialogRef.close).toHaveBeenCalledWith({ name: 'Marked', rounds: 2, description: 'Next hit deals +1d6.' });
+        expect(dialogRef.close).toHaveBeenCalledWith({
+            name: 'Marked',
+            rounds: 2,
+            description: 'Next hit deals +1d6.'
+        });
     });
 
     it('should leave out a blank description', () => {

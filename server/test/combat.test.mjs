@@ -138,8 +138,14 @@ test('PUT /api/combat reports every saved encounter to onSaved in revision order
         agent.put('/api/combat').send({ round: 1, combatants: [goblin()], turnId: 'goblin-1' })
     ]);
 
-    assert.deepEqual(saved.map((encounter) => encounter.revision), [1, 2]);
-    assert.equal(saved.some((encounter) => '_id' in encounter || 'updatedAt' in encounter), false);
+    assert.deepEqual(
+        saved.map((encounter) => encounter.revision),
+        [1, 2]
+    );
+    assert.equal(
+        saved.some((encounter) => '_id' in encounter || 'updatedAt' in encounter),
+        false
+    );
 });
 
 test('PUT /api/combat does not report a rejected encounter to onSaved', async () => {

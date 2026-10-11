@@ -291,7 +291,12 @@ describe('HelpOverlayComponent', () => {
 
     it('should scroll an off-screen target into view', () => {
         // Arrange
-        const anchor = addAnchor('combat-controls', { top: window.innerHeight + 200, left: 300, width: 400, height: 40 });
+        const anchor = addAnchor('combat-controls', {
+            top: window.innerHeight + 200,
+            left: 300,
+            width: 400,
+            height: 40
+        });
         const scrollSpy = jest.fn();
         anchor.scrollIntoView = scrollSpy;
         createComponent('/campaign/combat');
