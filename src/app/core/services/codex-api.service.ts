@@ -43,12 +43,10 @@ export class CodexApiService {
     }
 
     saveEntry(entry: ICodexEntry): Observable<ICodexEntry> {
-        return this.http
-            .put<Record<string, unknown>>(`${ENTRIES_URL}/${entry.section}/${entry.slug}`, entry)
-            .pipe(
-                map((raw) => toEntry(raw)),
-                catchError(this.toFriendlyError("Couldn't save the entry. Retry."))
-            );
+        return this.http.put<Record<string, unknown>>(`${ENTRIES_URL}/${entry.section}/${entry.slug}`, entry).pipe(
+            map((raw) => toEntry(raw)),
+            catchError(this.toFriendlyError("Couldn't save the entry. Retry."))
+        );
     }
 
     createEntry(
@@ -73,9 +71,7 @@ export class CodexApiService {
             return throwError(() => new Error('Invalid entry id.'));
         }
 
-        return this.http
-            .delete<void>(`${ENTRIES_URL}/${reference.section}/${reference.slug}`)
-            .pipe(map(() => id));
+        return this.http.delete<void>(`${ENTRIES_URL}/${reference.section}/${reference.slug}`).pipe(map(() => id));
     }
 
     private toFriendlyError(defaultMessage: string) {

@@ -101,9 +101,7 @@ describe('ModalService', () => {
         dialog.open.mockReturnValue({ closed: of(null) });
 
         // Act
-        service
-            .createEntry({ title: 'New entry in NPCs', statuses: ['Alive', 'Dead'], fields: [] })
-            .subscribe();
+        service.createEntry({ title: 'New entry in NPCs', statuses: ['Alive', 'Dead'], fields: [] }).subscribe();
 
         // Assert
         const [component, config] = dialog.open.mock.calls[0] as [unknown, { data: ICreateEntryModalData }];

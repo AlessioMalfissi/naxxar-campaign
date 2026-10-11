@@ -156,7 +156,7 @@ const COMBAT_TOPICS: readonly IHelpTopic[] = [
         id: 'combat-initiative',
         category: HelpCategory.Editing,
         title: 'Initiative',
-        body: 'Edit a combatant\'s initiative to reorder them. The smaller box is a tie-break: among equal initiatives, the higher one acts first.'
+        body: "Edit a combatant's initiative to reorder them. The smaller box is a tie-break: among equal initiatives, the higher one acts first."
     },
     {
         id: 'combat-identity',

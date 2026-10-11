@@ -82,9 +82,7 @@ describe('EditorEffects', () => {
         actions$.next(EditorActions.saveRequested());
 
         // Assert
-        expect(emitted).toEqual([
-            CodexActions.saveEntry.request({ entry: { ...buildEntry(), body: '# Edited' } })
-        ]);
+        expect(emitted).toEqual([CodexActions.saveEntry.request({ entry: { ...buildEntry(), body: '# Edited' } })]);
     });
 
     it('should ignore a save when no entry is open', () => {

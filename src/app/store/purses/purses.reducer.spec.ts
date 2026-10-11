@@ -44,7 +44,10 @@ describe('pursesReducer', () => {
 
     it('should replace an existing purse on update success', () => {
         // Arrange
-        const seeded = pursesReducer(INITIAL_PURSES_STATE, PursesActions.loadPurses.success({ purses: [buildPurse()] }));
+        const seeded = pursesReducer(
+            INITIAL_PURSES_STATE,
+            PursesActions.loadPurses.success({ purses: [buildPurse()] })
+        );
         const updated = buildPurse({ gold: 999 });
 
         // Act

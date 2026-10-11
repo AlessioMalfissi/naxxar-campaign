@@ -8,9 +8,7 @@ export const selectCombatState = createFeatureSelector<ICombatState>(COMBAT_FEAT
 
 export const selectEncounter = createSelector(selectCombatState, (state) => state.encounter);
 
-export const selectTurnOrder = createSelector(selectEncounter, (encounter) =>
-    sortByInitiative(encounter.combatants)
-);
+export const selectTurnOrder = createSelector(selectEncounter, (encounter) => sortByInitiative(encounter.combatants));
 
 export const selectCombatRound = createSelector(selectEncounter, (encounter) => encounter.round);
 

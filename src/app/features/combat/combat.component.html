@@ -185,7 +185,9 @@
                                     >
                                         {{ condition.name }}
                                         @if (condition.description) {
-                                            <mat-icon class="cdx-combat-condition-info" aria-hidden="true">info</mat-icon>
+                                            <mat-icon class="cdx-combat-condition-info" aria-hidden="true">
+                                                info
+                                            </mat-icon>
                                         }
                                         @if (condition.rounds !== null) {
                                             <span class="cdx-combat-condition-rounds">{{ condition.rounds }}r</span>

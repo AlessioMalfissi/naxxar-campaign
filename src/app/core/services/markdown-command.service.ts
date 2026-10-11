@@ -131,7 +131,9 @@ export class MarkdownCommandService {
         const allPrefixed = lines.every((line) => line.startsWith(prefix));
 
         const updated = lines
-            .map((line) => (allPrefixed ? line.slice(prefix.length) : `${prefix}${line.replace(/^(#{1,3}\s|-\s|>\s)/, '')}`))
+            .map((line) =>
+                allPrefixed ? line.slice(prefix.length) : `${prefix}${line.replace(/^(#{1,3}\s|-\s|>\s)/, '')}`
+            )
             .join('\n');
 
         return {

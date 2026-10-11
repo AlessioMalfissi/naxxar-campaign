@@ -6,8 +6,7 @@ import { AppComponent } from './app.component';
 import { APP_CONFIG } from './app.config';
 import { APP_ROUTES } from './app.routes';
 
-const findRoute = (routes: Route[], path: string): Route | undefined =>
-    routes.find((route) => route.path === path);
+const findRoute = (routes: Route[], path: string): Route | undefined => routes.find((route) => route.path === path);
 
 describe('AppComponent', () => {
     beforeEach(async () => {

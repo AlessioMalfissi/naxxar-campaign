@@ -21,31 +21,27 @@
             "outputPath": "dist/naxxar-campaign",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-                {
-                    "glob": "favicon.ico",
-                    "input": "src",
-                    "output": "/"
-                },
-                {
-                    "glob": "favicon.svg",
-                    "input": "src",
-                    "output": "/"
-                },
-                {
-                    "glob": "apple-touch-icon.png",
-                    "input": "src",
-                    "output": "/"
-                }
+              {
+                "glob": "favicon.ico",
+                "input": "src",
+                "output": "/"
+              },
+              {
+                "glob": "favicon.svg",
+                "input": "src",
+                "output": "/"
+              },
+              {
+                "glob": "apple-touch-icon.png",
+                "input": "src",
+                "output": "/"
+              }
             ],
-            "styles": [
-              "src/styles.scss"
-            ],
+            "styles": ["src/styles.scss"],
             "scripts": []
           },
           "configurations": {

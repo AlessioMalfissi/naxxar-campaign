@@ -109,13 +109,9 @@ export const codexReducer = createReducer<ICodexState>(
 
     on(CodexActions.favouriteToggled, (state, { id }): ICodexState => ({
         ...state,
-        entries: state.entries.map((entry) =>
-            entry.id === id ? { ...entry, favourite: !entry.favourite } : entry
-        ),
+        entries: state.entries.map((entry) => (entry.id === id ? { ...entry, favourite: !entry.favourite } : entry)),
         openEntry:
-            state.openEntry?.id === id
-                ? { ...state.openEntry, favourite: !state.openEntry.favourite }
-                : state.openEntry
+            state.openEntry?.id === id ? { ...state.openEntry, favourite: !state.openEntry.favourite } : state.openEntry
     })),
 
     on(CodexActions.filtersChanged, (state, { status, tags, query }): ICodexState => ({

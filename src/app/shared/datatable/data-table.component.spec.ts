@@ -12,9 +12,7 @@ describe('DataTableComponent', () => {
         { key: 'status', label: 'Status' }
     ];
 
-    const rows: IDataTableRow[] = [
-        { id: 'npcs:vaelith-corrun', chip: 'Alive', cells: { title: 'Vaelith Corrun' } }
-    ];
+    const rows: IDataTableRow[] = [{ id: 'npcs:vaelith-corrun', chip: 'Alive', cells: { title: 'Vaelith Corrun' } }];
 
     beforeEach(async () => {
         // Arrange

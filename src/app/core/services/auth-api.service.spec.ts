@@ -54,7 +54,9 @@ describe('AuthApiService', () => {
 
         // Act
         service.login('wrong').subscribe({ error: (thrown: Error) => (error = thrown) });
-        httpMock.expectOne('/api/auth/login').flush({ error: 'Incorrect password.' }, { status: 401, statusText: 'Unauthorized' });
+        httpMock
+            .expectOne('/api/auth/login')
+            .flush({ error: 'Incorrect password.' }, { status: 401, statusText: 'Unauthorized' });
 
         // Assert
         expect(error!.message).toBe('Incorrect password.');

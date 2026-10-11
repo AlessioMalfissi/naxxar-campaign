@@ -29,14 +29,14 @@ pnpm run server:test    # from the repo root, or `npm test` from here
 
 ## Environment variables
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `PORT` | `8000` | Port the API listens on. |
-| `MONGODB_URI` | `mongodb://127.0.0.1:27017` | Connection string. |
-| `MONGODB_DB` | `naxxar_campaign` | Database name. |
-| `STATIC_DIR` | unset | If set, also serves this directory as the Angular app (SPA fallback to `index.html` for any non-`/api` route). Point it at `../dist/naxxar-campaign/browser` after `pn run build` to run the whole app from one process. |
-| `APP_PASSWORD` | none - required | The shared password the whole table logs in with. The server refuses to start without it. |
-| `SESSION_SECRET` | `APP_PASSWORD` | Secret used to sign the login session cookie. Defaults to `APP_PASSWORD`; set it separately so rotating the login password doesn't also log everyone out. |
+| Variable         | Default                     | Purpose                                                                                                                                                                                                                  |
+| ---------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PORT`           | `8000`                      | Port the API listens on.                                                                                                                                                                                                 |
+| `MONGODB_URI`    | `mongodb://127.0.0.1:27017` | Connection string.                                                                                                                                                                                                       |
+| `MONGODB_DB`     | `naxxar_campaign`           | Database name.                                                                                                                                                                                                           |
+| `STATIC_DIR`     | unset                       | If set, also serves this directory as the Angular app (SPA fallback to `index.html` for any non-`/api` route). Point it at `../dist/naxxar-campaign/browser` after `pn run build` to run the whole app from one process. |
+| `APP_PASSWORD`   | none - required             | The shared password the whole table logs in with. The server refuses to start without it.                                                                                                                                |
+| `SESSION_SECRET` | `APP_PASSWORD`              | Secret used to sign the login session cookie. Defaults to `APP_PASSWORD`; set it separately so rotating the login password doesn't also log everyone out.                                                                |
 
 ## Authentication
 
@@ -44,36 +44,36 @@ There are no individual accounts - one shared password (`APP_PASSWORD`) gates th
 /api/auth/login` checks the password and sets an httpOnly, signed session cookie; every `/api/entries`
 route requires that cookie and responds `401` without it. `/api/auth/*` itself is unauthenticated.
 
-| Method | Path | Description |
-| --- | --- | --- |
-| `POST` | `/api/auth/login` | Body `{ "password": "..." }`. Sets the session cookie on success, `401` on a wrong password. |
-| `POST` | `/api/auth/logout` | Clears the session cookie. Always `200`. |
-| `GET` | `/api/auth/me` | Returns `{ "authenticated": true \| false }` based on the current cookie. |
+| Method | Path               | Description                                                                                  |
+| ------ | ------------------ | -------------------------------------------------------------------------------------------- |
+| `POST` | `/api/auth/login`  | Body `{ "password": "..." }`. Sets the session cookie on success, `401` on a wrong password. |
+| `POST` | `/api/auth/logout` | Clears the session cookie. Always `200`.                                                     |
+| `GET`  | `/api/auth/me`     | Returns `{ "authenticated": true \| false }` based on the current cookie.                    |
 
 ## Endpoints
 
 All responses are JSON. Entries are addressed by `section` + `slug` (matching the app's `section:slug`
 entry id), not a Mongo ObjectId. Every route below requires a valid session cookie (see Authentication).
 
-| Method | Path | Description |
-| --- | --- | --- |
-| `GET` | `/api/entries` | List entries (summaries - no `body`), optionally filtered. |
-| `GET` | `/api/entries/:section/:slug` | Fetch one entry, including its `body`. `404` if it doesn't exist. |
-| `POST` | `/api/entries` | Create an entry. Slug is derived from `title` server-side. `409` on a duplicate slug in the section. |
-| `PUT` | `/api/entries/:section/:slug` | Replace an existing entry (used for edits, favourite toggles, etc). `404` if it doesn't exist. |
-| `DELETE` | `/api/entries/:section/:slug` | Delete an entry. Idempotent - `200` even if nothing matched. |
+| Method   | Path                          | Description                                                                                          |
+| -------- | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/entries`                | List entries (summaries - no `body`), optionally filtered.                                           |
+| `GET`    | `/api/entries/:section/:slug` | Fetch one entry, including its `body`. `404` if it doesn't exist.                                    |
+| `POST`   | `/api/entries`                | Create an entry. Slug is derived from `title` server-side. `409` on a duplicate slug in the section. |
+| `PUT`    | `/api/entries/:section/:slug` | Replace an existing entry (used for edits, favourite toggles, etc). `404` if it doesn't exist.       |
+| `DELETE` | `/api/entries/:section/:slug` | Delete an entry. Idempotent - `200` even if nothing matched.                                         |
 
 ### Filtering `GET /api/entries`
 
 Query params, all optional and combinable:
 
-| Param | Example | Behaviour |
-| --- | --- | --- |
-| `section` | `npcs` | Exact match. |
-| `status` | `Alive` | Exact match. |
-| `visibility` | `dm` or `revealed` | Exact match. |
-| `tags` | `ally,silver-ledger` | Comma-separated; an entry must have every listed tag. |
-| `query` | `broker` | Case-insensitive substring match against `title` or `excerpt`. |
+| Param        | Example              | Behaviour                                                      |
+| ------------ | -------------------- | -------------------------------------------------------------- |
+| `section`    | `npcs`               | Exact match.                                                   |
+| `status`     | `Alive`              | Exact match.                                                   |
+| `visibility` | `dm` or `revealed`   | Exact match.                                                   |
+| `tags`       | `ally,silver-ledger` | Comma-separated; an entry must have every listed tag.          |
+| `query`      | `broker`             | Case-insensitive substring match against `title` or `excerpt`. |
 
 ```bash
 curl "http://localhost:8000/api/entries?section=npcs&status=Alive&tags=ally&query=broker"
@@ -102,12 +102,12 @@ least two characters after trimming; anything else fails with `400`.
 Items are addressed by a generated id (not `section:slug`). Every route below also requires a valid
 session cookie.
 
-| Method | Path | Description |
-| --- | --- | --- |
-| `GET` | `/api/inventory` | List every item, sorted by name. |
-| `POST` | `/api/inventory` | Create an item. `name` is required; `quantity` defaults to `1`, `owner` defaults to `"party"`, `rarity` defaults to `"none"`, `status` defaults to `"mundane"`. |
-| `PATCH` | `/api/inventory/:id` | Update one or more of `name`, `description`, `quantity`, `owner`, `rarity`, `status`. `404` if the item doesn't exist. |
-| `DELETE` | `/api/inventory/:id` | Delete an item. Idempotent - `200` even if nothing matched. |
+| Method   | Path                 | Description                                                                                                                                                     |
+| -------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/inventory`     | List every item, sorted by name.                                                                                                                                |
+| `POST`   | `/api/inventory`     | Create an item. `name` is required; `quantity` defaults to `1`, `owner` defaults to `"party"`, `rarity` defaults to `"none"`, `status` defaults to `"mundane"`. |
+| `PATCH`  | `/api/inventory/:id` | Update one or more of `name`, `description`, `quantity`, `owner`, `rarity`, `status`. `404` if the item doesn't exist.                                          |
+| `DELETE` | `/api/inventory/:id` | Delete an item. Idempotent - `200` even if nothing matched.                                                                                                     |
 
 `owner` is either the literal `"party"` (party inventory) or a codex entry id of a `players` entry
 (e.g. `"players:tessaly-oakhand"`), assigning the item to that character. The API stores whatever string
@@ -136,10 +136,10 @@ A purse tracks the gold held by the party or by one player, addressed by the sam
 inventory items (`"party"`, or a `players` entry id like `"players:tessaly-oakhand"`). Every route below
 also requires a valid session cookie.
 
-| Method | Path | Description |
-| --- | --- | --- |
-| `GET` | `/api/purses` | List every purse that has been set. An owner with no purse yet simply isn't in the list - the app treats that as 0 gold. |
-| `PUT` | `/api/purses/:owner` | Create or replace the purse for `owner` with the given `gold`. `gold` must be a non-negative number (fractional values are floored); anything else fails with `400`. |
+| Method | Path                 | Description                                                                                                                                                          |
+| ------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/purses`        | List every purse that has been set. An owner with no purse yet simply isn't in the list - the app treats that as 0 gold.                                             |
+| `PUT`  | `/api/purses/:owner` | Create or replace the purse for `owner` with the given `gold`. `gold` must be a non-negative number (fractional values are floored); anything else fails with `400`. |
 
 ```bash
 curl -X PUT http://localhost:8000/api/purses/party \
@@ -152,10 +152,10 @@ curl -X PUT http://localhost:8000/api/purses/party \
 The combat tracker is one encounter document (`_id: "current"`) that the app reads and writes whole.
 Every route below also requires a valid session cookie.
 
-| Method | Path | Description |
-| --- | --- | --- |
-| `GET` | `/api/combat` | The current encounter. Before anything has been saved this is `{ "revision": 0, "round": 0, "turnId": null, "combatants": [] }`. |
-| `PUT` | `/api/combat` | Replace the encounter. `combatants` must be a list of at most 100, each with a unique non-blank `id` and `name`; anything else fails with `400`. Returns the saved encounter with its new `revision`. |
+| Method | Path          | Description                                                                                                                                                                                           |
+| ------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/combat` | The current encounter. Before anything has been saved this is `{ "revision": 0, "round": 0, "turnId": null, "combatants": [] }`.                                                                      |
+| `PUT`  | `/api/combat` | Replace the encounter. `combatants` must be a list of at most 100, each with a unique non-blank `id` and `name`; anything else fails with `400`. Returns the saved encounter with its new `revision`. |
 
 Each combatant carries `kind` (`"player"` or `"enemy"`, defaulting to `"enemy"`), `entryId` (the
 `players` entry it was added from, or `null`), an integer `initiative`, an integer `initiativeNudge`

@@ -101,9 +101,7 @@ test('POST /api/inventory stores the supplied quantity, owner, description, rari
 test('POST /api/inventory falls back to a default rarity and status for an invalid value', async () => {
     const app = buildApp([]);
     const agent = await authedAgent(app);
-    const response = await agent
-        .post('/api/inventory')
-        .send({ name: 'Torch', rarity: 'mythical', status: 'cursed' });
+    const response = await agent.post('/api/inventory').send({ name: 'Torch', rarity: 'mythical', status: 'cursed' });
 
     assert.equal(response.status, 201);
     assert.equal(response.body.rarity, 'none');
@@ -144,9 +142,7 @@ test('PATCH /api/inventory/:id updates the quantity', async () => {
 test('PATCH /api/inventory/:id reassigns the owner to a player', async () => {
     const app = buildApp([sampleItem()]);
     const agent = await authedAgent(app);
-    const response = await agent
-        .patch(`/api/inventory/${sampleItem()._id}`)
-        .send({ owner: 'players:tessaly-oakhand' });
+    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ owner: 'players:tessaly-oakhand' });
 
     assert.equal(response.status, 200);
     assert.equal(response.body.owner, 'players:tessaly-oakhand');
@@ -180,9 +176,7 @@ test('PATCH /api/inventory/:id keeps the existing rarity and status when given a
 test('PATCH /api/inventory/:id updates the forSale and imp flags', async () => {
     const app = buildApp([sampleItem({ forSale: false, imp: false })]);
     const agent = await authedAgent(app);
-    const response = await agent
-        .patch(`/api/inventory/${sampleItem()._id}`)
-        .send({ forSale: true, imp: true });
+    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ forSale: true, imp: true });
 
     assert.equal(response.status, 200);
     assert.equal(response.body.forSale, true);
@@ -192,9 +186,7 @@ test('PATCH /api/inventory/:id updates the forSale and imp flags', async () => {
 test('PATCH /api/inventory/:id updates the impTag, trimming whitespace', async () => {
     const app = buildApp([sampleItem({ impTag: '' })]);
     const agent = await authedAgent(app);
-    const response = await agent
-        .patch(`/api/inventory/${sampleItem()._id}`)
-        .send({ impTag: ' Cromwell ' });
+    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ impTag: ' Cromwell ' });
 
     assert.equal(response.status, 200);
     assert.equal(response.body.impTag, 'Cromwell');

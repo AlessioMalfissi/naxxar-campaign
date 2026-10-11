@@ -150,10 +150,7 @@ describe('MarkdownEditorComponent', () => {
     it('should emit the entry id when a preview link is activated', () => {
         // Arrange
         fixture.componentRef.setInput('showPreview', true);
-        fixture.componentRef.setInput(
-            'html',
-            '<a href="#" data-entry-id="npcs:mother-ilsabeth">Mother Ilsabeth</a>'
-        );
+        fixture.componentRef.setInput('html', '<a href="#" data-entry-id="npcs:mother-ilsabeth">Mother Ilsabeth</a>');
         fixture.detectChanges();
         const emitted: string[] = [];
         component.entryLinkActivated.subscribe((id) => emitted.push(id));

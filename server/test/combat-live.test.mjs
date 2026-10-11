@@ -164,7 +164,10 @@ test('saves are pushed in revision order', async (t) => {
 
     await Promise.all(
         [0, 1, 2].map((round) =>
-            request(server).put('/api/combat').set('Cookie', cookie).send({ round, combatants: [goblin] })
+            request(server)
+                .put('/api/combat')
+                .set('Cookie', cookie)
+                .send({ round, combatants: [goblin] })
         )
     );
 

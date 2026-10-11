@@ -45,11 +45,7 @@ const tickConditions = (combatant: ICombatant): ICombatant => ({
         .filter((condition) => condition.rounds === null || condition.rounds > 0)
 });
 
-const updateById = (
-    encounter: IEncounter,
-    id: string,
-    update: (combatant: ICombatant) => ICombatant
-): IEncounter => ({
+const updateById = (encounter: IEncounter, id: string, update: (combatant: ICombatant) => ICombatant): IEncounter => ({
     ...encounter,
     combatants: encounter.combatants.map((combatant) => (combatant.id === id ? update(combatant) : combatant))
 });

@@ -114,9 +114,7 @@ describe('EntryDetailComponent', () => {
         fixture.detectChanges();
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            CodexActions.loadEntry.request({ id: 'places:ashfall-city' })
-        );
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.loadEntry.request({ id: 'places:ashfall-city' }));
     });
 
     it('should ignore an incomplete route', () => {
@@ -165,9 +163,7 @@ describe('EntryDetailComponent', () => {
         fixture.detectChanges();
 
         // Assert
-        expect(component['fields']().find((field) => field.label === 'Affiliation')?.value).toBe(
-            'Silver Ledger'
-        );
+        expect(component['fields']().find((field) => field.label === 'Affiliation')?.value).toBe('Silver Ledger');
     });
 
     it('should leave a malformed reference untouched', () => {
@@ -348,9 +344,7 @@ describe('EntryDetailComponent', () => {
         favouriteButton.click();
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            CodexActions.favouriteToggled({ id: 'npcs:vaelith-corrun' })
-        );
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.favouriteToggled({ id: 'npcs:vaelith-corrun' }));
     });
 
     it('should save the entry with the newly picked status', () => {
@@ -473,9 +467,7 @@ describe('EntryDetailComponent', () => {
         fixture.detectChanges();
 
         // Act
-        const menuTrigger = fixture.nativeElement.querySelector(
-            '[aria-label="Entry actions"]'
-        ) as HTMLButtonElement;
+        const menuTrigger = fixture.nativeElement.querySelector('[aria-label="Entry actions"]') as HTMLButtonElement;
         menuTrigger.click();
         fixture.detectChanges();
 
@@ -491,9 +483,7 @@ describe('EntryDetailComponent', () => {
         fixture.detectChanges();
 
         // Act
-        const menuTrigger = fixture.nativeElement.querySelector(
-            '[aria-label="Entry actions"]'
-        ) as HTMLButtonElement;
+        const menuTrigger = fixture.nativeElement.querySelector('[aria-label="Entry actions"]') as HTMLButtonElement;
         menuTrigger.click();
         fixture.detectChanges();
 
@@ -507,9 +497,7 @@ describe('EntryDetailComponent', () => {
         fixture.detectChanges();
 
         // Act
-        const menuTrigger = fixture.nativeElement.querySelector(
-            '[aria-label="Entry actions"]'
-        ) as HTMLButtonElement;
+        const menuTrigger = fixture.nativeElement.querySelector('[aria-label="Entry actions"]') as HTMLButtonElement;
         menuTrigger.click();
         fixture.detectChanges();
 
@@ -525,9 +513,7 @@ describe('EntryDetailComponent', () => {
         fixture.detectChanges();
 
         // Act
-        const menuTrigger = fixture.nativeElement.querySelector(
-            '[aria-label="Entry actions"]'
-        ) as HTMLButtonElement;
+        const menuTrigger = fixture.nativeElement.querySelector('[aria-label="Entry actions"]') as HTMLButtonElement;
         menuTrigger.click();
         fixture.detectChanges();
 
@@ -558,9 +544,7 @@ describe('EntryDetailComponent', () => {
         component['deleteEntry']();
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            CodexActions.deleteEntry.request({ id: 'npcs:vaelith-corrun' })
-        );
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.deleteEntry.request({ id: 'npcs:vaelith-corrun' }));
         expect(router.navigate).toHaveBeenCalledWith(['/campaign', 'npcs']);
     });
 
@@ -574,9 +558,7 @@ describe('EntryDetailComponent', () => {
         component['deleteEntry']();
 
         // Assert
-        expect(dispatchSpy).not.toHaveBeenCalledWith(
-            CodexActions.deleteEntry.request({ id: 'npcs:vaelith-corrun' })
-        );
+        expect(dispatchSpy).not.toHaveBeenCalledWith(CodexActions.deleteEntry.request({ id: 'npcs:vaelith-corrun' }));
     });
 
     it('should badge a DM-only entry', () => {

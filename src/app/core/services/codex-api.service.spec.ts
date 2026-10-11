@@ -49,9 +49,7 @@ describe('CodexApiService', () => {
             .subscribe();
 
         // Act
-        const request = httpMock.expectOne(
-            (req) => req.url === '/api/entries' && req.method === 'GET'
-        );
+        const request = httpMock.expectOne((req) => req.url === '/api/entries' && req.method === 'GET');
 
         // Assert
         expect(request.request.params.get('section')).toBe('npcs');

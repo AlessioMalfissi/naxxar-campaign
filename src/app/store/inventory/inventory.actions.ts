@@ -20,9 +20,9 @@ export const createItem = createApiAction<
     { item: IInventoryItem }
 >(SOURCE, 'create item');
 
-export const updateItem = createApiAction<
-    { id: string; changes: IInventoryItemChanges },
-    { item: IInventoryItem }
->(SOURCE, 'update item');
+export const updateItem = createApiAction<{ id: string; changes: IInventoryItemChanges }, { item: IInventoryItem }>(
+    SOURCE,
+    'update item'
+);
 
 export const deleteItem = createApiAction<{ id: string }, { id: string }>(SOURCE, 'delete item');

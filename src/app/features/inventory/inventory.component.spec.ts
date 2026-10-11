@@ -227,10 +227,11 @@ describe('InventoryComponent', () => {
         component['filterForm'].controls.forSale.setValue('yes');
 
         // Assert
-        expect(component['groups']()[0].items.map((item) => item.id).toSorted()).toEqual([
-            'for-sale-imp',
-            'for-sale-only'
-        ]);
+        expect(
+            component['groups']()[0]
+                .items.map((item) => item.id)
+                .toSorted()
+        ).toEqual(['for-sale-imp', 'for-sale-only']);
         expect(component['hasActiveFilters']()).toBe(true);
 
         // Act
@@ -238,7 +239,11 @@ describe('InventoryComponent', () => {
         component['filterForm'].controls.imp.setValue('no');
 
         // Assert
-        expect(component['groups']()[0].items.map((item) => item.id).toSorted()).toEqual(['for-sale-only', 'neither']);
+        expect(
+            component['groups']()[0]
+                .items.map((item) => item.id)
+                .toSorted()
+        ).toEqual(['for-sale-only', 'neither']);
     });
 
     it('should not add an item when the form is invalid', () => {

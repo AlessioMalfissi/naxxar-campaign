@@ -132,12 +132,16 @@ export const createEntriesRouter = (collection) => {
                 section,
                 slug,
                 path: existing.path,
-                title: typeof payload.title === 'string' && payload.title.trim() !== '' ? payload.title : existing.title,
+                title:
+                    typeof payload.title === 'string' && payload.title.trim() !== '' ? payload.title : existing.title,
                 status: typeof payload.status === 'string' ? payload.status : existing.status,
                 tags: payload.tags === undefined ? existing.tags : normalizeTags(payload.tags),
                 favourite: typeof payload.favourite === 'boolean' ? payload.favourite : existing.favourite,
                 visibility: normalizeVisibility(payload.visibility, existing.visibility),
-                author: typeof payload.author === 'string' && payload.author.trim() !== '' ? payload.author : existing.author,
+                author:
+                    typeof payload.author === 'string' && payload.author.trim() !== ''
+                        ? payload.author
+                        : existing.author,
                 updatedAt: new Date().toISOString(),
                 fields: payload.fields === undefined ? existing.fields : normalizeFields(payload.fields),
                 excerpt: typeof payload.excerpt === 'string' ? payload.excerpt : existing.excerpt,

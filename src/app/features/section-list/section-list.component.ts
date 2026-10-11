@@ -119,9 +119,7 @@ export class SectionListComponent {
         this.store.dispatch(
             CodexActions.filtersChanged({
                 ...current,
-                tags: current.tags.includes(tag)
-                    ? current.tags.filter((item) => item !== tag)
-                    : [...current.tags, tag]
+                tags: current.tags.includes(tag) ? current.tags.filter((item) => item !== tag) : [...current.tags, tag]
             })
         );
     }
