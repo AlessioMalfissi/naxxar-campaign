@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Store } from '@ngrx/store';
 import { filter } from 'rxjs';
 
@@ -44,7 +45,8 @@ interface IInventoryGroup {
         MatFormFieldModule,
         MatIconModule,
         MatInputModule,
-        MatSelectModule
+        MatSelectModule,
+        MatTooltipModule
     ],
     templateUrl: './inventory.component.html',
     styleUrl: './inventory.component.scss',
