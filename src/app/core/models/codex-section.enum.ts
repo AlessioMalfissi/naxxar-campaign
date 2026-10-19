@@ -3,5 +3,6 @@ export enum CodexSection {
     Players = 'players',
     Places = 'places',
     Organizations = 'organizations',
-    Story = 'story'
+    Story = 'story',
+    HouseRules = 'rules'
 }

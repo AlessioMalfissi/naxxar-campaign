@@ -111,6 +111,15 @@ test('POST /api/entries creates an entry with a slugified title', async () => {
     assert.equal(response.body.visibility, 'dm');
 });
 
+test('POST /api/entries accepts the rules section', async () => {
+    const app = buildApp([]);
+    const agent = await authedAgent(app);
+    const response = await agent.post('/api/entries').send({ section: 'rules', title: 'Short rests take one hour' });
+
+    assert.equal(response.status, 201);
+    assert.equal(response.body.section, 'rules');
+});
+
 test('POST /api/entries stores the supplied tags, visibility and fields', async () => {
     const app = buildApp([]);
     const agent = await authedAgent(app);

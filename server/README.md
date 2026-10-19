@@ -94,7 +94,7 @@ curl -X POST http://localhost:8000/api/entries \
   }'
 ```
 
-`section` must be one of `npcs`, `players`, `places`, `organizations`, `story`, and `title` must be at
+`section` must be one of `npcs`, `players`, `places`, `organizations`, `story`, `rules`, and `title` must be at
 least two characters after trimming; anything else fails with `400`.
 
 ## Inventory endpoints
@@ -215,7 +215,7 @@ server/
 │   ├── inventory.js       the /api/inventory router
 │   ├── purses.js          the /api/purses router
 │   ├── query.js           builds the MongoDB filter for GET /api/entries
-│   └── sections.js        the five valid section ids
+│   └── sections.js        the six valid section ids
 ├── seed-data/codex/      sample entries as markdown, one folder per section
 ├── scripts/seed.mjs      parses seed-data/codex/**/*.md and upserts them into Mongo
 ├── test/                 route + query-builder specs (node:test)
