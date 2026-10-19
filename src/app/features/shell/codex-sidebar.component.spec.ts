@@ -74,7 +74,7 @@ describe('CodexSidebarComponent', () => {
         const activeItem = fixture.nativeElement.querySelector('.cdx-sidebar-item-active') as HTMLElement;
 
         // Assert
-        expect(items.length).toBe(7);
+        expect(items.length).toBe(8);
         expect((activeItem.textContent ?? '').includes('3')).toBe(true);
     });
 

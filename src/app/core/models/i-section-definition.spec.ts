@@ -28,6 +28,20 @@ describe('sectionDefinitions', () => {
         expect(withGender.length).toBe(0);
     });
 
+    it('should define house rules with no extra fields', () => {
+        // Arrange
+        const definition = findSectionDefinition(CodexSection.HouseRules);
+
+        // Act
+        const { label, icon, fields, listColumns } = definition;
+
+        // Assert
+        expect(label).toBe('House rules');
+        expect(icon).toBe('gavel');
+        expect(fields).toEqual([]);
+        expect(listColumns).toEqual([]);
+    });
+
     it('should throw for an unknown section', () => {
         // Act
         const find = (): unknown => findSectionDefinition('unknown' as CodexSection);

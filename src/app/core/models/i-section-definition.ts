@@ -88,6 +88,14 @@ export const SECTION_DEFINITIONS: readonly ISectionDefinition[] = [
             { key: 'attending', label: 'Attending', kind: 'text' }
         ],
         listColumns: ['session', 'realDate']
+    },
+    {
+        section: CodexSection.HouseRules,
+        label: 'House rules',
+        icon: 'gavel',
+        statuses: ['In force', 'Retired'],
+        fields: [],
+        listColumns: []
     }
 ];
 
