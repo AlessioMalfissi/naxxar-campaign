@@ -21,6 +21,8 @@ Built to the specification in `naxxar-campaign-dashboard-spec.pdf`.
 The app is a static Angular front end talking to a small Node/Express API in `server/`, backed by
 MongoDB. Both live in this repo as a pnpm workspace.
 
+Here, `pn` is shorthand for `pnpm` (for example, `alias pn=pnpm`); plain `pnpm` works the same.
+
 ```bash
 pn install                         # installs both the app and server/
 cp server/.env.example server/.env # then fill in MONGODB_URI
