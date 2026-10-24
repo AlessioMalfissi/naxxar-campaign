@@ -265,6 +265,20 @@ describe('combatReducer', () => {
         expect(state.encounter.combatants.length).toBe(1);
     });
 
+    it('should mark a combatant dead without removing them', () => {
+        // Arrange
+        const previous = withEncounter();
+
+        // Act
+        const state = combatReducer(previous, CombatActions.combatantDeadSet({ id: 'goblin-1', dead: true }));
+
+        // Assert
+        expect(state === previous).toBe(false);
+        expect(state.encounter.combatants.length).toBe(2);
+        expect(state.encounter.combatants[1].dead).toBe(true);
+        expect(previous.encounter.combatants[1].dead).toBe(false);
+    });
+
     it('should adjust hit points', () => {
         // Act
         const state = combatReducer(withEncounter(), CombatActions.hpAdjusted({ id: 'tessaly', delta: -4 }));

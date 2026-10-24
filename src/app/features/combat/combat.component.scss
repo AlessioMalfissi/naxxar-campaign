@@ -212,7 +212,7 @@
 
 .cdx-combat-identity {
     display: flex;
-    flex: 1 1 160px;
+    flex: 1 1 220px;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
@@ -228,7 +228,7 @@
 .cdx-combat-name-input {
     flex: 1 1 120px;
     min-width: 0;
-    max-width: 240px;
+    max-width: 280px;
     border-color: transparent;
     background: transparent;
     color: var(--cdx-combatant-color, var(--cdx-text-primary));
@@ -243,21 +243,43 @@
 }
 
 .cdx-combat-kind {
-    padding: 0 6px;
+    flex: none;
+    padding: 0 4px;
     border-radius: 4px;
     background: rgb(255 255 255 / 6%);
     color: var(--cdx-info);
     font-size: 10px;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .cdx-combat-kind-enemy {
     color: var(--cdx-warning);
 }
 
+// Dead combatants are greyed out, and the label, strike-through and dashed border show it without relying on colour.
+.cdx-combat-row-dead {
+    opacity: 0.6;
+    border-style: dashed;
+
+    .cdx-combat-name,
+    .cdx-combat-name-input {
+        text-decoration: line-through;
+    }
+}
+
+.cdx-combat-dead-label {
+    padding: 0 6px;
+    border: 1px solid var(--cdx-danger);
+    border-radius: 4px;
+    color: var(--cdx-danger);
+    font-size: 10px;
+    white-space: nowrap;
+}
+
 .cdx-combat-conditions {
     display: flex;
-    flex: 1 1 200px;
+    flex: 1 1 260px;
     flex-wrap: wrap;
     align-items: center;
     gap: 4px;

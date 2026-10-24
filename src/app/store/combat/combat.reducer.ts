@@ -10,6 +10,7 @@ import {
     removeCombatant,
     removeCondition,
     revertTurn,
+    setCombatantDead,
     startCombat,
     updateCombatant,
     updateCondition
@@ -97,6 +98,10 @@ export const combatReducer = createReducer<ICombatState>(
 
     on(CombatActions.combatantRemoved, (state, { id }): ICombatState =>
         withEncounter(state, removeCombatant(state.encounter, id))
+    ),
+
+    on(CombatActions.combatantDeadSet, (state, { id, dead }): ICombatState =>
+        withEncounter(state, setCombatantDead(state.encounter, id, dead))
     ),
 
     on(CombatActions.hpAdjusted, (state, { id, delta }): ICombatState =>

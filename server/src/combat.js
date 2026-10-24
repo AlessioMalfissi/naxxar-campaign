@@ -24,7 +24,7 @@ export const toPublicEncounter = (doc) => ({
     revision: doc.revision ?? 0,
     round: doc.round,
     turnId: doc.turnId,
-    combatants: doc.combatants.map((combatant) => ({ initiativeNudge: 0, color: null, ...combatant }))
+    combatants: doc.combatants.map((combatant) => ({ initiativeNudge: 0, color: null, dead: false, ...combatant }))
 });
 
 const normalizeInteger = (value, fallback) => {
@@ -78,6 +78,8 @@ const normalizeCombatant = (value) => {
         initiative: normalizeInteger(value.initiative, 0),
         initiativeNudge: normalizeInteger(value.initiativeNudge, 0),
         color: normalizeColor(value.color),
+        // Only a literal true marks a combatant dead; anything else reads as alive.
+        dead: value.dead === true,
         hp: tracksStats ? normalizeOptionalInteger(value.hp, 0) : null,
         maxHp: tracksStats ? normalizeOptionalInteger(value.maxHp, 0) : null,
         ac: tracksStats ? normalizeOptionalInteger(value.ac, 0) : null,

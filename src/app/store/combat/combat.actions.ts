@@ -34,6 +34,9 @@ export const combatantUpdated = createAction(
 
 export const combatantRemoved = createAction(`[${SOURCE}] combatant removed`, props<{ id: string }>());
 
+// Marks a combatant dead or brings them back; the turn moves on when the acting combatant dies.
+export const combatantDeadSet = createAction(`[${SOURCE}] combatant dead set`, props<{ id: string; dead: boolean }>());
+
 export const hpAdjusted = createAction(`[${SOURCE}] hp adjusted`, props<{ id: string; delta: number }>());
 
 export const conditionAdded = createAction(
@@ -62,6 +65,7 @@ export const ENCOUNTER_MUTATIONS = [
     combatantsAdded,
     combatantUpdated,
     combatantRemoved,
+    combatantDeadSet,
     hpAdjusted,
     conditionAdded,
     conditionUpdated,

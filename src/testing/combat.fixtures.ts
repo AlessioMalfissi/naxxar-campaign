@@ -12,6 +12,7 @@ export const buildCombatant = (overrides: Partial<ICombatant> = {}): ICombatant 
     maxHp: null,
     ac: null,
     conditions: [],
+    dead: false,
     ...overrides
 });
 

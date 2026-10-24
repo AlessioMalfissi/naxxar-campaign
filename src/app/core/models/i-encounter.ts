@@ -49,6 +49,8 @@ export interface ICombatant {
     maxHp: number | null;
     ac: number | null;
     conditions: ICombatCondition[];
+    // A dead combatant stays in the list but is skipped by the turn order. Set through its own action, not ICombatantChanges.
+    dead: boolean;
 }
 
 export interface ICombatantChanges {

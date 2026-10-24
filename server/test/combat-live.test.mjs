@@ -23,7 +23,8 @@ const goblin = {
     hp: null,
     maxHp: null,
     ac: null,
-    conditions: []
+    conditions: [],
+    dead: false
 };
 
 const startServer = async (t, docs = []) => {
@@ -154,6 +155,22 @@ test('every connected tracker receives each saved encounter', async (t) => {
     assert.equal(saved.body.revision, 1);
     assert.deepEqual(await first.next(), expected);
     assert.deepEqual(await second.next(), expected);
+});
+
+test('the combat socket pushes a combatant marked dead as dead', async (t) => {
+    const { server, url, cookie } = await startServer(t);
+    const tracker = await connect(`${url}${COMBAT_LIVE_PATH}`, { Cookie: cookie });
+    t.after(() => tracker.socket.terminate());
+    await tracker.next();
+
+    await request(server)
+        .put('/api/combat')
+        .set('Cookie', cookie)
+        .send({ round: 1, turnId: 'tessaly', combatants: [goblin, { ...goblin, id: 'tessaly', dead: true }] });
+
+    const pushed = await tracker.next();
+    assert.equal(pushed.encounter.combatants.find((combatant) => combatant.id === 'tessaly').dead, true);
+    assert.equal(pushed.encounter.combatants.find((combatant) => combatant.id === 'goblin-1').dead, false);
 });
 
 test('saves are pushed in revision order', async (t) => {

@@ -51,8 +51,34 @@ const updateById = (encounter: IEncounter, id: string, update: (combatant: IComb
 });
 
 export const startCombat = (encounter: IEncounter): IEncounter => {
-    const [first] = sortByInitiative(encounter.combatants);
+    const [first] = sortByInitiative(encounter.combatants).filter((combatant) => !combatant.dead);
     return first === undefined ? encounter : { ...encounter, round: 1, turnId: first.id };
+};
+
+export const hasLivingCombatant = (combatants: ICombatant[]): boolean =>
+    combatants.some((combatant) => !combatant.dead);
+
+interface ITurnStep {
+    index: number;
+    // True when the step passed the end of the order (forwards) or the start of it (backwards).
+    wrapped: boolean;
+}
+
+/*
+ * Steps from `index` one place at a time in `direction`, returning the first living combatant reached within
+ * `steps` places, or null when none is. Dead combatants are passed over, so they never take a turn.
+ */
+const stepTurn = (order: ICombatant[], index: number, direction: 1 | -1, steps = order.length): ITurnStep | null => {
+    const count = order.length;
+    for (let k = 1; k <= steps; k++) {
+        const raw = index + direction * k;
+        const next = ((raw % count) + count) % count;
+        if (!order[next].dead) {
+            return { index: next, wrapped: raw < 0 || raw >= count };
+        }
+    }
+
+    return null;
 };
 
 export const advanceTurn = (encounter: IEncounter): IEncounter => {
@@ -62,12 +88,17 @@ export const advanceTurn = (encounter: IEncounter): IEncounter => {
         return startCombat(encounter);
     }
 
-    const wraps = index === order.length - 1;
-    const ticked = updateById(encounter, order[index].id, tickConditions);
+    const step = stepTurn(order, index, 1);
+    if (step === null) {
+        return encounter;
+    }
+
+    // A dead combatant has no turn to finish, so its conditions do not tick.
+    const ticked = order[index].dead ? encounter : updateById(encounter, order[index].id, tickConditions);
     return {
         ...ticked,
-        round: wraps ? encounter.round + 1 : encounter.round,
-        turnId: order[wraps ? 0 : index + 1].id
+        round: step.wrapped ? encounter.round + 1 : encounter.round,
+        turnId: order[step.index].id
     };
 };
 
@@ -75,17 +106,23 @@ export const advanceTurn = (encounter: IEncounter): IEncounter => {
 export const revertTurn = (encounter: IEncounter): IEncounter => {
     const order = sortByInitiative(encounter.combatants);
     const index = order.findIndex((combatant) => combatant.id === encounter.turnId);
-    if (index === -1 || (index === 0 && encounter.round <= 1)) {
+    if (index === -1) {
         return encounter;
     }
 
-    const wraps = index === 0;
+    const step = stepTurn(order, index, -1);
+    if (step === null || (step.wrapped && encounter.round <= 1)) {
+        return encounter;
+    }
+
     return {
         ...encounter,
-        round: wraps ? encounter.round - 1 : encounter.round,
-        turnId: order[wraps ? order.length - 1 : index - 1].id
+        round: step.wrapped ? encounter.round - 1 : encounter.round,
+        turnId: order[step.index].id
     };
 };
+
+export const canRevertTurn = (encounter: IEncounter): boolean => revertTurn(encounter) !== encounter;
 
 // Ends the fight: enemies leave the tracker, the party stays with its current hit points and conditions.
 export const endCombat = (encounter: IEncounter): IEncounter => ({
@@ -112,17 +149,53 @@ export const removeCombatant = (encounter: IEncounter, id: string): IEncounter =
 
     const order = sortByInitiative(encounter.combatants);
     const index = order.findIndex((combatant) => combatant.id === id);
-    const wraps = index === order.length - 1;
+    // Steps over the other combatants only, so the removed one is never picked. With nobody else living, the turn
+    // falls to the next seat, which the turn invariant allows only when every combatant is dead.
+    const step = stepTurn(order, index, 1, order.length - 1) ?? {
+        index: (index + 1) % order.length,
+        wrapped: index === order.length - 1
+    };
     return {
         ...encounter,
-        round: wraps ? encounter.round + 1 : encounter.round,
-        turnId: order[wraps ? 0 : index + 1].id,
+        round: step.wrapped ? encounter.round + 1 : encounter.round,
+        turnId: order[step.index].id,
         combatants: remaining
     };
 };
 
 export const updateCombatant = (encounter: IEncounter, id: string, changes: ICombatantChanges): IEncounter =>
     updateById(encounter, id, (combatant) => ({ ...combatant, ...changes }));
+
+/*
+ * Marking the acting combatant dead hands the turn on without ticking their conditions; the dead combatant stays in
+ * the list. Reviving someone only changes the flag, so they rejoin the cycle in initiative order.
+ */
+export const setCombatantDead = (encounter: IEncounter, id: string, dead: boolean): IEncounter => {
+    if (!encounter.combatants.some((combatant) => combatant.id === id)) {
+        return encounter;
+    }
+
+    const updated = updateById(encounter, id, (combatant) => ({ ...combatant, dead }));
+    if (!dead || encounter.turnId !== id || !hasLivingCombatant(updated.combatants.filter((c) => c.id !== id))) {
+        return updated;
+    }
+
+    const order = sortByInitiative(updated.combatants);
+    const step = stepTurn(
+        order,
+        order.findIndex((combatant) => combatant.id === id),
+        1
+    );
+    if (step === null) {
+        return updated;
+    }
+
+    return {
+        ...updated,
+        round: step.wrapped ? encounter.round + 1 : encounter.round,
+        turnId: order[step.index].id
+    };
+};
 
 /*
  * Damage floors at 0. Healing stops at max HP, but never lowers a total the DM deliberately set

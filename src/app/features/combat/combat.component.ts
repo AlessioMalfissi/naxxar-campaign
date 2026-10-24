@@ -20,7 +20,14 @@ import {
     ICombatantChanges,
     ICombatCondition
 } from '@core/models';
-import { colorOf, createCombatantId, rollD20 } from '@core/utils/combat.util';
+import {
+    canRevertTurn,
+    colorOf,
+    createCombatantId,
+    EMPTY_ENCOUNTER,
+    hasLivingCombatant,
+    rollD20
+} from '@core/utils/combat.util';
 import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries, selectPlayerMode } from '@store/codex/codex.selectors';
 import * as CombatActions from '@store/combat/combat.actions';
@@ -31,6 +38,7 @@ import {
     selectCombatLive,
     selectCombatLoading,
     selectCombatRound,
+    selectEncounter,
     selectTurnOrder
 } from '@store/combat/combat.selectors';
 
@@ -64,6 +72,7 @@ export class CombatComponent implements OnInit {
     protected readonly maxEnemyCount = MAX_ENEMY_COUNT;
     protected readonly maxNameLength = MAX_NAME_LENGTH;
     protected readonly turnOrder = toSignal(this.store.select(selectTurnOrder), { initialValue: [] });
+    protected readonly encounter = toSignal(this.store.select(selectEncounter), { initialValue: EMPTY_ENCOUNTER });
     protected readonly round = toSignal(this.store.select(selectCombatRound), { initialValue: 0 });
     protected readonly activeTurnId = toSignal(this.store.select(selectActiveTurnId), { initialValue: null });
     protected readonly inProgress = toSignal(this.store.select(selectCombatInProgress), { initialValue: false });
@@ -88,11 +97,11 @@ export class CombatComponent implements OnInit {
         return this.players().filter((player) => !present.has(player.id));
     });
 
+    // Next turn and Start need someone alive to take a turn.
+    protected readonly hasLiving = computed<boolean>(() => hasLivingCombatant(this.turnOrder()));
+
     // Stepping back stops at the first turn of round 1.
-    protected readonly canRevert = computed<boolean>(() => {
-        const [first] = this.turnOrder();
-        return this.round() > 1 || (first !== undefined && first.id !== this.activeTurnId());
-    });
+    protected readonly canRevert = computed<boolean>(() => canRevertTurn(this.encounter()));
 
     private readonly enemyFormDirective = viewChild(FormGroupDirective);
 
@@ -133,7 +142,8 @@ export class CombatComponent implements OnInit {
                     hp: null,
                     maxHp: null,
                     ac: null,
-                    conditions: []
+                    conditions: [],
+                    dead: false
                 }))
             })
         );
@@ -163,7 +173,8 @@ export class CombatComponent implements OnInit {
             hp: null,
             maxHp: null,
             ac: null,
-            conditions: []
+            conditions: [],
+            dead: false
         }));
 
         this.store.dispatch(CombatActions.combatantsAdded({ combatants }));
@@ -263,6 +274,11 @@ export class CombatComponent implements OnInit {
 
     protected removeCombatant(combatant: ICombatant): void {
         this.store.dispatch(CombatActions.combatantRemoved({ id: combatant.id }));
+    }
+
+    // Dead combatants stay in the list; the turn skips them until they are brought back.
+    protected toggleDead(combatant: ICombatant): void {
+        this.store.dispatch(CombatActions.combatantDeadSet({ id: combatant.id, dead: !combatant.dead }));
     }
 
     protected startCombat(): void {
