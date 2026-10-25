@@ -40,6 +40,7 @@ const goblin = (overrides = {}) => ({
     maxHp: null,
     ac: null,
     conditions: [],
+    dead: false,
     ...overrides
 });
 
@@ -85,6 +86,30 @@ test('GET /api/combat fills in the nudge and colour of encounters saved without 
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body.combatants[0], goblin({ initiativeNudge, color }));
+});
+
+test('GET /api/combat marks combatants saved before the dead flag as alive', async () => {
+    const { dead, ...legacy } = goblin();
+    const { app } = buildApp([{ _id: ENCOUNTER_ID, round: 0, turnId: null, combatants: [legacy] }]);
+    const agent = await authedAgent(app);
+    const response = await agent.get('/api/combat');
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.combatants[0].dead, false);
+});
+
+test('PUT /api/combat stores a dead combatant and reads any non-true dead flag as alive', async () => {
+    const { app } = buildApp();
+    const agent = await authedAgent(app);
+    const response = await agent.put('/api/combat').send({
+        round: 1,
+        turnId: 'goblin-1',
+        combatants: [goblin({ dead: true }), goblin({ id: 'goblin-2', name: 'Goblin 2', dead: 'yes' })]
+    });
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.combatants[0].dead, true);
+    assert.equal(response.body.combatants[1].dead, false);
 });
 
 test('PUT /api/combat stores the encounter and returns it', async () => {
@@ -213,6 +238,7 @@ test('PUT /api/combat normalizes combatant fields, drops blank conditions and ca
                 initiative: 14,
                 initiativeNudge: 2,
                 color: '#aabbcc',
+                dead: false,
                 hp: 0,
                 maxHp: null,
                 ac: null,

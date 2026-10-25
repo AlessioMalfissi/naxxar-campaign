@@ -6,6 +6,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of } from 'rxjs';
 
 import { COMBAT_CONDITIONS, CombatantKind, DEFAULT_COMBATANT_COLORS, ICombatant } from '@core/models';
+import { EMPTY_ENCOUNTER } from '@core/utils/combat.util';
 import { ModalService } from '@shared/modal/modal.service';
 import { selectPlayerEntries, selectPlayerMode } from '@store/codex/codex.selectors';
 import * as CombatActions from '@store/combat/combat.actions';
@@ -16,6 +17,7 @@ import {
     selectCombatLive,
     selectCombatLoading,
     selectCombatRound,
+    selectEncounter,
     selectTurnOrder
 } from '@store/combat/combat.selectors';
 import { buildCombatant, buildPlayerCombatant } from '@testing/combat.fixtures';
@@ -38,9 +40,13 @@ describe('CombatComponent', () => {
     let component: CombatComponent;
     let store: MockStore;
     let modalService: { confirm: jest.Mock; addCondition: jest.Mock; editCondition: jest.Mock };
+    // The combatants the tracker shows, so the encounter the component reads stays consistent with the turn order.
+    let roster: ICombatant[];
 
     const setTurnOrder = (combatants: ICombatant[]): void => {
+        roster = combatants;
         store.overrideSelector(selectTurnOrder, combatants);
+        store.overrideSelector(selectEncounter, { ...EMPTY_ENCOUNTER, combatants });
         store.refreshState();
     };
 
@@ -48,6 +54,7 @@ describe('CombatComponent', () => {
         store.overrideSelector(selectCombatRound, round);
         store.overrideSelector(selectActiveTurnId, turnId);
         store.overrideSelector(selectCombatInProgress, turnId !== null);
+        store.overrideSelector(selectEncounter, { ...EMPTY_ENCOUNTER, round, turnId, combatants: roster });
         store.refreshState();
     };
 
@@ -74,7 +81,9 @@ describe('CombatComponent', () => {
         }).compileComponents();
 
         store = TestBed.inject(MockStore);
-        store.overrideSelector(selectTurnOrder, [buildPlayerCombatant(), buildCombatant()]);
+        roster = [buildPlayerCombatant(), buildCombatant()];
+        store.overrideSelector(selectTurnOrder, roster);
+        store.overrideSelector(selectEncounter, { ...EMPTY_ENCOUNTER, combatants: roster });
         store.overrideSelector(selectCombatRound, 0);
         store.overrideSelector(selectActiveTurnId, null);
         store.overrideSelector(selectCombatInProgress, false);
@@ -240,7 +249,8 @@ describe('CombatComponent', () => {
                         hp: null,
                         maxHp: null,
                         ac: null,
-                        conditions: []
+                        conditions: [],
+                        dead: false
                     }
                 ]
             })
@@ -284,7 +294,8 @@ describe('CombatComponent', () => {
                         hp: null,
                         maxHp: null,
                         ac: null,
-                        conditions: []
+                        conditions: [],
+                        dead: false
                     }
                 ]
             })
@@ -785,6 +796,86 @@ describe('CombatComponent', () => {
 
         // Assert
         expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should show a dead combatant greyed out with a visible Dead label', () => {
+        // Arrange
+        setTurnOrder([buildPlayerCombatant(), buildCombatant({ dead: true })]);
+
+        // Act
+        fixture.detectChanges();
+        const rows = fixture.nativeElement.querySelectorAll('.cdx-combat-row') as NodeListOf<HTMLElement>;
+
+        // Assert
+        expect(rows[0].classList.contains('cdx-combat-row-dead')).toBe(false);
+        expect(rows[0].querySelector('.cdx-combat-dead-label') === null).toBe(true);
+        expect(rows[1].classList.contains('cdx-combat-row-dead')).toBe(true);
+        expect(rows[1].querySelector('.cdx-combat-dead-label')?.textContent?.trim()).toBe('Dead');
+    });
+
+    it('should toggle a combatant dead or alive with its own action', () => {
+        // Arrange
+        setTurnOrder([buildPlayerCombatant(), buildCombatant({ dead: true })]);
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const rows = fixture.nativeElement.querySelectorAll('.cdx-combat-row') as NodeListOf<HTMLElement>;
+        const aliveToggle = rows[0].querySelector('.cdx-combat-dead-toggle') as HTMLButtonElement;
+        const deadToggle = rows[1].querySelector('.cdx-combat-dead-toggle') as HTMLButtonElement;
+
+        // Act
+        aliveToggle.click();
+        deadToggle.click();
+
+        // Assert
+        expect(aliveToggle.getAttribute('aria-pressed')).toBe('false');
+        expect(deadToggle.getAttribute('aria-pressed')).toBe('true');
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.combatantDeadSet({ id: 'tessaly', dead: true }));
+        expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.combatantDeadSet({ id: 'goblin-1', dead: false }));
+    });
+
+    it('should not offer the dead toggle in player view', () => {
+        // Arrange
+        fixture.detectChanges();
+
+        // Act
+        setPlayerMode(true);
+        fixture.detectChanges();
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('.cdx-combat-dead-toggle') === null).toBe(true);
+    });
+
+    it('should disable Start with nobody living, and Next turn once everyone is dead', () => {
+        // Arrange
+        setTurnOrder([buildPlayerCombatant({ dead: true }), buildCombatant({ dead: true })]);
+
+        // Act
+        fixture.detectChanges();
+        const startButton = fixture.nativeElement.querySelector('.cdx-combat-start') as HTMLButtonElement;
+
+        // Assert
+        expect(startButton.disabled).toBe(true);
+
+        // Act
+        setInProgress(1, 'tessaly');
+        fixture.detectChanges();
+        const nextButton = fixture.nativeElement.querySelector('.cdx-combat-next') as HTMLButtonElement;
+
+        // Assert
+        expect(nextButton.disabled).toBe(true);
+    });
+
+    it('should keep Next turn enabled while someone is living', () => {
+        // Arrange
+        setTurnOrder([buildPlayerCombatant({ dead: true }), buildCombatant()]);
+        setInProgress(1, 'goblin-1');
+
+        // Act
+        fixture.detectChanges();
+        const nextButton = fixture.nativeElement.querySelector('.cdx-combat-next') as HTMLButtonElement;
+
+        // Assert
+        expect(nextButton.disabled).toBe(false);
     });
 
     it('should hide the controls in player view', () => {

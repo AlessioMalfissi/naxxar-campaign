@@ -4,16 +4,19 @@ import {
     addCombatants,
     addCondition,
     adjustHp,
+    canRevertTurn,
     colorOf,
     advanceTurn,
     createCombatantId,
     describeHealth,
     EMPTY_ENCOUNTER,
     endCombat,
+    hasLivingCombatant,
     removeCombatant,
     removeCondition,
     revertTurn,
     rollD20,
+    setCombatantDead,
     sortByInitiative,
     sortConditions,
     startCombat,
@@ -534,6 +537,279 @@ describe('combat util', () => {
 
             // Assert
             expect(updated.combatants[0].conditions).toEqual([{ name: 'Grappled', rounds: null }]);
+        });
+    });
+
+    describe('dead combatants', () => {
+        const DEAD_TESSALY = buildPlayerCombatant({ dead: true });
+        const DEAD_GOBLIN = buildCombatant({ dead: true });
+
+        it('should start combat on the first living combatant', () => {
+            // Arrange
+            const encounter = buildEncounter({ combatants: [DEAD_TESSALY, buildCombatant()] });
+
+            // Act
+            const started = startCombat(encounter);
+
+            // Assert
+            expect(started.round).toBe(1);
+            expect(started.turnId).toBe('goblin-1');
+        });
+
+        it('should leave the encounter unchanged when starting with nobody living', () => {
+            // Arrange
+            const encounter = buildEncounter({ combatants: [DEAD_TESSALY, DEAD_GOBLIN] });
+
+            // Act
+            const started = startCombat(encounter);
+
+            // Assert
+            expect(started === encounter).toBe(true);
+        });
+
+        it('should skip a dead combatant when advancing', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'tessaly',
+                combatants: [buildPlayerCombatant(), DEAD_GOBLIN, ORC]
+            });
+
+            // Act
+            const advanced = advanceTurn(encounter);
+
+            // Assert
+            expect(advanced.turnId).toBe('orc');
+            expect(advanced.round).toBe(1);
+        });
+
+        it('should skip dead combatants when the round wraps and start a new round', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'orc',
+                combatants: [buildPlayerCombatant({ dead: true }), buildCombatant(), ORC]
+            });
+
+            // Act
+            const advanced = advanceTurn(encounter);
+
+            // Assert
+            expect(advanced.turnId).toBe('goblin-1');
+            expect(advanced.round).toBe(2);
+        });
+
+        it('should not tick the conditions of a dead combatant', () => {
+            // Arrange
+            const frightened = [{ name: 'Frightened', rounds: 1 }];
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'tessaly',
+                combatants: [
+                    buildPlayerCombatant({ dead: true, conditions: frightened }),
+                    buildCombatant({ conditions: [{ name: 'Poisoned', rounds: 1 }] })
+                ]
+            });
+
+            // Act
+            const advanced = advanceTurn(encounter);
+
+            // Assert
+            expect(advanced.combatants[0].conditions).toEqual(frightened);
+        });
+
+        it('should leave the encounter unchanged when advancing with nobody living', () => {
+            // Arrange
+            const encounter = buildEncounter({ round: 1, turnId: 'tessaly', combatants: [DEAD_TESSALY, DEAD_GOBLIN] });
+
+            // Act
+            const advanced = advanceTurn(encounter);
+
+            // Assert
+            expect(advanced === encounter).toBe(true);
+        });
+
+        it('should skip a dead combatant when stepping back', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 2,
+                turnId: 'orc',
+                combatants: [buildPlayerCombatant(), DEAD_GOBLIN, ORC]
+            });
+
+            // Act
+            const reverted = revertTurn(encounter);
+
+            // Assert
+            expect(reverted.turnId).toBe('tessaly');
+            expect(reverted.round).toBe(2);
+        });
+
+        it('should not step back past the first living combatant in round 1', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'tessaly',
+                combatants: [buildPlayerCombatant(), DEAD_GOBLIN, ORC]
+            });
+
+            // Act
+            const reverted = revertTurn(encounter);
+
+            // Assert
+            expect(reverted === encounter).toBe(true);
+            expect(canRevertTurn(encounter)).toBe(false);
+        });
+
+        it('should report whether stepping back is possible', () => {
+            // Arrange
+            const atStart = buildEncounter({ round: 1, turnId: 'tessaly' });
+            const later = buildEncounter({ round: 1, turnId: 'goblin-1' });
+
+            // Assert
+            expect(canRevertTurn(atStart)).toBe(false);
+            expect(canRevertTurn(later)).toBe(true);
+        });
+
+        it('should move the turn on when the acting combatant is marked dead', () => {
+            // Arrange
+            const encounter = buildEncounter({ round: 1, turnId: 'tessaly' });
+
+            // Act
+            const updated = setCombatantDead(encounter, 'tessaly', true);
+
+            // Assert
+            expect(updated.combatants[0].dead).toBe(true);
+            expect(updated.turnId).toBe('goblin-1');
+            expect(updated.round).toBe(1);
+        });
+
+        it('should start a new round when the last combatant in order is marked dead on their turn', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'orc',
+                combatants: [buildPlayerCombatant(), buildCombatant(), ORC]
+            });
+
+            // Act
+            const updated = setCombatantDead(encounter, 'orc', true);
+
+            // Assert
+            expect(updated.turnId).toBe('tessaly');
+            expect(updated.round).toBe(2);
+        });
+
+        it('should not tick the conditions of a combatant marked dead on their turn', () => {
+            // Arrange
+            const poisoned = [{ name: 'Poisoned', rounds: 1 }];
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'orc',
+                combatants: [buildPlayerCombatant(), buildCombatant(), { ...ORC, conditions: poisoned }]
+            });
+
+            // Act
+            const updated = setCombatantDead(encounter, 'orc', true);
+
+            // Assert
+            expect(updated.combatants[2].conditions).toEqual(poisoned);
+        });
+
+        it('should only set the flag when a combatant who is not acting is marked dead', () => {
+            // Arrange
+            const encounter = buildEncounter({ round: 1, turnId: 'tessaly' });
+
+            // Act
+            const updated = setCombatantDead(encounter, 'goblin-1', true);
+
+            // Assert
+            expect(updated.combatants[1].dead).toBe(true);
+            expect(updated.turnId).toBe('tessaly');
+            expect(updated.round).toBe(1);
+        });
+
+        it('should keep the turn on a dead combatant when nobody else is living', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'goblin-1',
+                combatants: [DEAD_TESSALY, buildCombatant()]
+            });
+
+            // Act
+            const updated = setCombatantDead(encounter, 'goblin-1', true);
+
+            // Assert
+            expect(updated.combatants[1].dead).toBe(true);
+            expect(updated.turnId).toBe('goblin-1');
+        });
+
+        it('should bring a dead combatant back into the cycle without moving the turn', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'goblin-1',
+                combatants: [DEAD_TESSALY, buildCombatant()]
+            });
+
+            // Act
+            const revived = setCombatantDead(encounter, 'tessaly', false);
+
+            // Assert
+            expect(revived.combatants[0].dead).toBe(false);
+            expect(revived.turnId).toBe('goblin-1');
+            expect(revived.round).toBe(1);
+        });
+
+        it('should leave the encounter unchanged for an unknown combatant', () => {
+            // Arrange
+            const encounter = buildEncounter({ round: 1, turnId: 'tessaly' });
+
+            // Act
+            const updated = setCombatantDead(encounter, 'nobody', true);
+
+            // Assert
+            expect(updated === encounter).toBe(true);
+        });
+
+        it('should skip a dead combatant when the acting combatant is removed', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'tessaly',
+                combatants: [buildPlayerCombatant(), DEAD_GOBLIN, ORC]
+            });
+
+            // Act
+            const updated = removeCombatant(encounter, 'tessaly');
+
+            // Assert
+            expect(updated.turnId).toBe('orc');
+            expect(updated.round).toBe(1);
+        });
+
+        it('should hand the turn to a dead seat only when nobody else is living', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'goblin-1',
+                combatants: [DEAD_TESSALY, buildCombatant()]
+            });
+
+            // Act
+            const updated = removeCombatant(encounter, 'goblin-1');
+
+            // Assert
+            expect(updated.turnId).toBe('tessaly');
+            expect(updated.round).toBe(2);
+        });
+
+        it('should report whether anyone is living', () => {
+            // Assert
+            expect(hasLivingCombatant([DEAD_TESSALY, buildCombatant()])).toBe(true);
+            expect(hasLivingCombatant([DEAD_TESSALY, DEAD_GOBLIN])).toBe(false);
+            expect(hasLivingCombatant([])).toBe(false);
         });
     });
 

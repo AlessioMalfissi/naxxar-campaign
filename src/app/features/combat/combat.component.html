@@ -39,7 +39,13 @@
                     <mat-icon>skip_previous</mat-icon>
                     Previous
                 </button>
-                <button mat-flat-button type="button" class="cdx-combat-next" (click)="nextTurn()">
+                <button
+                    mat-flat-button
+                    type="button"
+                    class="cdx-combat-next"
+                    [disabled]="!hasLiving()"
+                    (click)="nextTurn()"
+                >
                     <mat-icon>skip_next</mat-icon>
                     Next turn
                 </button>
@@ -52,7 +58,7 @@
                     mat-flat-button
                     type="button"
                     class="cdx-combat-start"
-                    [disabled]="turnOrder().length === 0"
+                    [disabled]="!hasLiving()"
                     (click)="startCombat()"
                 >
                     <mat-icon>play_arrow</mat-icon>
@@ -106,6 +112,7 @@
                 <li
                     class="cdx-combat-row"
                     [class.cdx-combat-row-active]="isActive(combatant)"
+                    [class.cdx-combat-row-dead]="combatant.dead"
                     [style.--cdx-combatant-color]="colorOf(combatant)"
                     [attr.aria-current]="isActive(combatant) ? 'step' : null"
                 >
@@ -163,6 +170,9 @@
                         >
                             {{ combatant.kind === combatantKind.Player ? 'Player' : 'Enemy' }}
                         </span>
+                        @if (combatant.dead) {
+                            <span class="cdx-combat-dead-label">Dead</span>
+                        }
                     </div>
 
                     <div class="cdx-combat-conditions" data-help="combat-conditions">
@@ -213,6 +223,21 @@
                             </button>
                         }
                     </div>
+
+                    @if (!playerMode()) {
+                        <button
+                            mat-button
+                            type="button"
+                            class="cdx-combat-dead-toggle"
+                            [attr.aria-pressed]="combatant.dead"
+                            [attr.aria-label]="combatant.name + ' dead'"
+                            [matTooltip]="combatant.dead ? 'Bring back to the fight' : 'Mark as dead'"
+                            (click)="toggleDead(combatant)"
+                        >
+                            <mat-icon>heart_broken</mat-icon>
+                            Dead
+                        </button>
+                    }
 
                     @if (!playerMode()) {
                         <button
