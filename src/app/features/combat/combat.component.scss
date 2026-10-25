@@ -212,7 +212,7 @@
 
 .cdx-combat-identity {
     display: flex;
-    flex: 0 1 auto;
+    flex: 0.5;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
@@ -279,8 +279,7 @@
 
 .cdx-combat-conditions {
     display: flex;
-    flex: 1 1 0;
-    min-width: 200px;
+    flex: 1 1 260px;
     flex-wrap: wrap;
     align-items: center;
     gap: 4px;
