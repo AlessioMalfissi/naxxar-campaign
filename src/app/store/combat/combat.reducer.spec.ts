@@ -287,6 +287,42 @@ describe('combatReducer', () => {
         expect(state.encounter.combatants[0].hp).toBe(20);
     });
 
+    it('should spend, set and resize legendary pools', () => {
+        // Arrange
+        const encounter = buildEncounter({
+            combatants: [
+                buildCombatant({
+                    legendaryActions: { max: 3, remaining: 2 },
+                    legendaryResistances: { max: 3, remaining: 3 }
+                })
+            ]
+        });
+        const start = withEncounter({ encounter });
+
+        // Act
+        const spent = combatReducer(
+            start,
+            CombatActions.legendaryPoolSpent({ id: 'goblin-1', field: 'legendaryActions' })
+        );
+        const set = combatReducer(
+            spent,
+            CombatActions.legendaryPoolRemainingSet({
+                id: 'goblin-1',
+                field: 'legendaryActions',
+                remaining: 3
+            })
+        );
+        const resized = combatReducer(
+            set,
+            CombatActions.legendaryPoolMaxSet({ id: 'goblin-1', field: 'legendaryActions', max: 5 })
+        );
+
+        // Assert
+        expect(spent.encounter.combatants[0].legendaryActions).toEqual({ max: 3, remaining: 1 });
+        expect(set.encounter.combatants[0].legendaryActions).toEqual({ max: 3, remaining: 3 });
+        expect(resized.encounter.combatants[0].legendaryActions).toEqual({ max: 5, remaining: 5 });
+    });
+
     it('should add and remove conditions', () => {
         // Arrange
         const condition = { name: 'Prone', rounds: null };

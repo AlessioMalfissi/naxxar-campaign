@@ -18,7 +18,11 @@ import {
     ICodexEntrySummary,
     ICombatant,
     ICombatantChanges,
-    ICombatCondition
+    ICombatCondition,
+    ILegendaryPool,
+    LEGENDARY_POOL_FIELDS,
+    LegendaryPoolField,
+    MAX_LEGENDARY_POOL
 } from '@core/models';
 import {
     canRevertTurn,
@@ -26,6 +30,7 @@ import {
     createCombatantId,
     EMPTY_ENCOUNTER,
     hasLivingCombatant,
+    LEGENDARY_POOL_DEFINITIONS,
     rollD20
 } from '@core/utils/combat.util';
 import { ModalService } from '@shared/modal/modal.service';
@@ -69,7 +74,9 @@ export class CombatComponent implements OnInit {
     private readonly destroyRef = inject(DestroyRef);
 
     protected readonly combatantKind = CombatantKind;
+    protected readonly legendaryPools = LEGENDARY_POOL_DEFINITIONS;
     protected readonly maxEnemyCount = MAX_ENEMY_COUNT;
+    protected readonly maxLegendaryPool = MAX_LEGENDARY_POOL;
     protected readonly maxNameLength = MAX_NAME_LENGTH;
     protected readonly turnOrder = toSignal(this.store.select(selectTurnOrder), { initialValue: [] });
     protected readonly encounter = toSignal(this.store.select(selectEncounter), { initialValue: EMPTY_ENCOUNTER });
@@ -142,6 +149,8 @@ export class CombatComponent implements OnInit {
                     hp: null,
                     maxHp: null,
                     ac: null,
+                    legendaryActions: { max: 0, remaining: 0 },
+                    legendaryResistances: { max: 0, remaining: 0 },
                     conditions: [],
                     dead: false
                 }))
@@ -173,6 +182,8 @@ export class CombatComponent implements OnInit {
             hp: null,
             maxHp: null,
             ac: null,
+            legendaryActions: { max: 0, remaining: 0 },
+            legendaryResistances: { max: 0, remaining: 0 },
             conditions: [],
             dead: false
         }));
@@ -236,6 +247,32 @@ export class CombatComponent implements OnInit {
         if (color !== combatant.color) {
             this.update(combatant, { color });
         }
+    }
+
+    protected hasLegendaryPools(combatant: ICombatant): boolean {
+        return LEGENDARY_POOL_FIELDS.some((field) => combatant[field].max > 0);
+    }
+
+    // One pip per point in the pool, so both the visible dots and their button labels follow the maximum.
+    protected pips(pool: ILegendaryPool): number[] {
+        return Array.from({ length: pool.max }, (_, index) => index + 1);
+    }
+
+    protected changeLegendaryMax(combatant: ICombatant, field: LegendaryPoolField, event: Event): void {
+        const max = Math.max(0, Math.min(MAX_LEGENDARY_POOL, this.readInteger(event)));
+        if (max !== combatant[field].max) {
+            this.store.dispatch(CombatActions.legendaryPoolMaxSet({ id: combatant.id, field, max }));
+        }
+    }
+
+    protected setLegendaryRemaining(combatant: ICombatant, field: LegendaryPoolField, remaining: number): void {
+        if (remaining !== combatant[field].remaining) {
+            this.store.dispatch(CombatActions.legendaryPoolRemainingSet({ id: combatant.id, field, remaining }));
+        }
+    }
+
+    protected spendLegendaryPool(combatant: ICombatant, field: LegendaryPoolField): void {
+        this.store.dispatch(CombatActions.legendaryPoolSpent({ id: combatant.id, field }));
     }
 
     protected addCondition(combatant: ICombatant): void {

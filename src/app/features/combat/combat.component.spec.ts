@@ -249,6 +249,8 @@ describe('CombatComponent', () => {
                         hp: null,
                         maxHp: null,
                         ac: null,
+                        legendaryActions: { max: 0, remaining: 0 },
+                        legendaryResistances: { max: 0, remaining: 0 },
                         conditions: [],
                         dead: false
                     }
@@ -294,6 +296,8 @@ describe('CombatComponent', () => {
                         hp: null,
                         maxHp: null,
                         ac: null,
+                        legendaryActions: { max: 0, remaining: 0 },
+                        legendaryResistances: { max: 0, remaining: 0 },
                         conditions: [],
                         dead: false
                     }
@@ -937,6 +941,125 @@ describe('CombatComponent', () => {
         expect(form.querySelector('[formcontrolname="hp"]') === null).toBe(true);
         expect(form.querySelector('[formcontrolname="ac"]') === null).toBe(true);
         expect(Object.keys(component['enemyForm'].controls)).toEqual(['name', 'count', 'initiative']);
+    });
+
+    it('should show legendary pips on enemy rows only', () => {
+        // Arrange
+        setTurnOrder([
+            buildPlayerCombatant(),
+            buildCombatant({
+                legendaryActions: { max: 3, remaining: 2 },
+                legendaryResistances: { max: 2, remaining: 2 }
+            })
+        ]);
+
+        // Act
+        fixture.detectChanges();
+        const rows = fixture.nativeElement.querySelectorAll('.cdx-combat-row') as NodeListOf<HTMLElement>;
+        const pools = rows[1].querySelectorAll('.cdx-combat-legendary-pool') as NodeListOf<HTMLElement>;
+
+        // Assert
+        expect(rows[0].querySelector('.cdx-combat-legendary') === null).toBe(true);
+        expect(pools.length).toBe(2);
+        expect(pools[0].querySelectorAll('.cdx-combat-pip').length).toBe(3);
+        expect(pools[0].querySelectorAll('.cdx-combat-pip-filled').length).toBe(2);
+        expect(pools[1].querySelectorAll('.cdx-combat-pip-filled').length).toBe(2);
+        expect(pools[0].querySelector('.cdx-combat-legendary-pips')?.getAttribute('aria-label')).toBe(
+            'Goblin 1 legendary actions: 2 of 3 remaining'
+        );
+    });
+
+    it('should spend a legendary use and set the remaining count from a pip', () => {
+        // Arrange
+        setTurnOrder([
+            buildCombatant({
+                legendaryActions: { max: 3, remaining: 2 },
+                legendaryResistances: { max: 2, remaining: 2 }
+            })
+        ]);
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const row = fixture.nativeElement.querySelector('.cdx-combat-row') as HTMLElement;
+        const pool = row.querySelector('.cdx-combat-legendary-pool') as HTMLElement;
+        const use = pool.querySelector('.cdx-combat-legendary-use') as HTMLButtonElement;
+        const pips = pool.querySelectorAll('.cdx-combat-pip') as NodeListOf<HTMLButtonElement>;
+
+        // Act
+        use.click();
+        pips[2].click();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CombatActions.legendaryPoolSpent({ id: 'goblin-1', field: 'legendaryActions' })
+        );
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CombatActions.legendaryPoolRemainingSet({ id: 'goblin-1', field: 'legendaryActions', remaining: 3 })
+        );
+    });
+
+    it('should set a legendary maximum from the row', () => {
+        // Arrange
+        setTurnOrder([buildCombatant({ legendaryActions: { max: 3, remaining: 1 } })]);
+        fixture.detectChanges();
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const input = fixture.nativeElement.querySelector(
+            '[aria-label="Goblin 1 legendary actions maximum"]'
+        ) as HTMLInputElement;
+
+        // Act
+        input.value = '5';
+        input.dispatchEvent(new Event('change'));
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            CombatActions.legendaryPoolMaxSet({ id: 'goblin-1', field: 'legendaryActions', max: 5 })
+        );
+    });
+
+    it('should show legendary pools read-only in player view and hide unconfigured ones', () => {
+        // Arrange
+        setTurnOrder([
+            buildCombatant({
+                legendaryActions: { max: 3, remaining: 1 },
+                legendaryResistances: { max: 0, remaining: 0 }
+            })
+        ]);
+
+        // Act
+        setPlayerMode(true);
+        fixture.detectChanges();
+        const row = fixture.nativeElement.querySelector('.cdx-combat-row') as HTMLElement;
+        const pools = row.querySelectorAll('.cdx-combat-legendary-pool') as NodeListOf<HTMLElement>;
+        const pips = pools[0].querySelectorAll('.cdx-combat-pip') as NodeListOf<HTMLElement>;
+
+        // Assert
+        expect(pools.length).toBe(1);
+        expect(pools[0].querySelector('.cdx-combat-legendary-max') === null).toBe(true);
+        expect(pools[0].querySelector('.cdx-combat-legendary-use') === null).toBe(true);
+        expect(pips.length).toBe(3);
+        expect(pips[0].tagName).toBe('SPAN');
+        expect(pips[0].classList.contains('cdx-combat-pip-filled')).toBe(true);
+    });
+
+    it('should disable spending a legendary use when the pool is empty or the creature is dead', () => {
+        // Arrange
+        setTurnOrder([buildCombatant({ legendaryActions: { max: 2, remaining: 0 } })]);
+        fixture.detectChanges();
+
+        // Act
+        const row = fixture.nativeElement.querySelector('.cdx-combat-row') as HTMLElement;
+        const emptyUse = row.querySelector('.cdx-combat-legendary-use') as HTMLButtonElement;
+
+        // Assert
+        expect(emptyUse.disabled).toBe(true);
+
+        // Act
+        setTurnOrder([buildCombatant({ dead: true, legendaryActions: { max: 2, remaining: 2 } })]);
+        fixture.detectChanges();
+        const deadPips = row.querySelectorAll('.cdx-combat-pip') as NodeListOf<HTMLButtonElement>;
+
+        // Assert
+        expect(deadPips[0].disabled).toBe(true);
     });
 
     it('should re-render when the turn order changes', () => {

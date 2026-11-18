@@ -175,6 +175,12 @@ const COMBAT_TOPICS: readonly IHelpTopic[] = [
         category: HelpCategory.Editing,
         title: 'Conditions',
         body: 'Add conditions with an optional description and duration in rounds. Click a condition to edit it.'
+    },
+    {
+        id: 'combat-legendary',
+        category: HelpCategory.Editing,
+        title: 'Legendary actions',
+        body: "Enemy rows track legendary actions and resistances. Set the maximum, then click a pip or Use to spend a use. Actions refill when the creature's turn begins; resistances do not."
     }
 ];
 

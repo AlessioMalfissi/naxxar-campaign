@@ -9,6 +9,8 @@ export const COMBATANT_KINDS = ['player', 'enemy'];
 
 export const MAX_COMBATANTS = 100;
 
+export const MAX_LEGENDARY_POOL = 10;
+
 const MAX_CONDITIONS = 30;
 
 const MAX_CONDITION_DESCRIPTION = 500;
@@ -19,12 +21,19 @@ const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
 const EMPTY_ENCOUNTER = { revision: 0, round: 0, turnId: null, combatants: [] };
 
-// Encounters saved before colours, nudges and revisions existed read back with their defaults.
+// Encounters saved before colours, nudges, legendary pools and revisions existed read back with their defaults.
 export const toPublicEncounter = (doc) => ({
     revision: doc.revision ?? 0,
     round: doc.round,
     turnId: doc.turnId,
-    combatants: doc.combatants.map((combatant) => ({ initiativeNudge: 0, color: null, dead: false, ...combatant }))
+    combatants: doc.combatants.map((combatant) => ({
+        initiativeNudge: 0,
+        color: null,
+        dead: false,
+        legendaryActions: { max: 0, remaining: 0 },
+        legendaryResistances: { max: 0, remaining: 0 },
+        ...combatant
+    }))
 });
 
 const normalizeInteger = (value, fallback) => {
@@ -45,6 +54,12 @@ const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '')
 
 // A colour is a #rrggbb hex; anything else falls back to null, the default colour for the combatant's kind.
 const normalizeColor = (value) => (typeof value === 'string' && COLOR_PATTERN.test(value) ? value.toLowerCase() : null);
+
+// A legendary pool is a small non-negative counter; a missing remaining value starts full.
+const normalizeLegendaryPool = (value) => {
+    const max = Math.min(MAX_LEGENDARY_POOL, Math.max(0, normalizeInteger(value?.max, 0)));
+    return { max, remaining: Math.min(max, Math.max(0, normalizeInteger(value?.remaining, max))) };
+};
 
 const normalizeCondition = (value) => {
     const name = normalizeText(value?.name);
@@ -83,6 +98,8 @@ const normalizeCombatant = (value) => {
         hp: tracksStats ? normalizeOptionalInteger(value.hp, 0) : null,
         maxHp: tracksStats ? normalizeOptionalInteger(value.maxHp, 0) : null,
         ac: tracksStats ? normalizeOptionalInteger(value.ac, 0) : null,
+        legendaryActions: normalizeLegendaryPool(value.legendaryActions),
+        legendaryResistances: normalizeLegendaryPool(value.legendaryResistances),
         conditions: conditions
             .slice(0, MAX_CONDITIONS)
             .map(normalizeCondition)

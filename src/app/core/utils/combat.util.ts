@@ -4,12 +4,28 @@ import {
     ICombatant,
     ICombatantChanges,
     ICombatCondition,
-    IEncounter
+    IEncounter,
+    ILegendaryPool,
+    LegendaryPoolField,
+    MAX_LEGENDARY_POOL
 } from '../models';
 
 const D20_SIDES = 20;
 
 export const EMPTY_ENCOUNTER: IEncounter = { revision: 0, round: 0, turnId: null, combatants: [] };
+
+export interface ILegendaryPoolDefinition {
+    field: LegendaryPoolField;
+    short: string;
+    title: string;
+    singular: string;
+}
+
+// The order the pools are shown in on an enemy row.
+export const LEGENDARY_POOL_DEFINITIONS: readonly ILegendaryPoolDefinition[] = [
+    { field: 'legendaryActions', short: 'LA', title: 'Legendary actions', singular: 'legendary action' },
+    { field: 'legendaryResistances', short: 'LR', title: 'Legendary resistances', singular: 'legendary resistance' }
+];
 
 /*
  * Highest initiative acts first, then the highest nudge among equal initiatives. toSorted is stable,
@@ -50,9 +66,18 @@ const updateById = (encounter: IEncounter, id: string, update: (combatant: IComb
     combatants: encounter.combatants.map((combatant) => (combatant.id === id ? update(combatant) : combatant))
 });
 
+// Legendary actions come back at the start of the creature's turn. Resistances last until a long rest,
+// so only the DM's own edits restore those.
+const refillLegendaryActions = (combatant: ICombatant): ICombatant => {
+    const { max, remaining } = combatant.legendaryActions;
+    return remaining === max ? combatant : { ...combatant, legendaryActions: { max, remaining: max } };
+};
+
+const beginTurn = (encounter: IEncounter, id: string): IEncounter => updateById(encounter, id, refillLegendaryActions);
+
 export const startCombat = (encounter: IEncounter): IEncounter => {
     const [first] = sortByInitiative(encounter.combatants).filter((combatant) => !combatant.dead);
-    return first === undefined ? encounter : { ...encounter, round: 1, turnId: first.id };
+    return first === undefined ? encounter : beginTurn({ ...encounter, round: 1, turnId: first.id }, first.id);
 };
 
 export const hasLivingCombatant = (combatants: ICombatant[]): boolean =>
@@ -95,11 +120,8 @@ export const advanceTurn = (encounter: IEncounter): IEncounter => {
 
     // A dead combatant has no turn to finish, so its conditions do not tick.
     const ticked = order[index].dead ? encounter : updateById(encounter, order[index].id, tickConditions);
-    return {
-        ...ticked,
-        round: step.wrapped ? encounter.round + 1 : encounter.round,
-        turnId: order[step.index].id
-    };
+    const turnId = order[step.index].id;
+    return beginTurn({ ...ticked, round: step.wrapped ? encounter.round + 1 : encounter.round, turnId }, turnId);
 };
 
 // Steps the pointer back only - condition durations that ticked down are not restored.
@@ -155,12 +177,16 @@ export const removeCombatant = (encounter: IEncounter, id: string): IEncounter =
         index: (index + 1) % order.length,
         wrapped: index === order.length - 1
     };
-    return {
-        ...encounter,
-        round: step.wrapped ? encounter.round + 1 : encounter.round,
-        turnId: order[step.index].id,
-        combatants: remaining
-    };
+    const turnId = order[step.index].id;
+    return beginTurn(
+        {
+            ...encounter,
+            round: step.wrapped ? encounter.round + 1 : encounter.round,
+            turnId,
+            combatants: remaining
+        },
+        turnId
+    );
 };
 
 export const updateCombatant = (encounter: IEncounter, id: string, changes: ICombatantChanges): IEncounter =>
@@ -190,11 +216,8 @@ export const setCombatantDead = (encounter: IEncounter, id: string, dead: boolea
         return updated;
     }
 
-    return {
-        ...updated,
-        round: step.wrapped ? encounter.round + 1 : encounter.round,
-        turnId: order[step.index].id
-    };
+    const turnId = order[step.index].id;
+    return beginTurn({ ...updated, round: step.wrapped ? encounter.round + 1 : encounter.round, turnId }, turnId);
 };
 
 /*
@@ -210,6 +233,54 @@ export const adjustHp = (encounter: IEncounter, id: string, delta: number): IEnc
         const raw = Math.max(0, combatant.hp + delta);
         const ceiling = combatant.maxHp === null ? raw : Math.max(combatant.maxHp, combatant.hp);
         return { ...combatant, hp: delta > 0 ? Math.min(raw, ceiling) : raw };
+    });
+
+const normalizePoolMax = (max: number): number => Math.max(0, Math.min(MAX_LEGENDARY_POOL, Math.trunc(max)));
+
+const updateLegendaryPool = (
+    encounter: IEncounter,
+    id: string,
+    field: LegendaryPoolField,
+    update: (pool: ILegendaryPool) => ILegendaryPool
+): IEncounter =>
+    updateById(encounter, id, (combatant) => {
+        const pool = combatant[field];
+        const updated = update(pool);
+        return updated.max === pool.max && updated.remaining === pool.remaining
+            ? combatant
+            : { ...combatant, [field]: updated };
+    });
+
+export const spendLegendaryPool = (encounter: IEncounter, id: string, field: LegendaryPoolField): IEncounter =>
+    updateLegendaryPool(encounter, id, field, (pool) => ({
+        ...pool,
+        remaining: Math.max(0, pool.remaining - 1)
+    }));
+
+export const setLegendaryPoolRemaining = (
+    encounter: IEncounter,
+    id: string,
+    field: LegendaryPoolField,
+    remaining: number
+): IEncounter =>
+    updateLegendaryPool(encounter, id, field, (pool) => ({
+        ...pool,
+        remaining: Math.max(0, Math.min(pool.max, Math.trunc(remaining)))
+    }));
+
+// Growing the pool grants the extra uses; shrinking it cannot leave more uses than the new maximum.
+export const setLegendaryPoolMax = (
+    encounter: IEncounter,
+    id: string,
+    field: LegendaryPoolField,
+    max: number
+): IEncounter =>
+    updateLegendaryPool(encounter, id, field, (pool) => {
+        const clampedMax = normalizePoolMax(max);
+        return {
+            max: clampedMax,
+            remaining: Math.max(0, Math.min(clampedMax, pool.remaining + clampedMax - pool.max))
+        };
     });
 
 const isSameCondition = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();

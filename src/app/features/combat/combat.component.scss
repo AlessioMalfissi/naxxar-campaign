@@ -210,9 +210,11 @@
     }
 }
 
+// A stable basis keeps the kind badge and conditions aligned across rows: enemy rows also carry the
+// legendary strip, so a flex-grow share would make their identity block narrower than a player's.
 .cdx-combat-identity {
     display: flex;
-    flex: 0.5;
+    flex: 0 1 360px;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
@@ -327,4 +329,94 @@
 
 .cdx-combat-add-condition {
     font-size: 12px;
+}
+
+// Legendary pools sit next to the conditions as a compact, DM-editable strip.
+.cdx-combat-legendary {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+}
+
+.cdx-combat-legendary-pool {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cdx-combat-legendary-label {
+    color: var(--cdx-text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: help;
+}
+
+.cdx-combat-legendary-max {
+    width: 42px;
+    padding: 2px 4px;
+    font-size: 11px;
+}
+
+.cdx-combat-legendary-pips {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cdx-combat-pip {
+    display: inline-block;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 1px solid var(--cdx-border);
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: default;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 2px;
+    }
+}
+
+.cdx-combat-pip-static {
+    cursor: default;
+}
+
+.cdx-combat-pip-filled {
+    border-color: var(--cdx-combatant-color, var(--cdx-primary));
+    background: var(--cdx-combatant-color, var(--cdx-primary));
+}
+
+.cdx-combat-legendary-use {
+    padding: 1px 6px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--cdx-text-muted);
+    font: inherit;
+    font-size: 10px;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+        color: var(--cdx-text-primary);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 1px;
+    }
 }

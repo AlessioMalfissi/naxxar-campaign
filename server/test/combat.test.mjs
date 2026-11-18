@@ -39,6 +39,8 @@ const goblin = (overrides = {}) => ({
     hp: null,
     maxHp: null,
     ac: null,
+    legendaryActions: { max: 0, remaining: 0 },
+    legendaryResistances: { max: 0, remaining: 0 },
     conditions: [],
     dead: false,
     ...overrides
@@ -96,6 +98,17 @@ test('GET /api/combat marks combatants saved before the dead flag as alive', asy
 
     assert.equal(response.status, 200);
     assert.equal(response.body.combatants[0].dead, false);
+});
+
+test('GET /api/combat fills in legendary pools of encounters saved without them', async () => {
+    const { legendaryActions, legendaryResistances, ...legacy } = goblin();
+    const { app } = buildApp([{ _id: ENCOUNTER_ID, round: 0, turnId: null, combatants: [legacy] }]);
+    const agent = await authedAgent(app);
+    const response = await agent.get('/api/combat');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.combatants[0].legendaryActions, { max: 0, remaining: 0 });
+    assert.deepEqual(response.body.combatants[0].legendaryResistances, { max: 0, remaining: 0 });
 });
 
 test('PUT /api/combat stores a dead combatant and reads any non-true dead flag as alive', async () => {
@@ -242,6 +255,8 @@ test('PUT /api/combat normalizes combatant fields, drops blank conditions and ca
                 hp: 0,
                 maxHp: null,
                 ac: null,
+                legendaryActions: { max: 0, remaining: 0 },
+                legendaryResistances: { max: 0, remaining: 0 },
                 conditions: [
                     { name: 'Prone', rounds: null },
                     { name: 'Poisoned', rounds: 1 },
@@ -260,6 +275,32 @@ test('PUT /api/combat keeps player stats', async () => {
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body.combatants[0], player);
+});
+
+test('PUT /api/combat clamps legendary pools to their maximum', async () => {
+    const { app } = buildApp();
+    const agent = await authedAgent(app);
+    const response = await agent.put('/api/combat').send({
+        round: 0,
+        combatants: [
+            goblin({
+                legendaryActions: { max: 3, remaining: 5 },
+                legendaryResistances: { max: '4.9', remaining: -2 }
+            }),
+            goblin({
+                id: 'goblin-2',
+                name: 'Goblin 2',
+                legendaryActions: { max: '12' },
+                legendaryResistances: { max: 'none', remaining: 2 }
+            })
+        ]
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.combatants[0].legendaryActions, { max: 3, remaining: 3 });
+    assert.deepEqual(response.body.combatants[0].legendaryResistances, { max: 4, remaining: 0 });
+    assert.deepEqual(response.body.combatants[1].legendaryActions, { max: 10, remaining: 10 });
+    assert.deepEqual(response.body.combatants[1].legendaryResistances, { max: 0, remaining: 0 });
 });
 
 test('PUT /api/combat stores enemies without hit points or armour class', async () => {

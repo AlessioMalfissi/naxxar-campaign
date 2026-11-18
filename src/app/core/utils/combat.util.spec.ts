@@ -1,4 +1,4 @@
-import { CombatantKind, DEFAULT_COMBATANT_COLORS } from '@core/models';
+import { CombatantKind, DEFAULT_COMBATANT_COLORS, ICombatant } from '@core/models';
 import { buildCombatant, buildEncounter, buildPlayerCombatant } from '@testing/combat.fixtures';
 import {
     addCombatants,
@@ -17,8 +17,11 @@ import {
     revertTurn,
     rollD20,
     setCombatantDead,
+    setLegendaryPoolMax,
+    setLegendaryPoolRemaining,
     sortByInitiative,
     sortConditions,
+    spendLegendaryPool,
     startCombat,
     updateCombatant,
     updateCondition
@@ -395,6 +398,137 @@ describe('combat util', () => {
 
             // Assert
             expect(updated.combatants[0] === encounter.combatants[0]).toBe(true);
+        });
+    });
+
+    describe('legendary pools', () => {
+        const dragon = (overrides: Partial<ICombatant> = {}): ICombatant =>
+            buildCombatant({
+                id: 'dragon',
+                name: 'Dragon',
+                initiative: 20,
+                legendaryActions: { max: 3, remaining: 3 },
+                legendaryResistances: { max: 3, remaining: 3 },
+                ...overrides
+            });
+
+        it('should spend one use without going below zero', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                combatants: [dragon({ legendaryActions: { max: 3, remaining: 1 } })]
+            });
+
+            // Act
+            const spent = spendLegendaryPool(encounter, 'dragon', 'legendaryActions');
+            const twice = spendLegendaryPool(spent, 'dragon', 'legendaryActions');
+
+            // Assert
+            expect(spent.combatants[0].legendaryActions).toEqual({ max: 3, remaining: 0 });
+            expect(twice.combatants[0].legendaryActions).toEqual({ max: 3, remaining: 0 });
+            expect(twice.combatants[0] === spent.combatants[0]).toBe(true);
+        });
+
+        it('should clamp a chosen remaining count to the pool', () => {
+            // Arrange
+            const encounter = buildEncounter({ combatants: [dragon()] });
+
+            // Act
+            const high = setLegendaryPoolRemaining(encounter, 'dragon', 'legendaryResistances', 9);
+            const low = setLegendaryPoolRemaining(encounter, 'dragon', 'legendaryResistances', -2);
+
+            // Assert
+            expect(high.combatants[0].legendaryResistances).toEqual({ max: 3, remaining: 3 });
+            expect(low.combatants[0].legendaryResistances).toEqual({ max: 3, remaining: 0 });
+        });
+
+        it('should grow or shrink the remaining uses with the maximum and clamp it', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                combatants: [dragon({ legendaryActions: { max: 3, remaining: 1 } })]
+            });
+
+            // Act
+            const grown = setLegendaryPoolMax(encounter, 'dragon', 'legendaryActions', 5);
+            const shrunk = setLegendaryPoolMax(encounter, 'dragon', 'legendaryActions', 0);
+            const capped = setLegendaryPoolMax(encounter, 'dragon', 'legendaryActions', 50);
+
+            // Assert
+            expect(grown.combatants[0].legendaryActions).toEqual({ max: 5, remaining: 3 });
+            expect(shrunk.combatants[0].legendaryActions).toEqual({ max: 0, remaining: 0 });
+            expect(capped.combatants[0].legendaryActions).toEqual({ max: 10, remaining: 8 });
+        });
+
+        it('should refill legendary actions when combat starts, but not resistances', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                combatants: [
+                    buildPlayerCombatant({ legendaryActions: { max: 2, remaining: 0 } }),
+                    dragon({
+                        legendaryActions: { max: 3, remaining: 0 },
+                        legendaryResistances: { max: 3, remaining: 1 }
+                    })
+                ]
+            });
+
+            // Act
+            const started = startCombat(encounter);
+
+            // Assert
+            expect(started.turnId).toBe('dragon');
+            expect(started.combatants[0].legendaryActions).toEqual({ max: 2, remaining: 0 });
+            expect(started.combatants[1].legendaryActions).toEqual({ max: 3, remaining: 3 });
+            expect(started.combatants[1].legendaryResistances).toEqual({ max: 3, remaining: 1 });
+        });
+
+        it('should refill the incoming combatant when the turn advances', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'tessaly',
+                combatants: [
+                    buildPlayerCombatant(),
+                    dragon({ initiative: 5, legendaryActions: { max: 3, remaining: 0 } })
+                ]
+            });
+
+            // Act
+            const advanced = advanceTurn(encounter);
+
+            // Assert
+            expect(advanced.turnId).toBe('dragon');
+            expect(advanced.combatants[1].legendaryActions.remaining).toBe(3);
+        });
+
+        it('should refill the new actor when the acting combatant dies', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 1,
+                turnId: 'tessaly',
+                combatants: [buildPlayerCombatant(), dragon({ legendaryActions: { max: 3, remaining: 0 } })]
+            });
+
+            // Act
+            const updated = setCombatantDead(encounter, 'tessaly', true);
+
+            // Assert
+            expect(updated.turnId).toBe('dragon');
+            expect(updated.combatants[1].legendaryActions.remaining).toBe(3);
+        });
+
+        it('should not restore spent uses when the turn steps back', () => {
+            // Arrange
+            const encounter = buildEncounter({
+                round: 2,
+                turnId: 'tessaly',
+                combatants: [buildPlayerCombatant(), dragon({ legendaryActions: { max: 3, remaining: 1 } })]
+            });
+
+            // Act
+            const reverted = revertTurn(encounter);
+
+            // Assert
+            expect(reverted.turnId).toBe('dragon');
+            expect(reverted.combatants[1].legendaryActions.remaining).toBe(1);
         });
     });
 

@@ -224,6 +224,92 @@
                         }
                     </div>
 
+                    @if (combatant.kind === combatantKind.Enemy && (!playerMode() || hasLegendaryPools(combatant))) {
+                        <div class="cdx-combat-legendary" data-help="combat-legendary">
+                            @for (definition of legendaryPools; track definition.field) {
+                                @if (!playerMode() || combatant[definition.field].max > 0) {
+                                    <span class="cdx-combat-legendary-pool">
+                                        <span class="cdx-combat-legendary-label" [matTooltip]="definition.title">
+                                            {{ definition.short }}
+                                        </span>
+                                        @if (!playerMode()) {
+                                            <input
+                                                type="number"
+                                                class="cdx-combat-input cdx-combat-legendary-max"
+                                                min="0"
+                                                [max]="maxLegendaryPool"
+                                                [value]="combatant[definition.field].max"
+                                                [attr.aria-label]="
+                                                    combatant.name + ' ' + definition.title.toLowerCase() + ' maximum'
+                                                "
+                                                (change)="changeLegendaryMax(combatant, definition.field, $event)"
+                                            />
+                                        }
+                                        <span
+                                            class="cdx-combat-legendary-pips"
+                                            role="group"
+                                            [attr.aria-label]="
+                                                combatant.name +
+                                                ' ' +
+                                                definition.title.toLowerCase() +
+                                                ': ' +
+                                                combatant[definition.field].remaining +
+                                                ' of ' +
+                                                combatant[definition.field].max +
+                                                ' remaining'
+                                            "
+                                        >
+                                            @for (pip of pips(combatant[definition.field]); track pip) {
+                                                @if (playerMode()) {
+                                                    <span
+                                                        class="cdx-combat-pip cdx-combat-pip-static"
+                                                        [class.cdx-combat-pip-filled]="
+                                                            pip <= combatant[definition.field].remaining
+                                                        "
+                                                        aria-hidden="true"
+                                                    ></span>
+                                                } @else {
+                                                    <button
+                                                        type="button"
+                                                        class="cdx-combat-pip"
+                                                        [class.cdx-combat-pip-filled]="
+                                                            pip <= combatant[definition.field].remaining
+                                                        "
+                                                        [disabled]="combatant.dead"
+                                                        [attr.aria-label]="
+                                                            'Set ' +
+                                                            definition.title.toLowerCase() +
+                                                            ' to ' +
+                                                            pip +
+                                                            ' of ' +
+                                                            combatant[definition.field].max
+                                                        "
+                                                        (click)="
+                                                            setLegendaryRemaining(combatant, definition.field, pip)
+                                                        "
+                                                    ></button>
+                                                }
+                                            }
+                                        </span>
+                                        @if (!playerMode() && combatant[definition.field].max > 0) {
+                                            <button
+                                                type="button"
+                                                class="cdx-combat-legendary-use"
+                                                [disabled]="
+                                                    combatant.dead || combatant[definition.field].remaining === 0
+                                                "
+                                                [attr.aria-label]="'Spend a ' + definition.singular"
+                                                (click)="spendLegendaryPool(combatant, definition.field)"
+                                            >
+                                                Use
+                                            </button>
+                                        }
+                                    </span>
+                                }
+                            }
+                        </div>
+                    }
+
                     @if (!playerMode()) {
                         <button
                             mat-button

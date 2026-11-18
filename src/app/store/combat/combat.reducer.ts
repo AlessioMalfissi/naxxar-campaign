@@ -11,6 +11,9 @@ import {
     removeCondition,
     revertTurn,
     setCombatantDead,
+    setLegendaryPoolMax,
+    setLegendaryPoolRemaining,
+    spendLegendaryPool,
     startCombat,
     updateCombatant,
     updateCondition
@@ -118,6 +121,18 @@ export const combatReducer = createReducer<ICombatState>(
 
     on(CombatActions.conditionRemoved, (state, { id, name }): ICombatState =>
         withEncounter(state, removeCondition(state.encounter, id, name))
+    ),
+
+    on(CombatActions.legendaryPoolSpent, (state, { id, field }): ICombatState =>
+        withEncounter(state, spendLegendaryPool(state.encounter, id, field))
+    ),
+
+    on(CombatActions.legendaryPoolRemainingSet, (state, { id, field, remaining }): ICombatState =>
+        withEncounter(state, setLegendaryPoolRemaining(state.encounter, id, field, remaining))
+    ),
+
+    on(CombatActions.legendaryPoolMaxSet, (state, { id, field, max }): ICombatState =>
+        withEncounter(state, setLegendaryPoolMax(state.encounter, id, field, max))
     ),
 
     on(CombatActions.combatStarted, (state): ICombatState => withEncounter(state, startCombat(state.encounter))),

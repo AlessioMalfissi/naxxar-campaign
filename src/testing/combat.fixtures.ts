@@ -11,6 +11,8 @@ export const buildCombatant = (overrides: Partial<ICombatant> = {}): ICombatant 
     hp: null,
     maxHp: null,
     ac: null,
+    legendaryActions: { max: 0, remaining: 0 },
+    legendaryResistances: { max: 0, remaining: 0 },
     conditions: [],
     dead: false,
     ...overrides

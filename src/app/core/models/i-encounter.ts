@@ -33,6 +33,18 @@ export interface ICombatCondition {
     description?: string;
 }
 
+// A spendable stat-block pool. max 0 means the creature does not have that resource.
+export interface ILegendaryPool {
+    max: number;
+    remaining: number;
+}
+
+export const MAX_LEGENDARY_POOL = 10;
+
+export const LEGENDARY_POOL_FIELDS = ['legendaryActions', 'legendaryResistances'] as const;
+
+export type LegendaryPoolField = (typeof LEGENDARY_POOL_FIELDS)[number];
+
 export interface ICombatant {
     id: string;
     name: string;
@@ -48,6 +60,9 @@ export interface ICombatant {
     hp: number | null;
     maxHp: number | null;
     ac: number | null;
+    // Spent by the DM. Legendary actions refill when the creature's turn begins; resistances do not.
+    legendaryActions: ILegendaryPool;
+    legendaryResistances: ILegendaryPool;
     conditions: ICombatCondition[];
     // A dead combatant stays in the list but is skipped by the turn order. Set through its own action, not ICombatantChanges.
     dead: boolean;
