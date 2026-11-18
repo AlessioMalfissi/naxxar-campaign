@@ -4,6 +4,7 @@ import { createApp } from './app.js';
 import { createCombatLive } from './combat-live.js';
 import { loadConfig } from './config.js';
 import { connectToMongo } from './db.js';
+import { createInMemoryDb } from './in-memory-db.js';
 
 const config = loadConfig();
 
@@ -13,10 +14,16 @@ if (config.appPassword === null) {
 }
 
 const start = async () => {
-    const { collection, inventoryCollection, pursesCollection, combatCollection } = await connectToMongo({
-        uri: config.mongoUri,
-        dbName: config.mongoDb
-    });
+    if (config.inMemoryDb) {
+        console.warn('[dev] In-memory database seeded from server/seed-data - changes reset on restart.');
+    }
+
+    const { collection, inventoryCollection, pursesCollection, combatCollection } = config.inMemoryDb
+        ? await createInMemoryDb()
+        : await connectToMongo({
+              uri: config.mongoUri,
+              dbName: config.mongoDb
+          });
     const combatLive = createCombatLive(combatCollection);
     const app = createApp(
         {

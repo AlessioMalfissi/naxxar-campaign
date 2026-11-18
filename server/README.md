@@ -11,17 +11,23 @@ single document holding the running encounter, shaped like `IEncounter` (see
 ## Setup
 
 ```bash
-cp .env.example .env   # then set MONGODB_URI (and MONGODB_DB if you don't want the default)
 pnpm install            # from the repo root; server/ is part of the pnpm workspace
-pnpm run server:seed    # from the repo root - loads the sample entries into Mongo
-pnpm run server         # from the repo root, or `npm start` from here
+pnpm run dev            # from the repo root - local API + Angular app, no MongoDB required
+pnpm run server         # from the repo root, or `npm start` from here - needs a real MongoDB
 ```
 
-`MONGODB_URI` can point at a local `mongod` (`mongodb://127.0.0.1:27017`) or an Atlas connection string
-(`mongodb+srv://...`). The database name comes from `MONGODB_DB`, not the URI's path.
+`pnpm run dev` / `pnpm run server:dev` start with `PORT=3000` and `APP_PASSWORD=app` when those are
+missing, so the Angular dev proxy works on a fresh clone without a `.env`. When `MONGODB_URI` is also
+missing, they use an in-memory database seeded from `seed-data/codex` - data resets on every restart.
+Set `MONGODB_URI` in `.env` to use a real database in dev instead.
 
-Run the API's own tests (no MongoDB required - routes are exercised against an in-memory fake collection
-in `test-utils/fake-collection.mjs`):
+The plain `start` script still refuses to run without `APP_PASSWORD`, and always connects to MongoDB,
+so production keeps requiring an explicit password and database. `MONGODB_URI` can point at a local
+`mongod` (`mongodb://127.0.0.1:27017`) or an Atlas connection string (`mongodb+srv://...`). The database
+name comes from `MONGODB_DB`, not the URI's path.
+
+Run the API's own tests (no MongoDB required - routes are exercised against the same in-memory collection
+implementation the dev fallback uses):
 
 ```bash
 pnpm run server:test    # from the repo root, or `npm test` from here
@@ -29,14 +35,15 @@ pnpm run server:test    # from the repo root, or `npm test` from here
 
 ## Environment variables
 
-| Variable         | Default                     | Purpose                                                                                                                                                                                                                  |
-| ---------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PORT`           | `8000`                      | Port the API listens on.                                                                                                                                                                                                 |
-| `MONGODB_URI`    | `mongodb://127.0.0.1:27017` | Connection string.                                                                                                                                                                                                       |
-| `MONGODB_DB`     | `naxxar_campaign`           | Database name.                                                                                                                                                                                                           |
-| `STATIC_DIR`     | unset                       | If set, also serves this directory as the Angular app (SPA fallback to `index.html` for any non-`/api` route). Point it at `../dist/naxxar-campaign/browser` after `pn run build` to run the whole app from one process. |
-| `APP_PASSWORD`   | none - required             | The shared password the whole table logs in with. The server refuses to start without it.                                                                                                                                |
-| `SESSION_SECRET` | `APP_PASSWORD`              | Secret used to sign the login session cookie. Defaults to `APP_PASSWORD`; set it separately so rotating the login password doesn't also log everyone out.                                                                |
+| Variable           | Default                     | Purpose                                                                                                                                                                                                                  |
+| ------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PORT`             | `8000`                      | Port the API listens on. The dev script defaults it to `3000` to match the Angular proxy.                                                                                                                                |
+| `MONGODB_URI`      | `mongodb://127.0.0.1:27017` | Connection string. When unset in dev, the API uses the seeded in-memory database instead.                                                                                                                                |
+| `MONGODB_DB`       | `naxxar_campaign`           | Database name.                                                                                                                                                                                                           |
+| `STATIC_DIR`       | unset                       | If set, also serves this directory as the Angular app (SPA fallback to `index.html` for any non-`/api` route). Point it at `../dist/naxxar-campaign/browser` after `pn run build` to run the whole app from one process. |
+| `APP_PASSWORD`     | none - required             | The shared password the whole table logs in with. The plain `start` script refuses to run without it.                                                                                                                    |
+| `SESSION_SECRET`   | `APP_PASSWORD`              | Secret used to sign the login session cookie. Defaults to `APP_PASSWORD`; set it separately so rotating the login password doesn't also log everyone out.                                                                |
+| `DEV_IN_MEMORY_DB` | unset                       | `1` makes the API use the seeded in-memory database. The dev script sets it when `MONGODB_URI` is missing; the normal `start` script never sets it.                                                                      |
 
 ## Authentication
 
@@ -221,6 +228,10 @@ server/
 ├── test/                 route + query-builder specs (node:test)
 └── test-utils/           the in-memory fake collection used by the tests above
 ```
+
+`src/in-memory-collection.js` implements the collection API shared by the dev fallback and the tests,
+`src/in-memory-db.js` seeds it, and `src/seed.js` parses `seed-data/codex` for both the fallback and
+`scripts/seed.mjs`.
 
 `createApp({ entries, inventory }, options)` takes the Mongo collections as a parameter rather than
 importing a singleton, so tests can pass in fake collections instead of connecting to a real database.

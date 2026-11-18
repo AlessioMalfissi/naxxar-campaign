@@ -4,5 +4,6 @@ export const loadConfig = (env = process.env) => ({
     mongoDb: env.MONGODB_DB ?? 'naxxar_campaign',
     staticDir: env.STATIC_DIR ?? null,
     appPassword: env.APP_PASSWORD ?? null,
-    sessionSecret: env.SESSION_SECRET ?? env.APP_PASSWORD ?? null
+    sessionSecret: env.SESSION_SECRET ?? env.APP_PASSWORD ?? null,
+    inMemoryDb: env.DEV_IN_MEMORY_DB === '1'
 });

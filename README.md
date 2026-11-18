@@ -23,10 +23,13 @@ MongoDB. Both live in this repo as a pnpm workspace.
 
 ```bash
 pn install                         # installs both the app and server/
-cp server/.env.example server/.env # then fill in MONGODB_URI
-pn run server:seed                 # loads the sample codex entries into Mongo
 pn run dev                         # runs the API (:3000) and `ng serve` (:57571) together
 ```
+
+Without a `MONGODB_URI`, `pn run dev` uses an in-memory database seeded from `server/seed-data`; changes
+reset when the server restarts. To use a real MongoDB in dev, copy `server/.env.example` to
+`server/.env`, uncomment `MONGODB_URI`, and run `pn run server:seed` once. The normal `pn run server`
+and the deployed app always connect to MongoDB, not the in-memory store.
 
 `ng serve` proxies `/api/*` to `http://localhost:3000` (see `proxy.conf.json`), so the app at
 `http://localhost:57571` talks to the local API transparently. To run them separately instead of
