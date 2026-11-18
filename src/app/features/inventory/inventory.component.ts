@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -22,6 +22,7 @@ import { selectGoldByOwner } from '@store/purses/purses.selectors';
 const RARITY_FILTER_ALL = 'all';
 const STATUS_FILTER_ALL = 'all';
 const FLAG_FILTER_ALL = 'all';
+const OWNER_FILTER_ALL = 'all';
 const FLAG_FILTER_YES = 'yes';
 const FLAG_FILTER_NO = 'no';
 const EMPTY_GOLD_BY_OWNER: Record<string, number> = {};
@@ -65,6 +66,7 @@ export class InventoryComponent implements OnInit {
     protected readonly flagFilterAll = FLAG_FILTER_ALL;
     protected readonly flagFilterYes = FLAG_FILTER_YES;
     protected readonly flagFilterNo = FLAG_FILTER_NO;
+    protected readonly ownerFilterAll = OWNER_FILTER_ALL;
     protected readonly items = toSignal(this.store.select(selectInventoryItems), { initialValue: [] });
     protected readonly loading = toSignal(this.store.select(selectInventoryLoading), { initialValue: false });
     protected readonly players = toSignal(this.store.select(selectPlayerEntries), { initialValue: [] });
@@ -93,11 +95,14 @@ export class InventoryComponent implements OnInit {
 
     protected readonly filterForm = new FormGroup({
         query: new FormControl<string>('', { nonNullable: true }),
+        owner: new FormControl<string>(OWNER_FILTER_ALL, { nonNullable: true }),
         rarity: new FormControl<ItemRarity | typeof RARITY_FILTER_ALL>(RARITY_FILTER_ALL, { nonNullable: true }),
         status: new FormControl<ItemStatus | typeof STATUS_FILTER_ALL>(STATUS_FILTER_ALL, { nonNullable: true }),
         forSale: new FormControl<FlagFilter>(FLAG_FILTER_ALL, { nonNullable: true }),
         imp: new FormControl<FlagFilter>(FLAG_FILTER_ALL, { nonNullable: true })
     });
+
+    private readonly collapsedGroups = signal<ReadonlySet<string>>(new Set<string>());
 
     private readonly filters = toSignal(this.filterForm.valueChanges, {
         initialValue: this.filterForm.getRawValue()
@@ -107,6 +112,7 @@ export class InventoryComponent implements OnInit {
         const filters = this.filters();
         return (
             (filters.query ?? '').trim() !== '' ||
+            filters.owner !== OWNER_FILTER_ALL ||
             filters.rarity !== RARITY_FILTER_ALL ||
             filters.status !== STATUS_FILTER_ALL ||
             filters.forSale !== FLAG_FILTER_ALL ||
@@ -142,6 +148,7 @@ export class InventoryComponent implements OnInit {
     protected readonly groups = computed<IInventoryGroup[]>(() => {
         const items = this.items();
         const filteredItems = this.filteredItems();
+        const ownerFilter = this.filters().owner ?? OWNER_FILTER_ALL;
 
         const buildGroup = (id: string, label: string): IInventoryGroup => ({
             id,
@@ -150,10 +157,12 @@ export class InventoryComponent implements OnInit {
             totalCount: items.filter((item) => item.owner === id).length
         });
 
-        return [
+        const groups = [
             buildGroup(PARTY_OWNER_ID, 'Party inventory'),
             ...this.players().map((player) => buildGroup(player.id, player.title))
         ];
+
+        return ownerFilter === OWNER_FILTER_ALL ? groups : groups.filter((group) => group.id === ownerFilter);
     });
 
     ngOnInit(): void {
@@ -163,6 +172,12 @@ export class InventoryComponent implements OnInit {
         this.form.controls.owner.valueChanges
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((owner) => this.syncPartyOnlyFlags(owner));
+
+        this.filterForm.controls.owner.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((owner) => {
+            if (owner !== OWNER_FILTER_ALL) {
+                this.expandGroup(owner);
+            }
+        });
     }
 
     private syncPartyOnlyFlags(owner: string): void {
@@ -186,10 +201,39 @@ export class InventoryComponent implements OnInit {
     protected clearFilters(): void {
         this.filterForm.reset({
             query: '',
+            owner: OWNER_FILTER_ALL,
             rarity: RARITY_FILTER_ALL,
             status: STATUS_FILTER_ALL,
             forSale: FLAG_FILTER_ALL,
             imp: FLAG_FILTER_ALL
+        });
+    }
+
+    protected isGroupCollapsed(groupId: string): boolean {
+        return this.collapsedGroups().has(groupId);
+    }
+
+    protected toggleGroup(groupId: string): void {
+        this.collapsedGroups.update((collapsed) => {
+            const next = new Set(collapsed);
+            if (next.has(groupId)) {
+                next.delete(groupId);
+            } else {
+                next.add(groupId);
+            }
+            return next;
+        });
+    }
+
+    private expandGroup(groupId: string): void {
+        this.collapsedGroups.update((collapsed) => {
+            if (!collapsed.has(groupId)) {
+                return collapsed;
+            }
+
+            const next = new Set(collapsed);
+            next.delete(groupId);
+            return next;
         });
     }
 

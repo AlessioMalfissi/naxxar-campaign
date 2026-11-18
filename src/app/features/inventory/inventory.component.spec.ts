@@ -192,6 +192,7 @@ describe('InventoryComponent', () => {
         fixture.detectChanges();
         component['filterForm'].setValue({
             query: 'potion',
+            owner: PLAYER.id,
             rarity: ItemRarity.Rare,
             status: ItemStatus.Attuned,
             forSale: 'yes',
@@ -204,6 +205,7 @@ describe('InventoryComponent', () => {
         // Assert
         expect(component['filterForm'].getRawValue()).toEqual({
             query: '',
+            owner: 'all',
             rarity: 'all',
             status: 'all',
             forSale: 'all',
@@ -244,6 +246,70 @@ describe('InventoryComponent', () => {
                 .items.map((item) => item.id)
                 .toSorted()
         ).toEqual(['for-sale-only', 'neither']);
+    });
+
+    it('should show only the selected owner group when filtering by owner', () => {
+        // Arrange
+        fixture.detectChanges();
+
+        // Act
+        component['filterForm'].controls.owner.setValue(PLAYER.id);
+
+        // Assert
+        expect(component['groups']().map((group) => group.id)).toEqual([PLAYER.id]);
+        expect(component['hasActiveFilters']()).toBe(true);
+
+        // Act
+        component['filterForm'].controls.owner.setValue(PARTY_OWNER_ID);
+
+        // Assert
+        expect(component['groups']().map((group) => group.id)).toEqual([PARTY_OWNER_ID]);
+
+        // Act
+        component['filterForm'].controls.owner.setValue('all');
+
+        // Assert
+        expect(component['groups']().map((group) => group.id)).toEqual([PARTY_OWNER_ID, PLAYER.id]);
+    });
+
+    it('should collapse and expand a group from its header', () => {
+        // Arrange
+        fixture.detectChanges();
+        const partyHeader = fixture.nativeElement.querySelector('.cdx-inventory-group-toggle') as HTMLButtonElement;
+
+        // Assert
+        expect(partyHeader.getAttribute('aria-expanded')).toBe('true');
+        expect(fixture.nativeElement.querySelectorAll('.cdx-inventory-row').length).toBe(2);
+
+        // Act
+        partyHeader.click();
+        fixture.detectChanges();
+
+        // Assert
+        expect(partyHeader.getAttribute('aria-expanded')).toBe('false');
+        expect(fixture.nativeElement.querySelector('#cdx-inventory-group-body-0')).toBeNull();
+        expect(fixture.nativeElement.querySelectorAll('.cdx-inventory-row').length).toBe(1);
+
+        // Act
+        partyHeader.click();
+        fixture.detectChanges();
+
+        // Assert
+        expect(partyHeader.getAttribute('aria-expanded')).toBe('true');
+        expect(fixture.nativeElement.querySelectorAll('.cdx-inventory-row').length).toBe(2);
+    });
+
+    it('should expand a collapsed group when the owner filter selects it', () => {
+        // Arrange
+        fixture.detectChanges();
+        component['toggleGroup'](PLAYER.id);
+        expect(component['isGroupCollapsed'](PLAYER.id)).toBe(true);
+
+        // Act
+        component['filterForm'].controls.owner.setValue(PLAYER.id);
+
+        // Assert
+        expect(component['isGroupCollapsed'](PLAYER.id)).toBe(false);
     });
 
     it('should not add an item when the form is invalid', () => {

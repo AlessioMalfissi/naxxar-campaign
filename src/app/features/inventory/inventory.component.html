@@ -10,6 +10,17 @@
             <input matInput formControlName="query" placeholder="Search items" aria-label="Search items" />
         </mat-form-field>
 
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-filter-owner">
+            <mat-label>Owner</mat-label>
+            <mat-select formControlName="owner">
+                <mat-option [value]="ownerFilterAll">All owners</mat-option>
+                <mat-option [value]="partyOwner">Party inventory</mat-option>
+                @for (player of players(); track player.id) {
+                    <mat-option [value]="player.id">{{ player.title }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-filter-select">
             <mat-label>Rarity</mat-label>
             <mat-select formControlName="rarity">
@@ -130,8 +141,20 @@
     @for (group of groups(); track group.id) {
         <section class="cdx-inventory-group">
             <h2 class="cdx-inventory-group-title">
-                <span class="cdx-inventory-group-name">{{ group.label }}</span>
-                <span class="cdx-inventory-group-count">{{ group.items.length }}</span>
+                <button
+                    type="button"
+                    class="cdx-inventory-group-toggle"
+                    data-help="inventory-groups"
+                    [attr.aria-expanded]="!isGroupCollapsed(group.id)"
+                    [attr.aria-controls]="'cdx-inventory-group-body-' + $index"
+                    (click)="toggleGroup(group.id)"
+                >
+                    <mat-icon class="cdx-inventory-group-chevron" aria-hidden="true">
+                        {{ isGroupCollapsed(group.id) ? 'chevron_right' : 'expand_more' }}
+                    </mat-icon>
+                    <span class="cdx-inventory-group-name">{{ group.label }}</span>
+                    <span class="cdx-inventory-group-count">{{ group.items.length }}</span>
+                </button>
                 <span class="cdx-inventory-gold" data-help="inventory-gold">
                     <input
                         type="number"
@@ -146,131 +169,147 @@
                 </span>
             </h2>
 
-            @if (group.items.length > 0) {
-                <div class="cdx-inventory-rows">
-                    @for (item of group.items; track item.id) {
-                        <div class="cdx-inventory-row" data-help="inventory-row">
-                            <div class="cdx-inventory-row-main">
-                                <span class="cdx-inventory-name">{{ item.name }}</span>
-                                @if (item.description !== '') {
-                                    <span class="cdx-inventory-description" [matTooltip]="item.description">
-                                        {{ item.description }}
-                                    </span>
-                                }
-                            </div>
+            @if (!isGroupCollapsed(group.id)) {
+                <div class="cdx-inventory-group-body" [id]="'cdx-inventory-group-body-' + $index">
+                    @if (group.items.length > 0) {
+                        <div class="cdx-inventory-rows">
+                            @for (item of group.items; track item.id) {
+                                <div class="cdx-inventory-row" data-help="inventory-row">
+                                    <div class="cdx-inventory-row-main">
+                                        <span class="cdx-inventory-name">{{ item.name }}</span>
+                                        @if (item.description !== '') {
+                                            <span class="cdx-inventory-description" [matTooltip]="item.description">
+                                                {{ item.description }}
+                                            </span>
+                                        }
+                                    </div>
 
-                            <div class="cdx-inventory-qty">
-                                <button
-                                    mat-icon-button
-                                    type="button"
-                                    aria-label="Decrease quantity"
-                                    [disabled]="playerMode() || item.quantity <= 0"
-                                    (click)="changeQuantity(item, -1)"
-                                >
-                                    <mat-icon>remove</mat-icon>
-                                </button>
-                                <span class="cdx-inventory-qty-value">{{ item.quantity }}</span>
-                                <button
-                                    mat-icon-button
-                                    type="button"
-                                    aria-label="Increase quantity"
-                                    [disabled]="playerMode()"
-                                    (click)="changeQuantity(item, 1)"
-                                >
-                                    <mat-icon>add</mat-icon>
-                                </button>
-                            </div>
+                                    <div class="cdx-inventory-qty">
+                                        <button
+                                            mat-icon-button
+                                            type="button"
+                                            aria-label="Decrease quantity"
+                                            [disabled]="playerMode() || item.quantity <= 0"
+                                            (click)="changeQuantity(item, -1)"
+                                        >
+                                            <mat-icon>remove</mat-icon>
+                                        </button>
+                                        <span class="cdx-inventory-qty-value">{{ item.quantity }}</span>
+                                        <button
+                                            mat-icon-button
+                                            type="button"
+                                            aria-label="Increase quantity"
+                                            [disabled]="playerMode()"
+                                            (click)="changeQuantity(item, 1)"
+                                        >
+                                            <mat-icon>add</mat-icon>
+                                        </button>
+                                    </div>
 
-                            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-rarity">
-                                <mat-select
-                                    [value]="item.rarity"
-                                    aria-label="Rarity"
-                                    [disabled]="playerMode()"
-                                    (selectionChange)="changeRarity(item, $event)"
-                                >
-                                    <mat-option [value]="rarities.None">None</mat-option>
-                                    <mat-option [value]="rarities.Common">Common</mat-option>
-                                    <mat-option [value]="rarities.Uncommon">Uncommon</mat-option>
-                                    <mat-option [value]="rarities.Rare">Rare</mat-option>
-                                    <mat-option [value]="rarities.VeryRare">Very rare</mat-option>
-                                    <mat-option [value]="rarities.Legendary">Legendary</mat-option>
-                                    <mat-option [value]="rarities.Artifact">Artifact</mat-option>
-                                </mat-select>
-                            </mat-form-field>
+                                    <mat-form-field
+                                        appearance="outline"
+                                        subscriptSizing="dynamic"
+                                        class="cdx-inventory-rarity"
+                                    >
+                                        <mat-select
+                                            [value]="item.rarity"
+                                            aria-label="Rarity"
+                                            [disabled]="playerMode()"
+                                            (selectionChange)="changeRarity(item, $event)"
+                                        >
+                                            <mat-option [value]="rarities.None">None</mat-option>
+                                            <mat-option [value]="rarities.Common">Common</mat-option>
+                                            <mat-option [value]="rarities.Uncommon">Uncommon</mat-option>
+                                            <mat-option [value]="rarities.Rare">Rare</mat-option>
+                                            <mat-option [value]="rarities.VeryRare">Very rare</mat-option>
+                                            <mat-option [value]="rarities.Legendary">Legendary</mat-option>
+                                            <mat-option [value]="rarities.Artifact">Artifact</mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
 
-                            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-status">
-                                <mat-select
-                                    [value]="item.status"
-                                    aria-label="Status"
-                                    [disabled]="playerMode()"
-                                    (selectionChange)="changeStatus(item, $event)"
-                                >
-                                    <mat-option [value]="statuses.Mundane">Mundane</mat-option>
-                                    <mat-option [value]="statuses.NonAttuned">Non-attuned</mat-option>
-                                    <mat-option [value]="statuses.Attuned">Attuned</mat-option>
-                                    <mat-option [value]="statuses.Magic">Magic</mat-option>
-                                </mat-select>
-                            </mat-form-field>
+                                    <mat-form-field
+                                        appearance="outline"
+                                        subscriptSizing="dynamic"
+                                        class="cdx-inventory-status"
+                                    >
+                                        <mat-select
+                                            [value]="item.status"
+                                            aria-label="Status"
+                                            [disabled]="playerMode()"
+                                            (selectionChange)="changeStatus(item, $event)"
+                                        >
+                                            <mat-option [value]="statuses.Mundane">Mundane</mat-option>
+                                            <mat-option [value]="statuses.NonAttuned">Non-attuned</mat-option>
+                                            <mat-option [value]="statuses.Attuned">Attuned</mat-option>
+                                            <mat-option [value]="statuses.Magic">Magic</mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
 
-                            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="cdx-inventory-owner">
-                                <mat-select
-                                    [value]="item.owner"
-                                    aria-label="Assign to"
-                                    [disabled]="playerMode()"
-                                    (selectionChange)="changeOwner(item, $event)"
-                                >
-                                    <mat-option [value]="partyOwner">Party inventory</mat-option>
-                                    @for (player of players(); track player.id) {
-                                        <mat-option [value]="player.id">{{ player.title }}</mat-option>
+                                    <mat-form-field
+                                        appearance="outline"
+                                        subscriptSizing="dynamic"
+                                        class="cdx-inventory-owner"
+                                    >
+                                        <mat-select
+                                            [value]="item.owner"
+                                            aria-label="Assign to"
+                                            [disabled]="playerMode()"
+                                            (selectionChange)="changeOwner(item, $event)"
+                                        >
+                                            <mat-option [value]="partyOwner">Party inventory</mat-option>
+                                            @for (player of players(); track player.id) {
+                                                <mat-option [value]="player.id">{{ player.title }}</mat-option>
+                                            }
+                                        </mat-select>
+                                    </mat-form-field>
+
+                                    @if (item.owner === partyOwner) {
+                                        <div class="cdx-inventory-flags" data-help="inventory-flags">
+                                            <mat-checkbox
+                                                [checked]="item.forSale"
+                                                [disabled]="playerMode()"
+                                                (change)="changeForSale(item, $event)"
+                                            >
+                                                For sale
+                                            </mat-checkbox>
+                                            <mat-checkbox
+                                                [checked]="item.imp"
+                                                [disabled]="playerMode()"
+                                                (change)="changeImp(item, $event)"
+                                            >
+                                                IMP
+                                            </mat-checkbox>
+                                            <input
+                                                type="text"
+                                                class="cdx-inventory-imp-tag"
+                                                [value]="item.impTag"
+                                                placeholder="Tag (optional)"
+                                                aria-label="IMP tag"
+                                                [disabled]="playerMode()"
+                                                (change)="changeImpTag(item, $event)"
+                                            />
+                                        </div>
                                     }
-                                </mat-select>
-                            </mat-form-field>
 
-                            @if (item.owner === partyOwner) {
-                                <div class="cdx-inventory-flags" data-help="inventory-flags">
-                                    <mat-checkbox
-                                        [checked]="item.forSale"
-                                        [disabled]="playerMode()"
-                                        (change)="changeForSale(item, $event)"
-                                    >
-                                        For sale
-                                    </mat-checkbox>
-                                    <mat-checkbox
-                                        [checked]="item.imp"
-                                        [disabled]="playerMode()"
-                                        (change)="changeImp(item, $event)"
-                                    >
-                                        IMP
-                                    </mat-checkbox>
-                                    <input
-                                        type="text"
-                                        class="cdx-inventory-imp-tag"
-                                        [value]="item.impTag"
-                                        placeholder="Tag (optional)"
-                                        aria-label="IMP tag"
-                                        [disabled]="playerMode()"
-                                        (change)="changeImpTag(item, $event)"
-                                    />
+                                    @if (!playerMode()) {
+                                        <button
+                                            mat-icon-button
+                                            type="button"
+                                            aria-label="Delete item"
+                                            (click)="deleteItem(item)"
+                                        >
+                                            <mat-icon>delete</mat-icon>
+                                        </button>
+                                    }
                                 </div>
                             }
-
-                            @if (!playerMode()) {
-                                <button
-                                    mat-icon-button
-                                    type="button"
-                                    aria-label="Delete item"
-                                    (click)="deleteItem(item)"
-                                >
-                                    <mat-icon>delete</mat-icon>
-                                </button>
-                            }
                         </div>
+                    } @else if (group.totalCount > 0) {
+                        <p class="cdx-section-empty">No items match the filters.</p>
+                    } @else {
+                        <p class="cdx-section-empty">Nothing assigned here yet.</p>
                     }
                 </div>
-            } @else if (group.totalCount > 0) {
-                <p class="cdx-section-empty">No items match the filters.</p>
-            } @else {
-                <p class="cdx-section-empty">Nothing assigned here yet.</p>
             }
         </section>
     }

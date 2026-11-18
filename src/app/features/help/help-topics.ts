@@ -93,7 +93,13 @@ const INVENTORY_TOPICS: readonly IHelpTopic[] = [
         id: 'inventory-filters',
         category: HelpCategory.Filtering,
         title: 'Find items',
-        body: 'Search by name and filter by rarity, status, for sale or IMP. Clear filters resets them all.'
+        body: 'Search by name and filter by owner, rarity, status, for sale or IMP. Clear filters resets them all.'
+    },
+    {
+        id: 'inventory-groups',
+        category: HelpCategory.Navigation,
+        title: 'Collapse groups',
+        body: 'Click a party or player header to collapse or expand that block. Filtering by owner shows just that block.'
     },
     {
         id: 'inventory-add',

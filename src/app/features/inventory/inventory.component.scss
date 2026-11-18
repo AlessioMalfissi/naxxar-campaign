@@ -48,6 +48,10 @@
     flex: 0 1 160px;
 }
 
+.cdx-inventory-filter-owner {
+    flex: 0 1 200px;
+}
+
 .cdx-inventory-form {
     display: flex;
     flex-wrap: wrap;
@@ -104,6 +108,41 @@
     color: var(--cdx-text-muted);
     font-size: 11px;
     font-weight: 400;
+}
+
+.cdx-inventory-group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 6px 2px 2px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+
+    &:hover {
+        background: var(--cdx-surface-2);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--cdx-primary);
+        outline-offset: 1px;
+    }
+}
+
+.cdx-inventory-group-chevron {
+    width: 18px;
+    height: 18px;
+    color: var(--cdx-text-muted);
+    font-size: 18px;
+}
+
+.cdx-inventory-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .cdx-inventory-gold {
