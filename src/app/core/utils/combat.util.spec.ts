@@ -21,7 +21,6 @@ import {
     setLegendaryPoolRemaining,
     sortByInitiative,
     sortConditions,
-    spendLegendaryPool,
     startCombat,
     updateCombatant,
     updateCondition
@@ -411,22 +410,6 @@ describe('combat util', () => {
                 legendaryResistances: { max: 3, remaining: 3 },
                 ...overrides
             });
-
-        it('should spend one use without going below zero', () => {
-            // Arrange
-            const encounter = buildEncounter({
-                combatants: [dragon({ legendaryActions: { max: 3, remaining: 1 } })]
-            });
-
-            // Act
-            const spent = spendLegendaryPool(encounter, 'dragon', 'legendaryActions');
-            const twice = spendLegendaryPool(spent, 'dragon', 'legendaryActions');
-
-            // Assert
-            expect(spent.combatants[0].legendaryActions).toEqual({ max: 3, remaining: 0 });
-            expect(twice.combatants[0].legendaryActions).toEqual({ max: 3, remaining: 0 });
-            expect(twice.combatants[0] === spent.combatants[0]).toBe(true);
-        });
 
         it('should clamp a chosen remaining count to the pool', () => {
             // Arrange

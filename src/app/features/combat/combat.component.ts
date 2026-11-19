@@ -19,7 +19,6 @@ import {
     ICombatant,
     ICombatantChanges,
     ICombatCondition,
-    ILegendaryPool,
     LEGENDARY_POOL_FIELDS,
     LegendaryPoolField,
     MAX_LEGENDARY_POOL
@@ -253,26 +252,11 @@ export class CombatComponent implements OnInit {
         return LEGENDARY_POOL_FIELDS.some((field) => combatant[field].max > 0);
     }
 
-    // One pip per point in the pool, so both the visible dots and their button labels follow the maximum.
-    protected pips(pool: ILegendaryPool): number[] {
-        return Array.from({ length: pool.max }, (_, index) => index + 1);
-    }
-
     protected changeLegendaryMax(combatant: ICombatant, field: LegendaryPoolField, event: Event): void {
         const max = Math.max(0, Math.min(MAX_LEGENDARY_POOL, this.readInteger(event)));
         if (max !== combatant[field].max) {
             this.store.dispatch(CombatActions.legendaryPoolMaxSet({ id: combatant.id, field, max }));
         }
-    }
-
-    protected setLegendaryRemaining(combatant: ICombatant, field: LegendaryPoolField, remaining: number): void {
-        if (remaining !== combatant[field].remaining) {
-            this.store.dispatch(CombatActions.legendaryPoolRemainingSet({ id: combatant.id, field, remaining }));
-        }
-    }
-
-    protected spendLegendaryPool(combatant: ICombatant, field: LegendaryPoolField): void {
-        this.store.dispatch(CombatActions.legendaryPoolSpent({ id: combatant.id, field }));
     }
 
     protected addCondition(combatant: ICombatant): void {

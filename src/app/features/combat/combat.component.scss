@@ -360,63 +360,8 @@
     font-size: 11px;
 }
 
-.cdx-combat-legendary-pips {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.cdx-combat-pip {
-    display: inline-block;
-    flex: none;
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    border: 1px solid var(--cdx-border);
-    border-radius: 50%;
-    background: transparent;
-    cursor: pointer;
-
-    &:disabled {
-        cursor: default;
-    }
-
-    &:focus-visible {
-        outline: 2px solid var(--cdx-primary);
-        outline-offset: 2px;
-    }
-}
-
-.cdx-combat-pip-static {
-    cursor: default;
-}
-
-.cdx-combat-pip-filled {
-    border-color: var(--cdx-combatant-color, var(--cdx-primary));
-    background: var(--cdx-combatant-color, var(--cdx-primary));
-}
-
-.cdx-combat-legendary-use {
-    padding: 1px 6px;
-    border: 1px solid var(--cdx-border);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--cdx-text-muted);
-    font: inherit;
-    font-size: 10px;
-    cursor: pointer;
-
-    &:hover:not(:disabled) {
-        color: var(--cdx-text-primary);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: default;
-    }
-
-    &:focus-visible {
-        outline: 2px solid var(--cdx-primary);
-        outline-offset: 1px;
-    }
+.cdx-combat-legendary-count {
+    color: var(--cdx-text-primary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
 }

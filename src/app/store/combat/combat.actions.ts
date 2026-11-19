@@ -52,11 +52,6 @@ export const conditionUpdated = createAction(
 
 export const conditionRemoved = createAction(`[${SOURCE}] condition removed`, props<{ id: string; name: string }>());
 
-export const legendaryPoolSpent = createAction(
-    `[${SOURCE}] legendary pool spent`,
-    props<{ id: string; field: LegendaryPoolField }>()
-);
-
 // The pips set how many uses remain; legendary actions refill on their own when a turn begins.
 export const legendaryPoolRemainingSet = createAction(
     `[${SOURCE}] legendary pool remaining set`,
@@ -86,7 +81,6 @@ export const ENCOUNTER_MUTATIONS = [
     conditionAdded,
     conditionUpdated,
     conditionRemoved,
-    legendaryPoolSpent,
     legendaryPoolRemainingSet,
     legendaryPoolMaxSet,
     combatStarted,

@@ -180,7 +180,7 @@ const COMBAT_TOPICS: readonly IHelpTopic[] = [
         id: 'combat-legendary',
         category: HelpCategory.Editing,
         title: 'Legendary actions',
-        body: "Enemy rows track legendary actions and resistances. Set the maximum, then click a pip or Use to spend a use. Actions refill when the creature's turn begins; resistances do not."
+        body: 'Enemy rows track the total legendary actions and resistances available to an enemy. Set each total with the number field.'
     }
 ];
 

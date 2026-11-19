@@ -18,13 +18,12 @@ export interface ILegendaryPoolDefinition {
     field: LegendaryPoolField;
     short: string;
     title: string;
-    singular: string;
 }
 
 // The order the pools are shown in on an enemy row.
 export const LEGENDARY_POOL_DEFINITIONS: readonly ILegendaryPoolDefinition[] = [
-    { field: 'legendaryActions', short: 'LA', title: 'Legendary actions', singular: 'legendary action' },
-    { field: 'legendaryResistances', short: 'LR', title: 'Legendary resistances', singular: 'legendary resistance' }
+    { field: 'legendaryActions', short: 'LA', title: 'Legendary actions' },
+    { field: 'legendaryResistances', short: 'LR', title: 'Legendary resistances' }
 ];
 
 /*
@@ -250,12 +249,6 @@ const updateLegendaryPool = (
             ? combatant
             : { ...combatant, [field]: updated };
     });
-
-export const spendLegendaryPool = (encounter: IEncounter, id: string, field: LegendaryPoolField): IEncounter =>
-    updateLegendaryPool(encounter, id, field, (pool) => ({
-        ...pool,
-        remaining: Math.max(0, pool.remaining - 1)
-    }));
 
 export const setLegendaryPoolRemaining = (
     encounter: IEncounter,

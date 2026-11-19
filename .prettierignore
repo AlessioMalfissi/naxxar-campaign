@@ -5,3 +5,5 @@ coverage
 pnpm-lock.yaml
 server/seed-data
 src/_theme-colors.scss
+# Agent tooling bundle, kept in its upstream formatting.
+.opencode
