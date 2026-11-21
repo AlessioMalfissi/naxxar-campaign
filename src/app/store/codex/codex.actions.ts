@@ -36,7 +36,7 @@ export const sidebarToggled = createAction(`[${SOURCE}] sidebar toggled`);
 
 export const sidebarCollapsedSet = createAction(`[${SOURCE}] sidebar collapsed set`, props<{ collapsed: boolean }>());
 
-export const playerModeToggled = createAction(`[${SOURCE}] player mode toggled`);
+export const dmPreviewToggled = createAction(`[${SOURCE}] DM preview toggled`);
 
 export const helpToggled = createAction(`[${SOURCE}] help toggled`);
 

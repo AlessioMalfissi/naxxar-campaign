@@ -1,6 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 
 import { ApiCallStatus } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as CodexActions from './codex.actions';
 import { ICodexState, INITIAL_CODEX_STATE } from './codex.state';
 
@@ -8,6 +9,19 @@ const RECENT_LIMIT = 8;
 
 const withRecent = (recentIds: string[], id: string): string[] =>
     [id, ...recentIds.filter((item) => item !== id)].slice(0, RECENT_LIMIT);
+
+// The shell is destroyed when the campaign changes, but the store is not: drop the previous
+// campaign's entries and filters while keeping the user's sidebar/help preferences.
+const resetForCampaign = (state: ICodexState): ICodexState => ({
+    ...INITIAL_CODEX_STATE,
+    sidebarCollapsed: state.sidebarCollapsed,
+    helpOpen: state.helpOpen
+});
+
+const resetForSignOut = (state: ICodexState): ICodexState => ({
+    ...INITIAL_CODEX_STATE,
+    sidebarCollapsed: state.sidebarCollapsed
+});
 
 export const codexReducer = createReducer<ICodexState>(
     INITIAL_CODEX_STATE,
@@ -92,9 +106,9 @@ export const codexReducer = createReducer<ICodexState>(
         sidebarCollapsed: collapsed
     })),
 
-    on(CodexActions.playerModeToggled, (state): ICodexState => ({
+    on(CodexActions.dmPreviewToggled, (state): ICodexState => ({
         ...state,
-        playerMode: !state.playerMode
+        dmPreview: !state.dmPreview
     })),
 
     on(CodexActions.helpToggled, (state): ICodexState => ({

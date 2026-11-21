@@ -17,7 +17,8 @@ export interface ICodexState {
     recentIds: string[];
     filters: ICodexFilters;
     sidebarCollapsed: boolean;
-    playerMode: boolean;
+    // DM-only preview of the player view. Actual player accounts are read-only through their role.
+    dmPreview: boolean;
     helpOpen: boolean;
     error: string | null;
 }
@@ -31,7 +32,7 @@ export const INITIAL_CODEX_STATE: ICodexState = {
     recentIds: [],
     filters: { status: null, tags: [], query: '' },
     sidebarCollapsed: false,
-    playerMode: false,
+    dmPreview: false,
     helpOpen: false,
     error: null
 };

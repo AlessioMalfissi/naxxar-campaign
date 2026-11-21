@@ -6,7 +6,8 @@ export interface IApiActionGroup<TRequest extends object, TSuccess extends objec
     key: string;
     request: ApiActionCreator<TRequest>;
     success: ApiActionCreator<TSuccess>;
-    failure: ApiActionCreator<{ error: string }>;
+    // `status` carries the HTTP status when it is known, so callers can branch on 404/409/410.
+    failure: ApiActionCreator<{ error: string; status?: number }>;
 }
 
 /*
@@ -24,5 +25,5 @@ export const createApiAction = <TRequest extends object, TSuccess extends object
     key: `${source}:${name}`,
     request: createTypedAction<TRequest>(`[${source}] ${name}`),
     success: createTypedAction<TSuccess>(`[${source}] ${name} success`),
-    failure: createTypedAction<{ error: string }>(`[${source}] ${name} failure`)
+    failure: createTypedAction<{ error: string; status?: number }>(`[${source}] ${name} failure`)
 });

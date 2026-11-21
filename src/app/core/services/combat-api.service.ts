@@ -1,30 +1,31 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, Observable, throwError } from 'rxjs';
 
+import { toApiError } from '../errors/api-error';
 import { IEncounter } from '../models';
-
-const COMBAT_URL = '/api/combat';
+import { CampaignContextService } from './campaign-context.service';
 
 @Injectable({ providedIn: 'root' })
 export class CombatApiService {
     private readonly http = inject(HttpClient);
+    private readonly campaignContext = inject(CampaignContextService);
 
     loadEncounter(): Observable<IEncounter> {
-        return this.http.get<IEncounter>(COMBAT_URL);
+        return this.http.get<IEncounter>(this.combatUrl());
     }
 
     saveEncounter(encounter: IEncounter): Observable<IEncounter> {
         return this.http
-            .put<IEncounter>(COMBAT_URL, encounter)
+            .put<IEncounter>(this.combatUrl(), encounter)
             .pipe(catchError(this.toFriendlyError("Couldn't save the combat tracker. Retry.")));
     }
 
+    private combatUrl(): string {
+        return `${this.campaignContext.baseUrl()}/combat`;
+    }
+
     private toFriendlyError(defaultMessage: string) {
-        return (error: HttpErrorResponse): Observable<never> => {
-            const body = error.error as { error?: unknown } | null;
-            const message = typeof body?.error === 'string' && body.error.trim() !== '' ? body.error : defaultMessage;
-            return throwError(() => new Error(message));
-        };
+        return (error: unknown): Observable<never> => throwError(() => toApiError(error, defaultMessage));
     }
 }

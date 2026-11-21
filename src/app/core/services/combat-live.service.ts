@@ -4,7 +4,8 @@ import { defer, Observable, retry, tap, timer } from 'rxjs';
 
 import { CombatLiveEvent, CombatLiveEventType, IEncounter } from '../models';
 
-export const COMBAT_LIVE_PATH = '/api/combat/live';
+export const combatLivePath = (campaignSlug: string): string =>
+    `/api/campaigns/${encodeURIComponent(campaignSlug)}/combat/live`;
 
 const RETRY_BASE_MS = 1000;
 const RETRY_MAX_MS = 15000;
@@ -52,15 +53,16 @@ export class CombatLiveService {
     private readonly createSocket = inject(WEB_SOCKET_FACTORY);
 
     /*
-     * Streams the encounter the server pushes on connect and after every save, plus the connection
-     * state. A dropped connection is reported as Disconnected and reopened with backoff for as long as
-     * the stream is subscribed; the backoff restarts once a connection opens. Unsubscribing closes the socket.
+     * Streams the encounter the server pushes on connect and after every save in this campaign, plus
+     * the connection state. A dropped connection is reported as Disconnected and reopened with
+     * backoff for as long as the stream is subscribed; the backoff restarts once a connection opens.
+     * Unsubscribing closes the socket.
      */
-    connect(): Observable<CombatLiveEvent> {
+    connect(campaignSlug: string): Observable<CombatLiveEvent> {
         return defer(() => {
             let failures = 0;
 
-            return this.open().pipe(
+            return this.open(campaignSlug).pipe(
                 tap((event) => {
                     if (event.type === CombatLiveEventType.Connected) {
                         failures = 0;
@@ -77,9 +79,9 @@ export class CombatLiveService {
     }
 
     // One socket: emits while it is open, then Disconnected and an error once it closes.
-    private open(): Observable<CombatLiveEvent> {
+    private open(campaignSlug: string): Observable<CombatLiveEvent> {
         return new Observable<CombatLiveEvent>((subscriber) => {
-            const socket = this.createSocket(this.liveUrl());
+            const socket = this.createSocket(this.liveUrl(campaignSlug));
 
             socket.onopen = (): void => {
                 subscriber.next({ type: CombatLiveEventType.Connected });
@@ -104,8 +106,8 @@ export class CombatLiveService {
         });
     }
 
-    private liveUrl(): string {
+    private liveUrl(campaignSlug: string): string {
         const { protocol, host } = this.document.location;
-        return `${protocol === 'https:' ? 'wss:' : 'ws:'}//${host}${COMBAT_LIVE_PATH}`;
+        return `${protocol === 'https:' ? 'wss:' : 'ws:'}//${host}${combatLivePath(campaignSlug)}`;
     }
 }

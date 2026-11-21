@@ -1,16 +1,17 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable, throwError } from 'rxjs';
 
 import { CodexSection, EntryVisibility, ICodexEntry, ICodexEntryFilter, ICodexEntrySummary } from '../models';
+import { toApiError } from '../errors/api-error';
 import { parseEntryId } from '../utils/entry-id.util';
 import { toEntry, toEntrySummary } from '../utils/front-matter.util';
-
-const ENTRIES_URL = '/api/entries';
+import { CampaignContextService } from './campaign-context.service';
 
 @Injectable({ providedIn: 'root' })
 export class CodexApiService {
     private readonly http = inject(HttpClient);
+    private readonly campaignContext = inject(CampaignContextService);
 
     loadIndex(filter: ICodexEntryFilter = {}): Observable<ICodexEntrySummary[]> {
         let params = new HttpParams();
@@ -32,21 +33,23 @@ export class CodexApiService {
         }
 
         return this.http
-            .get<Record<string, unknown>[]>(ENTRIES_URL, { params })
+            .get<Record<string, unknown>[]>(this.entriesUrl(), { params })
             .pipe(map((entries) => entries.map((entry) => toEntrySummary(entry))));
     }
 
     loadEntry(summary: ICodexEntrySummary): Observable<ICodexEntry> {
         return this.http
-            .get<Record<string, unknown>>(`${ENTRIES_URL}/${summary.section}/${summary.slug}`)
+            .get<Record<string, unknown>>(`${this.entriesUrl()}/${summary.section}/${summary.slug}`)
             .pipe(map((raw) => toEntry(raw)));
     }
 
     saveEntry(entry: ICodexEntry): Observable<ICodexEntry> {
-        return this.http.put<Record<string, unknown>>(`${ENTRIES_URL}/${entry.section}/${entry.slug}`, entry).pipe(
-            map((raw) => toEntry(raw)),
-            catchError(this.toFriendlyError("Couldn't save the entry. Retry."))
-        );
+        return this.http
+            .put<Record<string, unknown>>(`${this.entriesUrl()}/${entry.section}/${entry.slug}`, entry)
+            .pipe(
+                map((raw) => toEntry(raw)),
+                catchError(this.toFriendlyError("Couldn't save the entry. Retry."))
+            );
     }
 
     createEntry(
@@ -58,7 +61,14 @@ export class CodexApiService {
         fields: Record<string, string> = {}
     ): Observable<ICodexEntry> {
         return this.http
-            .post<Record<string, unknown>>(ENTRIES_URL, { section, title, status, tags, visibility, fields })
+            .post<Record<string, unknown>>(this.entriesUrl(), {
+                section,
+                title,
+                status,
+                tags,
+                visibility,
+                fields
+            })
             .pipe(
                 map((raw) => toEntry(raw)),
                 catchError(this.toFriendlyError("Couldn't create the entry. Retry."))
@@ -71,14 +81,14 @@ export class CodexApiService {
             return throwError(() => new Error('Invalid entry id.'));
         }
 
-        return this.http.delete<void>(`${ENTRIES_URL}/${reference.section}/${reference.slug}`).pipe(map(() => id));
+        return this.http.delete<void>(`${this.entriesUrl()}/${reference.section}/${reference.slug}`).pipe(map(() => id));
+    }
+
+    private entriesUrl(): string {
+        return `${this.campaignContext.baseUrl()}/entries`;
     }
 
     private toFriendlyError(defaultMessage: string) {
-        return (error: HttpErrorResponse): Observable<never> => {
-            const body = error.error as { error?: unknown } | null;
-            const message = typeof body?.error === 'string' && body.error.trim() !== '' ? body.error : defaultMessage;
-            return throwError(() => new Error(message));
-        };
+        return (error: unknown): Observable<never> => throwError(() => toApiError(error, defaultMessage));
     }
 }

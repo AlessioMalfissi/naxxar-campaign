@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, guestGuard } from '@core/guards/auth.guard';
+import { authGuard, campaignMemberGuard, guestGuard } from '@core/guards/auth.guard';
 
 export const APP_ROUTES: Routes = [
     {
@@ -9,8 +9,31 @@ export const APP_ROUTES: Routes = [
         loadComponent: () => import('@features/auth/login.component').then((module) => module.LoginComponent)
     },
     {
-        path: 'campaign',
+        path: 'forgot-password',
+        canActivate: [guestGuard],
+        loadComponent: () =>
+            import('@features/auth/forgot-password.component').then((module) => module.ForgotPasswordComponent)
+    },
+    {
+        path: 'reset-password/:token',
+        loadComponent: () =>
+            import('@features/auth/reset-password.component').then((module) => module.ResetPasswordComponent)
+    },
+    {
+        path: 'invite/:token',
+        loadComponent: () =>
+            import('@features/invite/invite-accept.component').then((module) => module.InviteAcceptComponent)
+    },
+    { path: 'register', redirectTo: 'login', pathMatch: 'full' },
+    {
+        path: 'campaigns',
         canActivate: [authGuard],
+        loadComponent: () =>
+            import('@features/campaigns/campaign-list.component').then((module) => module.CampaignListComponent)
+    },
+    {
+        path: 'campaigns/:campaignSlug',
+        canActivate: [authGuard, campaignMemberGuard],
         loadComponent: () =>
             import('@features/shell/campaign-shell.component').then((module) => module.CampaignShellComponent),
         children: [
@@ -24,6 +47,11 @@ export const APP_ROUTES: Routes = [
                 path: 'combat',
                 loadComponent: () =>
                     import('@features/combat/combat.component').then((module) => module.CombatComponent)
+            },
+            {
+                path: 'members',
+                loadComponent: () =>
+                    import('@features/members/members.component').then((module) => module.MembersComponent)
             },
             {
                 path: ':section',
@@ -41,6 +69,6 @@ export const APP_ROUTES: Routes = [
             }
         ]
     },
-    { path: '', redirectTo: 'campaign/npcs', pathMatch: 'full' },
-    { path: '**', redirectTo: 'campaign/npcs' }
+    { path: '', redirectTo: 'campaigns', pathMatch: 'full' },
+    { path: '**', redirectTo: 'campaigns' }
 ];
