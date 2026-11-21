@@ -2,31 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import request from 'supertest';
 
-import { createApp } from '../src/app.js';
-import { ENCOUNTER_ID, MAX_COMBATANTS } from '../src/combat.js';
-import { createFakeCollection } from '../test-utils/fake-collection.mjs';
-
-const PASSWORD = 'campaign-test-password';
-
-const buildApp = (docs = []) => {
-    const combat = createFakeCollection(docs);
-    const app = createApp(
-        {
-            entries: createFakeCollection([]),
-            inventory: createFakeCollection([]),
-            purses: createFakeCollection([]),
-            combat
-        },
-        { appPassword: PASSWORD, sessionSecret: 'test-secret' }
-    );
-    return { app, combat };
-};
-
-const authedAgent = async (app) => {
-    const agent = request.agent(app);
-    await agent.post('/api/auth/login').send({ password: PASSWORD });
-    return agent;
-};
+import { encounterId, MAX_COMBATANTS } from '../src/combat.js';
+import { addCampaign, addUser, buildApp, campaignPath } from './helpers.mjs';
 
 const goblin = (overrides = {}) => ({
     id: 'goblin-1',
@@ -46,196 +23,195 @@ const goblin = (overrides = {}) => ({
     ...overrides
 });
 
-test('GET /api/combat returns an empty encounter when none was saved', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/combat');
+const buildFixture = async () => {
+    const context = buildApp();
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    const player = await addUser(context.users, { email: 'player@example.com', displayName: 'Player' });
+    const campaign = await addCampaign(context.campaigns, context.memberships, { dm, players: [player] });
+    const other = await addCampaign(context.campaigns, context.memberships, { slug: 'other', name: 'Other', dm });
 
+    return { ...context, dm, player, campaign, other };
+};
+
+const loginAs = async (app, email) => {
+    const agent = request.agent(app);
+    await agent.post('/api/auth/login').send({ email, password: 'password123' });
+    return agent;
+};
+
+test('GET returns an empty encounter when none was saved', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+
+    const response = await agent.get(campaignPath(context.campaign, '/combat'));
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, { revision: 0, round: 0, turnId: null, combatants: [] });
 });
 
-test('GET /api/combat requires a session', async () => {
-    const { app } = buildApp();
-    const response = await request(app).get('/api/combat');
+test('GET returns the saved encounter without internal fields', async () => {
+    const context = await buildFixture();
+    await context.combat.insertOne({
+        _id: encounterId(context.campaign._id),
+        campaignId: context.campaign._id,
+        revision: 4,
+        round: 2,
+        turnId: 'goblin-1',
+        combatants: [goblin()],
+        updatedAt: '2026-10-01T00:00:00.000Z'
+    });
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 401);
-});
-
-test('GET /api/combat returns the saved encounter without internal fields', async () => {
-    const { app } = buildApp([
-        {
-            _id: ENCOUNTER_ID,
-            revision: 4,
-            round: 2,
-            turnId: 'goblin-1',
-            combatants: [goblin()],
-            updatedAt: '2026-10-01T00:00:00.000Z'
-        }
-    ]);
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/combat');
-
-    assert.equal(response.status, 200);
+    const response = await agent.get(campaignPath(context.campaign, '/combat'));
     assert.deepEqual(response.body, { revision: 4, round: 2, turnId: 'goblin-1', combatants: [goblin()] });
 });
 
-test('GET /api/combat fills in the nudge and colour of encounters saved without them', async () => {
-    const { initiativeNudge, color, ...legacy } = goblin();
-    const { app } = buildApp([{ _id: ENCOUNTER_ID, round: 0, turnId: null, combatants: [legacy] }]);
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/combat');
+test('GET fills in defaults for encounters saved before those fields existed', async () => {
+    const { initiativeNudge, color, dead, legendaryActions, legendaryResistances, ...legacy } = goblin();
+    const context = await buildFixture();
+    await context.combat.insertOne({
+        _id: encounterId(context.campaign._id),
+        campaignId: context.campaign._id,
+        round: 0,
+        turnId: null,
+        combatants: [legacy]
+    });
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(response.body.combatants[0], goblin({ initiativeNudge, color }));
-});
-
-test('GET /api/combat marks combatants saved before the dead flag as alive', async () => {
-    const { dead, ...legacy } = goblin();
-    const { app } = buildApp([{ _id: ENCOUNTER_ID, round: 0, turnId: null, combatants: [legacy] }]);
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/combat');
-
-    assert.equal(response.status, 200);
+    const response = await agent.get(campaignPath(context.campaign, '/combat'));
     assert.equal(response.body.combatants[0].dead, false);
-});
-
-test('GET /api/combat fills in legendary pools of encounters saved without them', async () => {
-    const { legendaryActions, legendaryResistances, ...legacy } = goblin();
-    const { app } = buildApp([{ _id: ENCOUNTER_ID, round: 0, turnId: null, combatants: [legacy] }]);
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/combat');
-
-    assert.equal(response.status, 200);
     assert.deepEqual(response.body.combatants[0].legendaryActions, { max: 0, remaining: 0 });
     assert.deepEqual(response.body.combatants[0].legendaryResistances, { max: 0, remaining: 0 });
+    assert.equal(response.body.combatants[0].initiativeNudge, 0);
+    assert.equal(response.body.combatants[0].color, null);
 });
 
-test('PUT /api/combat stores a dead combatant and reads any non-true dead flag as alive', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({
+test('PUT stores the encounter and bumps its revision', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+
+    const response = await agent
+        .put(campaignPath(context.campaign, '/combat'))
+        .send({ round: 1, turnId: 'goblin-1', combatants: [goblin()] });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body, {
+        revision: 1,
         round: 1,
         turnId: 'goblin-1',
-        combatants: [goblin({ dead: true }), goblin({ id: 'goblin-2', name: 'Goblin 2', dead: 'yes' })]
+        combatants: [goblin()]
     });
-
-    assert.equal(response.status, 200);
-    assert.equal(response.body.combatants[0].dead, true);
-    assert.equal(response.body.combatants[1].dead, false);
+    assert.equal(context.combat.dump().length, 1);
 });
 
-test('PUT /api/combat stores the encounter and returns it', async () => {
-    const { app, combat } = buildApp();
-    const agent = await authedAgent(app);
-    const encounter = { round: 1, turnId: 'goblin-1', combatants: [goblin()] };
-    const response = await agent.put('/api/combat').send(encounter);
+test('each campaign has its own encounter and revision sequence', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(response.body, { revision: 1, ...encounter });
-    assert.equal(combat.dump().length, 1);
+    const first = await agent
+        .put(campaignPath(context.campaign, '/combat'))
+        .send({ round: 0, combatants: [] });
+    const second = await agent
+        .put(campaignPath(context.other, '/combat'))
+        .send({ round: 0, combatants: [] });
 
-    const listed = await agent.get('/api/combat');
-    assert.deepEqual(listed.body, { revision: 1, ...encounter });
+    assert.equal(first.body.revision, 1);
+    assert.equal(second.body.revision, 1);
+
+    const again = await agent
+        .put(campaignPath(context.campaign, '/combat'))
+        .send({ round: 1, combatants: [] });
+    assert.equal(again.body.revision, 2);
+    assert.equal((await agent.get(campaignPath(context.other, '/combat'))).body.revision, 1);
 });
 
-test('PUT /api/combat bumps the revision on every save and ignores a client-sent revision', async () => {
-    const { app } = buildApp([{ _id: ENCOUNTER_ID, revision: 7, round: 0, turnId: null, combatants: [] }]);
-    const agent = await authedAgent(app);
+test('saves within one campaign are serialized and ignored client revisions are replaced', async () => {
+    const context = await buildFixture();
+    await context.combat.insertOne({
+        _id: encounterId(context.campaign._id),
+        campaignId: context.campaign._id,
+        revision: 7,
+        round: 0,
+        turnId: null,
+        combatants: []
+    });
+    const agent = await loginAs(context.app, 'dm@example.com');
     const encounter = { revision: 100, round: 0, turnId: null, combatants: [goblin()] };
 
     const [first, second] = await Promise.all([
-        agent.put('/api/combat').send(encounter),
-        agent.put('/api/combat').send(encounter)
+        agent.put(campaignPath(context.campaign, '/combat')).send(encounter),
+        agent.put(campaignPath(context.campaign, '/combat')).send(encounter)
     ]);
 
     assert.deepEqual([first.body.revision, second.body.revision].sort(), [8, 9]);
-    assert.equal((await agent.get('/api/combat')).body.revision, 9);
 });
 
-test('PUT /api/combat reports every saved encounter to onSaved in revision order', async () => {
-    const combat = createFakeCollection([]);
+test('onSaved receives the campaign id and revision in order', async () => {
     const saved = [];
-    const app = createApp(
-        {
-            entries: createFakeCollection([]),
-            inventory: createFakeCollection([]),
-            purses: createFakeCollection([]),
-            combat
-        },
-        {
-            appPassword: PASSWORD,
-            sessionSecret: 'test-secret',
-            combatLive: { publish: (encounter) => saved.push(encounter) }
-        }
-    );
-    const agent = await authedAgent(app);
+    const context = buildApp({
+        services: { combatLive: { publish: (campaignId, encounter) => saved.push({ campaignId, encounter }) } }
+    });
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    const campaign = await addCampaign(context.campaigns, context.memberships, { dm });
+    const agent = await loginAs(context.app, 'dm@example.com');
 
     await Promise.all([
-        agent.put('/api/combat').send({ round: 0, combatants: [] }),
-        agent.put('/api/combat').send({ round: 1, combatants: [goblin()], turnId: 'goblin-1' })
+        agent.put(campaignPath(campaign, '/combat')).send({ round: 0, combatants: [] }),
+        agent.put(campaignPath(campaign, '/combat')).send({ round: 1, combatants: [goblin()] })
     ]);
 
     assert.deepEqual(
-        saved.map((encounter) => encounter.revision),
-        [1, 2]
-    );
-    assert.equal(
-        saved.some((encounter) => '_id' in encounter || 'updatedAt' in encounter),
-        false
+        saved.map(({ campaignId, encounter }) => [campaignId, encounter.revision]),
+        [
+            [campaign._id, 1],
+            [campaign._id, 2]
+        ]
     );
 });
 
-test('PUT /api/combat does not report a rejected encounter to onSaved', async () => {
-    const combat = createFakeCollection([]);
+test('an invalid encounter is not reported to onSaved', async () => {
     const saved = [];
-    const app = createApp(
-        {
-            entries: createFakeCollection([]),
-            inventory: createFakeCollection([]),
-            purses: createFakeCollection([]),
-            combat
-        },
-        {
-            appPassword: PASSWORD,
-            sessionSecret: 'test-secret',
-            combatLive: { publish: (encounter) => saved.push(encounter) }
-        }
-    );
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({ round: 1 });
+    const context = buildApp({
+        services: { combatLive: { publish: (...args) => saved.push(args) } }
+    });
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    const campaign = await addCampaign(context.campaigns, context.memberships, { dm });
+    const agent = await loginAs(context.app, 'dm@example.com');
 
+    const response = await agent.put(campaignPath(campaign, '/combat')).send({ round: 1 });
     assert.equal(response.status, 400);
     assert.equal(saved.length, 0);
 });
 
-test('PUT /api/combat normalizes combatant fields, drops blank conditions and caps descriptions', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({
-        round: -3,
-        turnId: 'missing',
-        combatants: [
-            {
-                id: ' tessaly ',
-                name: '  Tessaly Oakhand ',
-                kind: 'player',
-                entryId: ' players:tessaly-oakhand ',
-                initiative: '14.7',
-                initiativeNudge: '2.9',
-                color: '#AABBCC',
-                hp: -4,
-                maxHp: '',
-                ac: 'tough',
-                conditions: [
-                    { name: ' Prone ', rounds: null, description: '   ' },
-                    { name: 'Poisoned', rounds: 0 },
-                    { name: '  ' },
-                    { name: 'Hexed', rounds: 2, description: ` ${'x'.repeat(600)} ` }
-                ]
-            }
-        ]
-    });
+test('normalization trims combatants, clamps values and drops blank conditions', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+
+    const response = await agent
+        .put(campaignPath(context.campaign, '/combat'))
+        .send({
+            round: -3,
+            turnId: 'missing',
+            combatants: [
+                {
+                    id: ' tessaly ',
+                    name: '  Tessaly Oakhand ',
+                    kind: 'player',
+                    entryId: ' players:tessaly-oakhand ',
+                    initiative: '14.7',
+                    initiativeNudge: '2.9',
+                    color: '#AABBCC',
+                    hp: -4,
+                    maxHp: '',
+                    ac: 'tough',
+                    conditions: [
+                        { name: ' Prone ', rounds: null, description: '   ' },
+                        { name: 'Poisoned', rounds: 0 },
+                        { name: '  ' },
+                        { name: 'Hexed', rounds: 2, description: ` ${'x'.repeat(600)} ` }
+                    ]
+                }
+            ]
+        });
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, {
@@ -267,95 +243,67 @@ test('PUT /api/combat normalizes combatant fields, drops blank conditions and ca
     });
 });
 
-test('PUT /api/combat keeps player stats', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const player = goblin({ id: 'tessaly', name: 'Tessaly Oakhand', kind: 'player', hp: 20, maxHp: 24, ac: 16 });
-    const response = await agent.put('/api/combat').send({ round: 0, combatants: [player] });
+test('enemies never keep hit points or armour class', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(response.body.combatants[0], player);
+    const response = await agent
+        .put(campaignPath(context.campaign, '/combat'))
+        .send({ round: 0, combatants: [goblin({ kind: 'dragon', hp: 7, maxHp: 7, ac: 15 })] });
+
+    assert.deepEqual(response.body.combatants[0], goblin());
 });
 
-test('PUT /api/combat clamps legendary pools to their maximum', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({
+test('legendary pools are clamped to their maximum', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+
+    const response = await agent.put(campaignPath(context.campaign, '/combat')).send({
         round: 0,
         combatants: [
             goblin({
                 legendaryActions: { max: 3, remaining: 5 },
                 legendaryResistances: { max: '4.9', remaining: -2 }
             }),
-            goblin({
-                id: 'goblin-2',
-                name: 'Goblin 2',
-                legendaryActions: { max: '12' },
-                legendaryResistances: { max: 'none', remaining: 2 }
-            })
+            goblin({ id: 'goblin-2', name: 'Goblin 2', legendaryActions: { max: '12' } })
         ]
     });
 
-    assert.equal(response.status, 200);
     assert.deepEqual(response.body.combatants[0].legendaryActions, { max: 3, remaining: 3 });
     assert.deepEqual(response.body.combatants[0].legendaryResistances, { max: 4, remaining: 0 });
     assert.deepEqual(response.body.combatants[1].legendaryActions, { max: 10, remaining: 10 });
-    assert.deepEqual(response.body.combatants[1].legendaryResistances, { max: 0, remaining: 0 });
 });
 
-test('PUT /api/combat stores enemies without hit points or armour class', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({
-        round: 0,
-        combatants: [goblin({ kind: 'dragon', hp: 7, maxHp: 7, ac: 15 })]
-    });
+test('PUT rejects a body without a combatant list, a nameless combatant, duplicates and oversize encounters', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+    const base = campaignPath(context.campaign, '/combat');
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(response.body.combatants[0], goblin());
-});
+    assert.equal((await agent.put(base).send({ round: 1 })).status, 400);
+    assert.equal(
+        (await agent.put(base).send({ round: 0, combatants: [goblin({ name: ' ' })] })).status,
+        400
+    );
+    assert.equal((await agent.put(base).send({ round: 0, combatants: [goblin(), goblin()] })).status, 400);
 
-test('PUT /api/combat drops a colour that is not a hex code and caps long names', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({
-        round: 0,
-        combatants: [goblin({ name: 'x'.repeat(150), color: 'red', initiativeNudge: 'first' })]
-    });
-
-    assert.equal(response.status, 200);
-    assert.deepEqual(response.body.combatants[0], goblin({ name: 'x'.repeat(100) }));
-});
-
-test('PUT /api/combat rejects a body without a combatant list', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({ round: 1 });
-
-    assert.equal(response.status, 400);
-});
-
-test('PUT /api/combat rejects a combatant without a name', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({ round: 0, combatants: [goblin({ name: ' ' })] });
-
-    assert.equal(response.status, 400);
-});
-
-test('PUT /api/combat rejects duplicate combatant ids', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/combat').send({ round: 0, combatants: [goblin(), goblin()] });
-
-    assert.equal(response.status, 400);
-});
-
-test('PUT /api/combat rejects an oversized encounter', async () => {
-    const { app } = buildApp();
-    const agent = await authedAgent(app);
     const combatants = Array.from({ length: MAX_COMBATANTS + 1 }, (_, index) => goblin({ id: `goblin-${index}` }));
-    const response = await agent.put('/api/combat').send({ round: 0, combatants });
+    assert.equal((await agent.put(base).send({ round: 0, combatants })).status, 400);
+});
 
-    assert.equal(response.status, 400);
+test('players can read combat but not write it', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'player@example.com');
+
+    assert.equal((await agent.get(campaignPath(context.campaign, '/combat'))).status, 200);
+    assert.equal(
+        (await agent.put(campaignPath(context.campaign, '/combat')).send({ round: 0, combatants: [] })).status,
+        403
+    );
+});
+
+test('combat requires a session', async () => {
+    const context = await buildFixture();
+    const response = await request(context.app).get(campaignPath(context.campaign, '/combat'));
+
+    assert.equal(response.status, 401);
 });

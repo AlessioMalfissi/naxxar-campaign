@@ -6,16 +6,49 @@ export const connectToMongo = async ({ uri, dbName }) => {
 
     const db = client.db(dbName);
 
-    const collection = db.collection('entries');
-    await collection.createIndex({ section: 1, status: 1 });
-    await collection.createIndex({ tags: 1 });
+    const users = db.collection('users');
+    await users.createIndex({ emailNormalized: 1 }, { unique: true });
+    await users.createIndex({ googleSub: 1 }, { unique: true, partialFilterExpression: { googleSub: { $type: 'string' } } });
 
-    const inventoryCollection = db.collection('inventory');
-    await inventoryCollection.createIndex({ owner: 1 });
+    const sessions = db.collection('sessions');
+    await sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    await sessions.createIndex({ userId: 1 });
 
-    const pursesCollection = db.collection('purses');
+    const campaigns = db.collection('campaigns');
+    await campaigns.createIndex({ slug: 1 }, { unique: true });
 
-    const combatCollection = db.collection('combat');
+    const memberships = db.collection('memberships');
+    await memberships.createIndex({ campaignId: 1 });
+    await memberships.createIndex({ userId: 1 });
 
-    return { client, collection, inventoryCollection, pursesCollection, combatCollection };
+    const invites = db.collection('invites');
+    await invites.createIndex({ campaignId: 1, createdAt: -1 });
+
+    const passwordResets = db.collection('password_resets');
+    await passwordResets.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    await passwordResets.createIndex({ userId: 1 });
+
+    const entries = db.collection('entries');
+    await entries.createIndex({ campaignId: 1, section: 1, status: 1 });
+    await entries.createIndex({ campaignId: 1, tags: 1 });
+
+    const inventory = db.collection('inventory');
+    await inventory.createIndex({ campaignId: 1, name: 1 });
+
+    const purses = db.collection('purses');
+    const combat = db.collection('combat');
+
+    return {
+        client,
+        users,
+        sessions,
+        campaigns,
+        memberships,
+        invites,
+        passwordResets,
+        entries,
+        inventory,
+        purses,
+        combat
+    };
 };

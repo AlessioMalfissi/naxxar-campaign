@@ -64,7 +64,7 @@ const parseFrontMatter = (source) => {
     return { data, body: source.slice(match[0].length) };
 };
 
-export const buildSeedEntries = async () => {
+export const buildSeedEntries = async (campaignId) => {
     const entries = [];
 
     for (const section of SECTIONS) {
@@ -77,7 +77,8 @@ export const buildSeedEntries = async () => {
             const trimmedBody = body.trim();
 
             entries.push({
-                _id: `${section}:${slug}`,
+                _id: `${campaignId}:${section}:${slug}`,
+                campaignId,
                 section,
                 slug,
                 path: `assets/codex/${section}/${file}`,

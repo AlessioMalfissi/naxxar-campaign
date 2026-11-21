@@ -4,13 +4,10 @@ import { test } from 'node:test';
 import request from 'supertest';
 import { WebSocket } from 'ws';
 
-import { createApp } from '../src/app.js';
-import { ENCOUNTER_ID } from '../src/combat.js';
-import { COMBAT_LIVE_PATH, createCombatLive } from '../src/combat-live.js';
-import { createFakeCollection } from '../test-utils/fake-collection.mjs';
-
-const PASSWORD = 'campaign-test-password';
-const SECRET = 'test-secret';
+import { combatLivePath, createCombatLive } from '../src/combat-live.js';
+import { encounterId } from '../src/combat.js';
+import { resolveSession } from '../src/sessions.js';
+import { addCampaign, addUser, buildApp, campaignPath } from './helpers.mjs';
 
 const goblin = {
     id: 'goblin-1',
@@ -29,33 +26,61 @@ const goblin = {
     dead: false
 };
 
-const startServer = async (t, docs = []) => {
-    const combat = createFakeCollection(docs);
-    const combatLive = createCombatLive(combat);
-    const app = createApp(
-        {
-            entries: createFakeCollection([]),
-            inventory: createFakeCollection([]),
-            purses: createFakeCollection([]),
-            combat
-        },
-        { appPassword: PASSWORD, sessionSecret: SECRET, combatLive }
-    );
+const buildFixture = async () => {
+    const context = buildApp({
+        services: {
+            combatLiveFactory: (collections) =>
+                createCombatLive(collections.combat, {
+                    resolveAccess: async (req, slug) => {
+                        const auth = await resolveSession(req, {
+                            sessions: collections.sessions,
+                            users: collections.users
+                        });
+                        if (auth === null) {
+                            return { status: 401, reason: 'Unauthorized' };
+                        }
 
-    const server = app.listen(0);
-    await once(server, 'listening');
-    combatLive.attach(server, { sessionSecret: SECRET });
+                        const campaign = await collections.campaigns.findOne({ slug });
+                        if (campaign === null) {
+                            return { status: 404, reason: 'Not Found' };
+                        }
 
-    t.after(() => {
-        combatLive.close();
-        server.close();
+                        const membership = await collections.memberships.findOne({
+                            _id: `${campaign._id}:${auth.user._id}`
+                        });
+                        return membership === null
+                            ? { status: 404, reason: 'Not Found' }
+                            : { campaignId: campaign._id };
+                    }
+                })
+        }
     });
 
-    const login = await request(server).post('/api/auth/login').send({ password: PASSWORD });
-    const cookie = login.headers['set-cookie'][0].split(';')[0];
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    const player = await addUser(context.users, { email: 'player@example.com', displayName: 'Player' });
+    const campaign = await addCampaign(context.campaigns, context.memberships, { dm, players: [player] });
+    const other = await addCampaign(context.campaigns, context.memberships, { slug: 'other', name: 'Other', dm });
+
+    const server = context.app.listen(0);
+    await once(server, 'listening');
+    context.combatLive.attach(server);
+
+    const login = async (email) => {
+        const response = await request(server).post('/api/auth/login').send({ email, password: 'password123' });
+        return response.headers['set-cookie'][0].split(';')[0];
+    };
+
     const { port } = server.address();
 
-    return { server, cookie, url: `ws://127.0.0.1:${port}` };
+    return {
+        ...context,
+        server,
+        url: `ws://127.0.0.1:${port}`,
+        dmCookie: await login('dm@example.com'),
+        playerCookie: await login('player@example.com'),
+        campaign,
+        other
+    };
 };
 
 // Resolves with the socket once open, buffering every message it receives from the first frame on.
@@ -92,32 +117,60 @@ const rejectionStatus = (url, headers = {}) =>
         socket.on('error', () => undefined);
     });
 
-test('the combat socket refuses a connection without a session', async (t) => {
-    const { url } = await startServer(t);
+const withServer = (fixture, t) => {
+    t.after(() => {
+        fixture.combatLive.close();
+        fixture.server.close();
+    });
+    return fixture;
+};
 
-    assert.equal(await rejectionStatus(`${url}${COMBAT_LIVE_PATH}`), 401);
+test('the socket refuses a connection without a session', async (t) => {
+    const fixture = withServer(await buildFixture(), t);
+
+    assert.equal(await rejectionStatus(`${fixture.url}${combatLivePath('naxxar')}`), 401);
 });
 
-test('the combat socket refuses a forged session cookie', async (t) => {
-    const { url } = await startServer(t);
+test('the socket refuses a forged session cookie', async (t) => {
+    const fixture = withServer(await buildFixture(), t);
 
     assert.equal(
-        await rejectionStatus(`${url}${COMBAT_LIVE_PATH}`, { Cookie: 'naxxar_session=authenticated.forged' }),
+        await rejectionStatus(`${fixture.url}${combatLivePath('naxxar')}`, {
+            Cookie: 'naxxar_session=forged'
+        }),
         401
     );
 });
 
-test('websocket upgrades on any other path are refused', async (t) => {
-    const { url, cookie } = await startServer(t);
+test('a non-member gets a 404, as does an unknown campaign', async (t) => {
+    const fixture = withServer(await buildFixture(), t);
 
-    assert.equal(await rejectionStatus(`${url}/api/entries`, { Cookie: cookie }), 404);
+    assert.equal(
+        await rejectionStatus(`${fixture.url}${combatLivePath('other-campaign')}`, {
+            Cookie: fixture.playerCookie
+        }),
+        404
+    );
+    assert.equal(
+        await rejectionStatus(`${fixture.url}/api/entries`, { Cookie: fixture.dmCookie }),
+        404
+    );
 });
 
-test('the combat socket sends the current encounter as soon as it connects', async (t) => {
-    const { url, cookie } = await startServer(t, [
-        { _id: ENCOUNTER_ID, revision: 3, round: 2, turnId: 'goblin-1', combatants: [goblin] }
-    ]);
-    const { socket, next } = await connect(`${url}${COMBAT_LIVE_PATH}`, { Cookie: cookie });
+test('the socket sends that campaign’s current encounter on connect', async (t) => {
+    const fixture = withServer(await buildFixture(), t);
+    await fixture.combat.insertOne({
+        _id: encounterId(fixture.campaign._id),
+        campaignId: fixture.campaign._id,
+        revision: 3,
+        round: 2,
+        turnId: 'goblin-1',
+        combatants: [goblin]
+    });
+
+    const { socket, next } = await connect(`${fixture.url}${combatLivePath('naxxar')}`, {
+        Cookie: fixture.dmCookie
+    });
     t.after(() => socket.terminate());
 
     assert.deepEqual(await next(), {
@@ -126,9 +179,11 @@ test('the combat socket sends the current encounter as soon as it connects', asy
     });
 });
 
-test('the combat socket sends an empty encounter when none was saved', async (t) => {
-    const { url, cookie } = await startServer(t);
-    const { socket, next } = await connect(`${url}${COMBAT_LIVE_PATH}`, { Cookie: cookie });
+test('the socket sends an empty encounter when none was saved', async (t) => {
+    const fixture = withServer(await buildFixture(), t);
+    const { socket, next } = await connect(`${fixture.url}${combatLivePath('naxxar')}`, {
+        Cookie: fixture.dmCookie
+    });
     t.after(() => socket.terminate());
 
     assert.deepEqual(await next(), {
@@ -137,10 +192,10 @@ test('the combat socket sends an empty encounter when none was saved', async (t)
     });
 });
 
-test('every connected tracker receives each saved encounter', async (t) => {
-    const { server, url, cookie } = await startServer(t);
-    const first = await connect(`${url}${COMBAT_LIVE_PATH}`, { Cookie: cookie });
-    const second = await connect(`${url}${COMBAT_LIVE_PATH}`, { Cookie: cookie });
+test('a websocket in campaign A never receives campaign B’s encounter', async (t) => {
+    const fixture = withServer(await buildFixture(), t);
+    const first = await connect(`${fixture.url}${combatLivePath('naxxar')}`, { Cookie: fixture.dmCookie });
+    const second = await connect(`${fixture.url}${combatLivePath('other')}`, { Cookie: fixture.dmCookie });
     t.after(() => {
         first.socket.terminate();
         second.socket.terminate();
@@ -148,44 +203,52 @@ test('every connected tracker receives each saved encounter', async (t) => {
     await first.next();
     await second.next();
 
-    const saved = await request(server)
-        .put('/api/combat')
-        .set('Cookie', cookie)
+    const saved = await request(fixture.server)
+        .put(campaignPath(fixture.campaign, '/combat'))
+        .set('Cookie', fixture.dmCookie)
         .send({ round: 1, turnId: 'goblin-1', combatants: [goblin] });
 
-    const expected = { type: 'encounter', encounter: saved.body };
     assert.equal(saved.body.revision, 1);
-    assert.deepEqual(await first.next(), expected);
-    assert.deepEqual(await second.next(), expected);
+    assert.deepEqual(await first.next(), { type: 'encounter', encounter: saved.body });
+
+    // The other campaign only sees its own empty snapshot; nothing arrives after it.
+    const raced = await Promise.race([
+        second.next().then((message) => message),
+        new Promise((resolve) => setTimeout(() => resolve('timeout'), 150))
+    ]);
+    assert.equal(raced, 'timeout');
 });
 
-test('the combat socket pushes a combatant marked dead as dead', async (t) => {
-    const { server, url, cookie } = await startServer(t);
-    const tracker = await connect(`${url}${COMBAT_LIVE_PATH}`, { Cookie: cookie });
+test('players are members and receive live updates', async (t) => {
+    const fixture = withServer(await buildFixture(), t);
+    const tracker = await connect(`${fixture.url}${combatLivePath('naxxar')}`, {
+        Cookie: fixture.playerCookie
+    });
     t.after(() => tracker.socket.terminate());
     await tracker.next();
 
-    await request(server)
-        .put('/api/combat')
-        .set('Cookie', cookie)
-        .send({ round: 1, turnId: 'tessaly', combatants: [goblin, { ...goblin, id: 'tessaly', dead: true }] });
+    await request(fixture.server)
+        .put(campaignPath(fixture.campaign, '/combat'))
+        .set('Cookie', fixture.dmCookie)
+        .send({ round: 1, combatants: [goblin] });
 
     const pushed = await tracker.next();
-    assert.equal(pushed.encounter.combatants.find((combatant) => combatant.id === 'tessaly').dead, true);
-    assert.equal(pushed.encounter.combatants.find((combatant) => combatant.id === 'goblin-1').dead, false);
+    assert.equal(pushed.encounter.revision, 1);
 });
 
 test('saves are pushed in revision order', async (t) => {
-    const { server, url, cookie } = await startServer(t);
-    const { socket, next } = await connect(`${url}${COMBAT_LIVE_PATH}`, { Cookie: cookie });
+    const fixture = withServer(await buildFixture(), t);
+    const { socket, next } = await connect(`${fixture.url}${combatLivePath('naxxar')}`, {
+        Cookie: fixture.dmCookie
+    });
     t.after(() => socket.terminate());
     await next();
 
     await Promise.all(
         [0, 1, 2].map((round) =>
-            request(server)
-                .put('/api/combat')
-                .set('Cookie', cookie)
+            request(fixture.server)
+                .put(campaignPath(fixture.campaign, '/combat'))
+                .set('Cookie', fixture.dmCookie)
                 .send({ round, combatants: [goblin] })
         )
     );

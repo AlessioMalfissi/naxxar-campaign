@@ -4,8 +4,7 @@
 import 'dotenv/config';
 
 const defaults = {
-    PORT: '3000',
-    APP_PASSWORD: 'app'
+    PORT: '3000'
 };
 
 for (const [key, value] of Object.entries(defaults)) {

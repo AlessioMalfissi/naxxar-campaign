@@ -1,9 +1,10 @@
 import { Router } from 'express';
 
+import { assertCampaignDm } from './campaign-access.js';
 import { HttpError } from './http-error.js';
 
-// The table runs one fight at a time, so the whole tracker is a single document.
-export const ENCOUNTER_ID = 'current';
+// The table runs one fight at a time per campaign, so each campaign's tracker is a single document.
+export const encounterId = (campaignId) => `${campaignId}:current`;
 
 export const COMBATANT_KINDS = ['player', 'enemy'];
 
@@ -129,12 +130,13 @@ export const normalizeEncounter = (body) => {
     };
 };
 
-export const readEncounter = async (collection) => {
-    const doc = await collection.findOne({ _id: ENCOUNTER_ID });
+export const readEncounter = async (collection, campaignId) => {
+    const doc = await collection.findOne({ _id: encounterId(campaignId) });
     return doc === null ? EMPTY_ENCOUNTER : toPublicEncounter(doc);
 };
 
-// Runs tasks one after another, so each save reads the revision the previous one wrote.
+// Runs tasks one after another, so each save reads the revision the previous one wrote. Queues are
+// per campaign so one table's saves cannot delay another's.
 const createSerialQueue = () => {
     let tail = Promise.resolve();
 
@@ -145,18 +147,25 @@ const createSerialQueue = () => {
     };
 };
 
+const queueFor = (queues, campaignId) => {
+    if (!queues.has(campaignId)) {
+        queues.set(campaignId, createSerialQueue());
+    }
+
+    return queues.get(campaignId);
+};
+
 /*
  * Every save bumps the encounter's revision, so clients can tell a newer snapshot from a stale one
- * whichever channel (HTTP response or live socket) delivers it first. `onSaved` receives each saved
- * encounter in revision order.
+ * whichever channel (HTTP response or live socket) delivers it first. `onSaved(campaignId, encounter)`
+ * receives each saved encounter in revision order.
  */
-export const createCombatRouter = (collection, { onSaved = () => undefined } = {}) => {
+export const createCombatRouter = (collection, { onSaved = () => undefined, queues = new Map() } = {}) => {
     const router = Router();
-    const enqueue = createSerialQueue();
 
     router.get('/', async (req, res, next) => {
         try {
-            res.json(await readEncounter(collection));
+            res.json(await readEncounter(collection, req.campaign.doc._id));
         } catch (error) {
             next(error);
         }
@@ -164,19 +173,22 @@ export const createCombatRouter = (collection, { onSaved = () => undefined } = {
 
     router.put('/', async (req, res, next) => {
         try {
+            assertCampaignDm(req);
+            const campaignId = req.campaign.doc._id;
             const normalized = normalizeEncounter(req.body ?? {});
-            const saved = await enqueue(async () => {
-                const current = await readEncounter(collection);
+            const saved = await queueFor(queues, campaignId)(async () => {
+                const current = await readEncounter(collection, campaignId);
                 const encounter = {
-                    _id: ENCOUNTER_ID,
+                    _id: encounterId(campaignId),
+                    campaignId,
                     ...normalized,
                     revision: current.revision + 1,
                     updatedAt: new Date().toISOString()
                 };
 
-                await collection.replaceOne({ _id: ENCOUNTER_ID }, encounter, { upsert: true });
+                await collection.replaceOne({ _id: encounter._id }, encounter, { upsert: true });
                 const published = toPublicEncounter(encounter);
-                onSaved(published);
+                onSaved(campaignId, published);
                 return published;
             });
 

@@ -2,106 +2,159 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import request from 'supertest';
 
-import { createApp } from '../src/app.js';
-import { createFakeCollection } from '../test-utils/fake-collection.mjs';
+import { stripDmBlocks } from '../src/entries.js';
+import { addCampaign, addUser, buildApp, campaignPath, login, makeEntry } from './helpers.mjs';
 
-const PASSWORD = 'campaign-test-password';
+const buildFixture = async () => {
+    const context = buildApp();
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    const player = await addUser(context.users, { email: 'player@example.com', displayName: 'Player' });
+    const campaign = await addCampaign(context.campaigns, context.memberships, { dm, players: [player] });
+    const other = await addCampaign(context.campaigns, context.memberships, {
+        slug: 'other',
+        name: 'Other',
+        dm
+    });
 
-const buildApp = (docs = []) =>
-    createApp(
-        { entries: createFakeCollection(docs), inventory: createFakeCollection([]), purses: createFakeCollection([]) },
-        { appPassword: PASSWORD, sessionSecret: 'test-secret' }
-    );
+    return { ...context, dm, player, campaign, other };
+};
 
-// Returns a supertest agent that already carries a valid session cookie, so route tests below
-// only need to exercise /api/entries, not the login flow itself (covered in auth.test.mjs).
-const authedAgent = async (app) => {
+const loginAs = async (app, email) => {
     const agent = request.agent(app);
-    await agent.post('/api/auth/login').send({ password: PASSWORD });
+    await agent.post('/api/auth/login').send({ email, password: 'password123' });
     return agent;
 };
 
-const sampleEntry = (overrides = {}) => ({
-    _id: 'npcs:vaelith-corrun',
-    section: 'npcs',
-    slug: 'vaelith-corrun',
-    path: 'assets/codex/npcs/vaelith-corrun.md',
-    title: 'Vaelith Corrun',
-    status: 'Alive',
-    tags: ['ally'],
-    favourite: false,
-    visibility: 'dm',
-    author: 'DM',
-    updatedAt: '2026-08-25T00:00:00.000Z',
-    fields: { race: 'Half-elf' },
-    excerpt: 'Broker of debts.',
-    body: '# Who he is\n\nBroker of debts.',
-    ...overrides
+const sampleEntry = (campaignId, overrides = {}) =>
+    makeEntry(campaignId, 'npcs', 'vaelith-corrun', {
+        title: 'Vaelith Corrun',
+        status: 'Alive',
+        tags: ['ally'],
+        visibility: 'revealed',
+        excerpt: 'Broker of debts.',
+        body: '# Who he is\n\nBroker of debts.',
+        ...overrides
+    });
+
+test('the same section and slug in two campaigns are two independent entries', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(sampleEntry(context.campaign._id, { body: '# Campaign one\n' }));
+    await context.entries.insertOne(
+        sampleEntry(context.other._id, { body: '# Campaign two\n' })
+    );
+    const agent = await loginAs(context.app, 'dm@example.com');
+
+    const first = await agent.get(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'));
+    const second = await agent.get(campaignPath(context.other, '/entries/npcs/vaelith-corrun'));
+
+    assert.equal(first.body.id, 'npcs:vaelith-corrun');
+    assert.equal(second.body.id, 'npcs:vaelith-corrun');
+    assert.equal(first.body.body, '# Campaign one\n');
+    assert.equal(second.body.body, '# Campaign two\n');
 });
 
-test('GET /api/entries lists summaries without the body', async () => {
-    const app = buildApp([sampleEntry()]);
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/entries');
+test('GET entries lists summaries without the body, scoped to the campaign', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(sampleEntry(context.campaign._id));
+    await context.entries.insertOne(makeEntry(context.other._id, 'npcs', 'other-only', { title: 'Other only' }));
+    const agent = await loginAs(context.app, 'dm@example.com');
 
+    const response = await agent.get(campaignPath(context.campaign, '/entries'));
     assert.equal(response.status, 200);
     assert.equal(response.body.length, 1);
     assert.equal(response.body[0].id, 'npcs:vaelith-corrun');
     assert.equal('body' in response.body[0], false);
+    assert.equal('campaignId' in response.body[0], false);
 });
 
-test('GET /api/entries filters by status', async () => {
-    const app = buildApp([
-        sampleEntry(),
-        sampleEntry({ _id: 'npcs:grum', slug: 'grum', title: 'Grum', status: 'Dead', tags: ['merchant'] })
-    ]);
-    const agent = await authedAgent(app);
+test('GET entries filters by status, tags and free-text query', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(sampleEntry(context.campaign._id));
+    await context.entries.insertOne(
+        sampleEntry(context.campaign._id, {
+            _id: `${context.campaign._id}:npcs:grum`,
+            slug: 'grum',
+            title: 'Grum',
+            status: 'Dead',
+            tags: ['merchant'],
+            excerpt: 'A shady dealer.'
+        })
+    );
+    const agent = await loginAs(context.app, 'dm@example.com');
+    const base = campaignPath(context.campaign, '/entries');
 
-    const response = await agent.get('/api/entries').query({ status: 'Alive' });
-
-    assert.equal(response.body.length, 1);
-    assert.equal(response.body[0].id, 'npcs:vaelith-corrun');
+    assert.equal((await agent.get(base).query({ status: 'Alive' })).body.length, 1);
+    assert.equal((await agent.get(base).query({ tags: 'merchant' })).body[0].id, 'npcs:grum');
+    assert.equal((await agent.get(base).query({ query: 'shady' })).body[0].id, 'npcs:grum');
 });
 
-test('GET /api/entries filters by comma-separated tags and free-text query', async () => {
-    const app = buildApp([
-        sampleEntry(),
-        sampleEntry({ _id: 'npcs:grum', slug: 'grum', title: 'Grum', tags: ['merchant'], excerpt: 'A shady dealer.' })
-    ]);
-    const agent = await authedAgent(app);
+test('a player never receives a visibility:dm entry in the list', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(sampleEntry(context.campaign._id));
+    await context.entries.insertOne(
+        sampleEntry(context.campaign._id, {
+            _id: `${context.campaign._id}:npcs:secret`,
+            slug: 'secret',
+            title: 'Secret',
+            visibility: 'dm'
+        })
+    );
+    const agent = await loginAs(context.app, 'player@example.com');
 
-    const byTag = await agent.get('/api/entries').query({ tags: 'merchant' });
-    assert.equal(byTag.body.length, 1);
-    assert.equal(byTag.body[0].id, 'npcs:grum');
+    const response = await agent.get(campaignPath(context.campaign, '/entries'));
+    assert.deepEqual(response.body.map((entry) => entry.id), ['npcs:vaelith-corrun']);
 
-    const byQuery = await agent.get('/api/entries').query({ query: 'shady' });
-    assert.equal(byQuery.body.length, 1);
-    assert.equal(byQuery.body[0].id, 'npcs:grum');
+    const forced = await agent
+        .get(campaignPath(context.campaign, '/entries'))
+        .query({ visibility: 'dm' });
+    assert.deepEqual(forced.body.map((entry) => entry.id), ['npcs:vaelith-corrun']);
 });
 
-test('GET /api/entries/:section/:slug returns the full entry', async () => {
-    const app = buildApp([sampleEntry()]);
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/entries/npcs/vaelith-corrun');
+test('a player gets a 404 for a DM-only entry and cannot read :::dm blocks', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(
+        sampleEntry(context.campaign._id, {
+            body: '# Public\n\nEveryone knows this.\n\n:::dm\nA secret only the DM knows.\n:::\n\nAfter the block.'
+        })
+    );
+    const agent = await loginAs(context.app, 'player@example.com');
 
+    const response = await agent.get(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'));
     assert.equal(response.status, 200);
-    assert.equal(response.body.body, '# Who he is\n\nBroker of debts.');
+    assert.equal(response.body.body.includes('secret only the DM knows'), false);
+    assert.equal(response.body.body.includes('After the block.'), true);
+
+    await context.entries.replaceOne(
+        { _id: `${context.campaign._id}:npcs:vaelith-corrun` },
+        sampleEntry(context.campaign._id, { visibility: 'dm' })
+    );
+    const hidden = await agent.get(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'));
+    assert.equal(hidden.status, 404);
 });
 
-test('GET /api/entries/:section/:slug 404s when the entry is missing', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/entries/npcs/missing');
+test('the DM still sees :::dm content', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(
+        sampleEntry(context.campaign._id, { body: '# Public\n\n:::dm\nSecret.\n:::\n' })
+    );
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 404);
-    assert.equal(response.body.error, 'Entry not found.');
+    const response = await agent.get(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'));
+    assert.match(response.body.body, /Secret\./);
 });
 
-test('POST /api/entries creates an entry with a slugified title', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
+test('stripDmBlocks drops an unterminated DM block to the end', () => {
+    assert.equal(stripDmBlocks('before\n:::dm\nsecret\nstill secret'), 'before\n');
+    assert.equal(stripDmBlocks(':::dm\n secret\n:::\nafter'), 'after');
+    assert.equal(stripDmBlocks('no blocks'), 'no blocks');
+});
+
+test('POST creates an entry with a campaign-scoped id and a slugified title', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+
     const response = await agent
-        .post('/api/entries')
+        .post(campaignPath(context.campaign, '/entries'))
         .send({ section: 'places', title: 'Emberfall Road', status: 'Visited' });
 
     assert.equal(response.status, 201);
@@ -109,97 +162,77 @@ test('POST /api/entries creates an entry with a slugified title', async () => {
     assert.equal(response.body.body, '# Emberfall Road\n\n');
     assert.equal(response.body.favourite, false);
     assert.equal(response.body.visibility, 'dm');
+    assert.equal(
+        (await context.entries.findOne({ _id: `${context.campaign._id}:places:emberfall-road` })).campaignId,
+        context.campaign._id
+    );
 });
 
-test('POST /api/entries accepts the rules section', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.post('/api/entries').send({ section: 'rules', title: 'Short rests take one hour' });
+test('POST rejects a duplicate slug in the same campaign and section', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(sampleEntry(context.campaign._id));
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 201);
-    assert.equal(response.body.section, 'rules');
+    const duplicate = await agent
+        .post(campaignPath(context.campaign, '/entries'))
+        .send({ section: 'npcs', title: 'Vaelith Corrun' });
+    assert.equal(duplicate.status, 409);
+
+    // The same title in another campaign is not a duplicate.
+    const elsewhere = await agent
+        .post(campaignPath(context.other, '/entries'))
+        .send({ section: 'npcs', title: 'Vaelith Corrun' });
+    assert.equal(elsewhere.status, 201);
 });
 
-test('POST /api/entries stores the supplied tags, visibility and fields', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.post('/api/entries').send({
-        section: 'npcs',
-        title: 'Grum the Broker',
-        status: 'Alive',
-        tags: ['merchant', 'ally'],
-        visibility: 'revealed',
-        fields: { race: 'Dwarf' }
-    });
+test('POST validates the section and title', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+    const base = campaignPath(context.campaign, '/entries');
 
-    assert.equal(response.status, 201);
-    assert.deepEqual(response.body.tags, ['merchant', 'ally']);
-    assert.equal(response.body.visibility, 'revealed');
-    assert.deepEqual(response.body.fields, { race: 'Dwarf' });
+    assert.equal((await agent.post(base).send({ section: 'dragons', title: 'Smaug' })).status, 400);
+    assert.equal((await agent.post(base).send({ section: 'npcs', title: 'A' })).status, 400);
 });
 
-test('POST /api/entries rejects a duplicate slug in the same section', async () => {
-    const app = buildApp([sampleEntry()]);
-    const agent = await authedAgent(app);
-    const response = await agent
-        .post('/api/entries')
-        .send({ section: 'npcs', title: 'Vaelith Corrun', status: 'Alive' });
+test('PUT updates an entry and DELETE removes it, scoped to the campaign', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(sampleEntry(context.campaign._id));
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 409);
-    assert.equal(response.body.error, 'That name is already taken in this section.');
+    const updated = await agent
+        .put(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'))
+        .send({ status: 'Dead', body: '# Updated\n' });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.body.status, 'Dead');
+    assert.equal(updated.body.body, '# Updated\n');
+
+    const deleted = await agent.delete(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'));
+    assert.equal(deleted.status, 200);
+    assert.deepEqual(deleted.body, { id: 'npcs:vaelith-corrun' });
+    assert.equal(context.entries.dump().length, 0);
 });
 
-test('POST /api/entries rejects an invalid section or a too-short title', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
+test('a cross-campaign entry id behaves as missing', async () => {
+    const context = await buildFixture();
+    await context.entries.insertOne(sampleEntry(context.other._id));
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    const badSection = await agent.post('/api/entries').send({ section: 'dragons', title: 'Smaug' });
-    assert.equal(badSection.status, 400);
-
-    const shortTitle = await agent.post('/api/entries').send({ section: 'npcs', title: 'A' });
-    assert.equal(shortTitle.status, 400);
-});
-
-test('PUT /api/entries/:section/:slug updates an existing entry and stamps updatedAt', async () => {
-    const app = buildApp([sampleEntry()]);
-    const agent = await authedAgent(app);
-    const response = await agent
-        .put('/api/entries/npcs/vaelith-corrun')
-        .send({ ...sampleEntry(), status: 'Dead', body: '# Who he is\n\nUpdated.' });
-
-    assert.equal(response.status, 200);
-    assert.equal(response.body.status, 'Dead');
-    assert.equal(response.body.body, '# Who he is\n\nUpdated.');
-    assert.notEqual(response.body.updatedAt, sampleEntry().updatedAt);
-});
-
-test('PUT /api/entries/:section/:slug 404s when the entry does not exist', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.put('/api/entries/npcs/missing').send({ title: 'Ghost' });
-
+    const response = await agent.get(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'));
     assert.equal(response.status, 404);
 });
 
-test('DELETE /api/entries/:section/:slug removes the entry', async () => {
-    const collection = createFakeCollection([sampleEntry()]);
-    const app = createApp(
-        { entries: collection, inventory: createFakeCollection([]), purses: createFakeCollection([]) },
-        { appPassword: PASSWORD, sessionSecret: 'test-secret' }
-    );
-    const agent = await authedAgent(app);
-    const response = await agent.delete('/api/entries/npcs/vaelith-corrun');
+test('DELETE is idempotent', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(response.body, { id: 'npcs:vaelith-corrun' });
-    assert.equal(collection.dump().length, 0);
-});
-
-test('DELETE /api/entries/:section/:slug is idempotent when nothing matches', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.delete('/api/entries/npcs/missing');
-
+    const response = await agent.delete(campaignPath(context.campaign, '/entries/npcs/missing'));
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, { id: 'npcs:missing' });
+});
+
+test('entry routes require a session', async () => {
+    const context = await buildFixture();
+    const response = await request(context.app).get(campaignPath(context.campaign, '/entries'));
+
+    assert.equal(response.status, 401);
 });

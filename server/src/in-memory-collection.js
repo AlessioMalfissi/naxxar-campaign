@@ -1,5 +1,7 @@
 // In-memory stand-in for the subset of the MongoDB collection API the routes use. It backs the
 // dev server when there is no MONGODB_URI, and the route tests.
+const hasField = (doc, key) => Object.prototype.hasOwnProperty.call(doc, key);
+
 const matches = (doc, filter) =>
     Object.entries(filter).every(([key, condition]) => {
         if (key === '$or') {
@@ -10,8 +12,19 @@ const matches = (doc, filter) =>
         if (condition instanceof RegExp) {
             return condition.test(String(value ?? ''));
         }
-        if (condition !== null && typeof condition === 'object' && '$all' in condition) {
-            return Array.isArray(value) && condition.$all.every((item) => value.includes(item));
+        if (condition !== null && typeof condition === 'object') {
+            if ('$all' in condition) {
+                return Array.isArray(value) && condition.$all.every((item) => value.includes(item));
+            }
+            if ('$in' in condition) {
+                return condition.$in.includes(value);
+            }
+            if ('$ne' in condition) {
+                return value !== condition.$ne;
+            }
+            if ('$exists' in condition) {
+                return condition.$exists ? hasField(doc, key) : !hasField(doc, key);
+            }
         }
 
         return value === condition;
@@ -58,6 +71,13 @@ export const createInMemoryCollection = (initialDocs = []) => {
                 docs.delete(found._id);
             }
             return { deletedCount: found === undefined ? 0 : 1 };
+        },
+        deleteMany: async (filter) => {
+            const found = [...docs.values()].filter((existing) => matches(existing, filter));
+            for (const doc of found) {
+                docs.delete(doc._id);
+            }
+            return { deletedCount: found.length };
         },
         dump: () => [...docs.values()]
     };

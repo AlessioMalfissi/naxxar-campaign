@@ -1,20 +1,55 @@
 import { Router } from 'express';
 
+import { assertCampaignDm } from './campaign-access.js';
 import { HttpError } from './http-error.js';
 import { buildEntryQuery } from './query.js';
 import { isValidSection } from './sections.js';
 import { slugify } from './slugify.js';
 
-const buildId = (section, slug) => `${section}:${slug}`;
+export const buildEntryId = (campaignId, section, slug) => `${campaignId}:${section}:${slug}`;
 
-const toPublicEntry = (doc) => {
-    const { _id, ...rest } = doc;
-    return { id: _id, ...rest };
+const toPublicId = (campaignId, storedId) => {
+    const prefix = `${campaignId}:`;
+    return storedId.startsWith(prefix) ? storedId.slice(prefix.length) : storedId;
+};
+
+const toPublicEntry = (doc, campaignId) => {
+    const { _id, campaignId: _campaignId, ...rest } = doc;
+    return { id: toPublicId(campaignId, _id), ...rest };
 };
 
 const toSummary = (entry) => {
     const { body, ...summary } = entry;
     return summary;
+};
+
+// Removes `:::dm ... :::` blocks. An unterminated block drops everything that follows so a missing
+// closing marker cannot leak DM notes.
+export const stripDmBlocks = (body) => {
+    if (typeof body !== 'string') {
+        return body;
+    }
+
+    const output = [];
+    let insideDmBlock = false;
+
+    for (const line of body.split('\n')) {
+        const trimmed = line.trim();
+        if (!insideDmBlock && /^:::dm\b/i.test(trimmed)) {
+            insideDmBlock = true;
+            continue;
+        }
+        if (insideDmBlock) {
+            if (/^:::\s*$/.test(trimmed)) {
+                insideDmBlock = false;
+            }
+            continue;
+        }
+
+        output.push(line);
+    }
+
+    return output.join('\n');
 };
 
 const parseTags = (raw) =>
@@ -40,6 +75,8 @@ export const createEntriesRouter = (collection) => {
 
     router.get('/', async (req, res, next) => {
         try {
+            const campaignId = req.campaign.doc._id;
+            const forPlayer = req.campaign.role !== 'dm';
             const filter = buildEntryQuery({
                 section: typeof req.query.section === 'string' ? req.query.section : undefined,
                 status: typeof req.query.status === 'string' ? req.query.status : undefined,
@@ -48,8 +85,14 @@ export const createEntriesRouter = (collection) => {
                 query: typeof req.query.query === 'string' ? req.query.query : undefined
             });
 
+            filter.campaignId = campaignId;
+            if (forPlayer) {
+                // Never trust a client-supplied visibility filter to reveal DM entries.
+                filter.visibility = { $ne: 'dm' };
+            }
+
             const docs = await collection.find(filter).sort({ title: 1 }).toArray();
-            res.json(docs.map((doc) => toSummary(toPublicEntry(doc))));
+            res.json(docs.map((doc) => toSummary(toPublicEntry(doc, campaignId))));
         } catch (error) {
             next(error);
         }
@@ -57,13 +100,22 @@ export const createEntriesRouter = (collection) => {
 
     router.get('/:section/:slug', async (req, res, next) => {
         try {
+            const campaignId = req.campaign.doc._id;
             const { section, slug } = req.params;
-            const doc = await collection.findOne({ _id: buildId(section, slug) });
+            const doc = await collection.findOne({ _id: buildEntryId(campaignId, section, slug) });
             if (doc === null) {
                 throw new HttpError(404, 'Entry not found.');
             }
+            if (req.campaign.role !== 'dm') {
+                if (doc.visibility === 'dm') {
+                    throw new HttpError(404, 'Entry not found.');
+                }
 
-            res.json(toPublicEntry(doc));
+                res.json({ ...toPublicEntry(doc, campaignId), body: stripDmBlocks(doc.body) });
+                return;
+            }
+
+            res.json(toPublicEntry(doc, campaignId));
         } catch (error) {
             next(error);
         }
@@ -71,6 +123,8 @@ export const createEntriesRouter = (collection) => {
 
     router.post('/', async (req, res, next) => {
         try {
+            assertCampaignDm(req);
+            const campaignId = req.campaign.doc._id;
             const body = req.body ?? {};
 
             if (!isValidSection(body.section)) {
@@ -86,7 +140,7 @@ export const createEntriesRouter = (collection) => {
                 throw new HttpError(400, 'Title must contain at least one letter or number.');
             }
 
-            const id = buildId(body.section, slug);
+            const id = buildEntryId(campaignId, body.section, slug);
             const existing = await collection.findOne({ _id: id });
             if (existing !== null) {
                 throw new HttpError(409, 'That name is already taken in this section.');
@@ -95,6 +149,7 @@ export const createEntriesRouter = (collection) => {
             const now = new Date().toISOString();
             const entry = {
                 _id: id,
+                campaignId,
                 section: body.section,
                 slug,
                 path: `assets/codex/${body.section}/${slug}.md`,
@@ -111,7 +166,7 @@ export const createEntriesRouter = (collection) => {
             };
 
             await collection.insertOne(entry);
-            res.status(201).json(toPublicEntry(entry));
+            res.status(201).json(toPublicEntry(entry, campaignId));
         } catch (error) {
             next(error);
         }
@@ -119,8 +174,10 @@ export const createEntriesRouter = (collection) => {
 
     router.put('/:section/:slug', async (req, res, next) => {
         try {
+            assertCampaignDm(req);
+            const campaignId = req.campaign.doc._id;
             const { section, slug } = req.params;
-            const id = buildId(section, slug);
+            const id = buildEntryId(campaignId, section, slug);
             const existing = await collection.findOne({ _id: id });
             if (existing === null) {
                 throw new HttpError(404, 'Entry not found.');
@@ -129,6 +186,7 @@ export const createEntriesRouter = (collection) => {
             const payload = req.body ?? {};
             const entry = {
                 _id: id,
+                campaignId,
                 section,
                 slug,
                 path: existing.path,
@@ -149,7 +207,7 @@ export const createEntriesRouter = (collection) => {
             };
 
             await collection.replaceOne({ _id: id }, entry);
-            res.json(toPublicEntry(entry));
+            res.json(toPublicEntry(entry, campaignId));
         } catch (error) {
             next(error);
         }
@@ -157,10 +215,11 @@ export const createEntriesRouter = (collection) => {
 
     router.delete('/:section/:slug', async (req, res, next) => {
         try {
+            assertCampaignDm(req);
+            const campaignId = req.campaign.doc._id;
             const { section, slug } = req.params;
-            const id = buildId(section, slug);
-            await collection.deleteOne({ _id: id });
-            res.json({ id });
+            await collection.deleteOne({ _id: buildEntryId(campaignId, section, slug) });
+            res.json({ id: `${section}:${slug}` });
         } catch (error) {
             next(error);
         }

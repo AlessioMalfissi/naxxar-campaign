@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 
+import { assertCampaignDm } from './campaign-access.js';
 import { HttpError } from './http-error.js';
 
 export const PARTY_OWNER = 'party';
@@ -11,7 +12,7 @@ export const ITEM_RARITIES = ['none', 'common', 'uncommon', 'rare', 'very-rare',
 export const ITEM_STATUSES = ['mundane', 'non-attuned', 'attuned', 'magic'];
 
 const toPublicItem = (doc) => {
-    const { _id, ...rest } = doc;
+    const { _id, campaignId: _campaignId, ...rest } = doc;
     return { id: _id, ...rest };
 };
 
@@ -36,7 +37,10 @@ export const createInventoryRouter = (collection) => {
 
     router.get('/', async (req, res, next) => {
         try {
-            const docs = await collection.find({}).sort({ name: 1 }).toArray();
+            const docs = await collection
+                .find({ campaignId: req.campaign.doc._id })
+                .sort({ name: 1 })
+                .toArray();
             res.json(docs.map(toPublicItem));
         } catch (error) {
             next(error);
@@ -45,6 +49,7 @@ export const createInventoryRouter = (collection) => {
 
     router.post('/', async (req, res, next) => {
         try {
+            assertCampaignDm(req);
             const body = req.body ?? {};
             const name = typeof body.name === 'string' ? body.name.trim() : '';
             if (name === '') {
@@ -53,6 +58,7 @@ export const createInventoryRouter = (collection) => {
 
             const item = {
                 _id: randomUUID(),
+                campaignId: req.campaign.doc._id,
                 name,
                 description: typeof body.description === 'string' ? body.description.trim() : '',
                 quantity: normalizeQuantity(body.quantity, 1),
@@ -74,8 +80,9 @@ export const createInventoryRouter = (collection) => {
 
     router.patch('/:id', async (req, res, next) => {
         try {
+            assertCampaignDm(req);
             const { id } = req.params;
-            const existing = await collection.findOne({ _id: id });
+            const existing = await collection.findOne({ _id: id, campaignId: req.campaign.doc._id });
             if (existing === null) {
                 throw new HttpError(404, 'Item not found.');
             }
@@ -83,6 +90,7 @@ export const createInventoryRouter = (collection) => {
             const payload = req.body ?? {};
             const item = {
                 _id: id,
+                campaignId: req.campaign.doc._id,
                 name:
                     typeof payload.name === 'string' && payload.name.trim() !== ''
                         ? payload.name.trim()
@@ -114,8 +122,9 @@ export const createInventoryRouter = (collection) => {
 
     router.delete('/:id', async (req, res, next) => {
         try {
+            assertCampaignDm(req);
             const { id } = req.params;
-            await collection.deleteOne({ _id: id });
+            await collection.deleteOne({ _id: id, campaignId: req.campaign.doc._id });
             res.json({ id });
         } catch (error) {
             next(error);

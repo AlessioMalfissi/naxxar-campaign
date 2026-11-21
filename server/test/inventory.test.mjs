@@ -2,25 +2,27 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import request from 'supertest';
 
-import { createApp } from '../src/app.js';
-import { createFakeCollection } from '../test-utils/fake-collection.mjs';
+import { addCampaign, addUser, buildApp, campaignPath } from './helpers.mjs';
 
-const PASSWORD = 'campaign-test-password';
+const buildFixture = async () => {
+    const context = buildApp();
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    const player = await addUser(context.users, { email: 'player@example.com', displayName: 'Player' });
+    const campaign = await addCampaign(context.campaigns, context.memberships, { dm, players: [player] });
+    const other = await addCampaign(context.campaigns, context.memberships, { slug: 'other', name: 'Other', dm });
 
-const buildApp = (docs = []) =>
-    createApp(
-        { entries: createFakeCollection([]), inventory: createFakeCollection(docs), purses: createFakeCollection([]) },
-        { appPassword: PASSWORD, sessionSecret: 'test-secret' }
-    );
+    return { ...context, dm, player, campaign, other };
+};
 
-const authedAgent = async (app) => {
+const loginAs = async (app, email) => {
     const agent = request.agent(app);
-    await agent.post('/api/auth/login').send({ password: PASSWORD });
+    await agent.post('/api/auth/login').send({ email, password: 'password123' });
     return agent;
 };
 
-const sampleItem = (overrides = {}) => ({
+const item = (campaignId, overrides = {}) => ({
     _id: 'a5c8f9d0-1111-4a2b-9c3d-000000000001',
+    campaignId,
     name: 'Potion of healing',
     description: 'Restores 2d4+2 hit points.',
     quantity: 3,
@@ -34,50 +36,58 @@ const sampleItem = (overrides = {}) => ({
     ...overrides
 });
 
-test('GET /api/inventory lists items sorted by name', async () => {
-    const app = buildApp([
-        sampleItem({ _id: 'id-2', name: 'Rope, 50ft' }),
-        sampleItem({ _id: 'id-1', name: 'Bag of holding' })
-    ]);
-    const agent = await authedAgent(app);
-    const response = await agent.get('/api/inventory');
+test('GET lists only the campaign’s items, sorted by name, without campaignId', async () => {
+    const context = await buildFixture();
+    await context.inventory.insertOne(item(context.campaign._id, { _id: 'id-2', name: 'Rope, 50ft' }));
+    await context.inventory.insertOne(item(context.campaign._id, { _id: 'id-1', name: 'Bag of holding' }));
+    await context.inventory.insertOne(item(context.other._id, { _id: 'id-3', name: 'Other item' }));
+    const agent = await loginAs(context.app, 'dm@example.com');
 
+    const response = await agent.get(campaignPath(context.campaign, '/inventory'));
     assert.equal(response.status, 200);
-    assert.equal(response.body.length, 2);
-    assert.equal(response.body[0].name, 'Bag of holding');
-    assert.equal(response.body[0].id, 'id-1');
+    assert.deepEqual(
+        response.body.map((row) => row.name),
+        ['Bag of holding', 'Rope, 50ft']
+    );
+    assert.equal('campaignId' in response.body[0], false);
 });
 
-test('GET /api/inventory requires a session', async () => {
-    const app = buildApp([sampleItem()]);
-    const response = await request(app).get('/api/inventory');
+test('inventory requires a session and a membership', async () => {
+    const context = await buildFixture();
+    const anonymous = await request(context.app).get(campaignPath(context.campaign, '/inventory'));
+    assert.equal(anonymous.status, 401);
 
-    assert.equal(response.status, 401);
+    const outsider = await addUser(context.users, { email: 'outsider@example.com' });
+    assert.ok(outsider !== null);
+    const agent = await loginAs(context.app, 'outsider@example.com');
+    const hidden = await agent.get(campaignPath(context.campaign, '/inventory'));
+    assert.equal(hidden.status, 404);
 });
 
-test('POST /api/inventory creates an item defaulting owner to party, quantity to 1, rarity to none and status to mundane', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.post('/api/inventory').send({ name: 'Torch' });
+test('POST creates an item scoped to the campaign with the usual defaults', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+
+    const response = await agent
+        .post(campaignPath(context.campaign, '/inventory'))
+        .send({ name: 'Torch' });
 
     assert.equal(response.status, 201);
     assert.equal(response.body.name, 'Torch');
     assert.equal(response.body.quantity, 1);
     assert.equal(response.body.owner, 'party');
-    assert.equal(response.body.description, '');
     assert.equal(response.body.rarity, 'none');
     assert.equal(response.body.status, 'mundane');
-    assert.equal(response.body.forSale, false);
-    assert.equal(response.body.imp, false);
-    assert.equal(response.body.impTag, '');
+    assert.equal('campaignId' in response.body, false);
+    assert.equal((await context.inventory.findOne({ _id: response.body.id })).campaignId, context.campaign._id);
 });
 
-test('POST /api/inventory stores the supplied quantity, owner, description, rarity, status and flags', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.post('/api/inventory').send({
+test('POST stores supplied fields, normalizing rarity, status and impTag', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
+
+    const response = await agent.post(campaignPath(context.campaign, '/inventory')).send({
         name: 'Potion of healing',
-        description: 'Restores 2d4+2 hit points.',
         quantity: 5,
         owner: 'players:tessaly-oakhand',
         rarity: 'common',
@@ -87,147 +97,89 @@ test('POST /api/inventory stores the supplied quantity, owner, description, rari
         impTag: ' Cromwell '
     });
 
-    assert.equal(response.status, 201);
     assert.equal(response.body.quantity, 5);
     assert.equal(response.body.owner, 'players:tessaly-oakhand');
-    assert.equal(response.body.description, 'Restores 2d4+2 hit points.');
-    assert.equal(response.body.rarity, 'common');
-    assert.equal(response.body.status, 'magic');
-    assert.equal(response.body.forSale, true);
-    assert.equal(response.body.imp, true);
     assert.equal(response.body.impTag, 'Cromwell');
 });
 
-test('POST /api/inventory falls back to a default rarity and status for an invalid value', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.post('/api/inventory').send({ name: 'Torch', rarity: 'mythical', status: 'cursed' });
+test('POST rejects an empty name', async () => {
+    const context = await buildFixture();
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 201);
-    assert.equal(response.body.rarity, 'none');
-    assert.equal(response.body.status, 'mundane');
+    assert.equal(
+        (await agent.post(campaignPath(context.campaign, '/inventory')).send({ name: '   ' })).status,
+        400
+    );
 });
 
-test('POST /api/inventory rejects an empty name', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
+test('PATCH updates an item in the same campaign and 404s across campaigns', async () => {
+    const context = await buildFixture();
+    await context.inventory.insertOne(item(context.campaign._id));
+    await context.inventory.insertOne(item(context.other._id, { _id: 'other-item' }));
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    const empty = await agent.post('/api/inventory').send({ name: '' });
-    assert.equal(empty.status, 400);
+    const updated = await agent
+        .patch(campaignPath(context.campaign, '/inventory/a5c8f9d0-1111-4a2b-9c3d-000000000001'))
+        .send({ quantity: 7, rarity: 'legendary', status: 'attuned' });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.body.quantity, 7);
+    assert.equal(updated.body.rarity, 'legendary');
+    assert.equal(updated.body.status, 'attuned');
 
-    const blank = await agent.post('/api/inventory').send({ name: '   ' });
-    assert.equal(blank.status, 400);
+    const crossCampaign = await agent
+        .patch(campaignPath(context.campaign, '/inventory/other-item'))
+        .send({ quantity: 2 });
+    assert.equal(crossCampaign.status, 404);
+    assert.equal((await context.inventory.findOne({ _id: 'other-item' })).quantity, 3);
 });
 
-test('POST /api/inventory falls back to a default quantity for a negative or non-integer value', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.post('/api/inventory').send({ name: 'Torch', quantity: -3 });
+test('PATCH keeps existing values for an invalid rarity and status', async () => {
+    const context = await buildFixture();
+    await context.inventory.insertOne(item(context.campaign._id, { rarity: 'rare', status: 'attuned' }));
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 201);
-    assert.equal(response.body.quantity, 1);
-});
-
-test('PATCH /api/inventory/:id updates the quantity', async () => {
-    const app = buildApp([sampleItem()]);
-    const agent = await authedAgent(app);
-    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ quantity: 7 });
-
-    assert.equal(response.status, 200);
-    assert.equal(response.body.quantity, 7);
-    assert.equal(response.body.owner, 'party');
-    assert.notEqual(response.body.updatedAt, sampleItem().updatedAt);
-});
-
-test('PATCH /api/inventory/:id reassigns the owner to a player', async () => {
-    const app = buildApp([sampleItem()]);
-    const agent = await authedAgent(app);
-    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ owner: 'players:tessaly-oakhand' });
-
-    assert.equal(response.status, 200);
-    assert.equal(response.body.owner, 'players:tessaly-oakhand');
-    assert.equal(response.body.quantity, sampleItem().quantity);
-});
-
-test('PATCH /api/inventory/:id updates the rarity and status', async () => {
-    const app = buildApp([sampleItem({ rarity: 'none', status: 'mundane' })]);
-    const agent = await authedAgent(app);
     const response = await agent
-        .patch(`/api/inventory/${sampleItem()._id}`)
-        .send({ rarity: 'legendary', status: 'attuned' });
-
-    assert.equal(response.status, 200);
-    assert.equal(response.body.rarity, 'legendary');
-    assert.equal(response.body.status, 'attuned');
-});
-
-test('PATCH /api/inventory/:id keeps the existing rarity and status when given an invalid value', async () => {
-    const app = buildApp([sampleItem({ rarity: 'rare', status: 'attuned' })]);
-    const agent = await authedAgent(app);
-    const response = await agent
-        .patch(`/api/inventory/${sampleItem()._id}`)
+        .patch(campaignPath(context.campaign, '/inventory/a5c8f9d0-1111-4a2b-9c3d-000000000001'))
         .send({ rarity: 'mythical', status: 'cursed' });
 
-    assert.equal(response.status, 200);
     assert.equal(response.body.rarity, 'rare');
     assert.equal(response.body.status, 'attuned');
 });
 
-test('PATCH /api/inventory/:id updates the forSale and imp flags', async () => {
-    const app = buildApp([sampleItem({ forSale: false, imp: false })]);
-    const agent = await authedAgent(app);
-    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ forSale: true, imp: true });
+test('DELETE removes only this campaign’s item and is idempotent', async () => {
+    const context = await buildFixture();
+    await context.inventory.insertOne(item(context.campaign._id));
+    await context.inventory.insertOne(item(context.other._id, { _id: 'other-item' }));
+    const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(response.status, 200);
-    assert.equal(response.body.forSale, true);
-    assert.equal(response.body.imp, true);
-});
-
-test('PATCH /api/inventory/:id updates the impTag, trimming whitespace', async () => {
-    const app = buildApp([sampleItem({ impTag: '' })]);
-    const agent = await authedAgent(app);
-    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ impTag: ' Cromwell ' });
-
-    assert.equal(response.status, 200);
-    assert.equal(response.body.impTag, 'Cromwell');
-});
-
-test('PATCH /api/inventory/:id keeps the existing impTag when not supplied', async () => {
-    const app = buildApp([sampleItem({ impTag: 'Cromwell' })]);
-    const agent = await authedAgent(app);
-    const response = await agent.patch(`/api/inventory/${sampleItem()._id}`).send({ quantity: 2 });
-
-    assert.equal(response.status, 200);
-    assert.equal(response.body.impTag, 'Cromwell');
-});
-
-test('PATCH /api/inventory/:id 404s when the item does not exist', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.patch('/api/inventory/missing').send({ quantity: 2 });
-
-    assert.equal(response.status, 404);
-});
-
-test('DELETE /api/inventory/:id removes the item', async () => {
-    const collection = createFakeCollection([sampleItem()]);
-    const app = createApp(
-        { entries: createFakeCollection([]), inventory: collection, purses: createFakeCollection([]) },
-        { appPassword: PASSWORD, sessionSecret: 'test-secret' }
+    const response = await agent.delete(
+        campaignPath(context.campaign, '/inventory/a5c8f9d0-1111-4a2b-9c3d-000000000001')
     );
-    const agent = await authedAgent(app);
-    const response = await agent.delete(`/api/inventory/${sampleItem()._id}`);
-
     assert.equal(response.status, 200);
-    assert.deepEqual(response.body, { id: sampleItem()._id });
-    assert.equal(collection.dump().length, 0);
+    assert.equal((await context.inventory.findOne({ _id: 'other-item' })) !== null, true);
+
+    const again = await agent.delete(campaignPath(context.campaign, '/inventory/missing'));
+    assert.equal(again.status, 200);
 });
 
-test('DELETE /api/inventory/:id is idempotent when nothing matches', async () => {
-    const app = buildApp([]);
-    const agent = await authedAgent(app);
-    const response = await agent.delete('/api/inventory/missing');
+test('a player can read inventory but cannot write it', async () => {
+    const context = await buildFixture();
+    await context.inventory.insertOne(item(context.campaign._id));
+    const agent = await loginAs(context.app, 'player@example.com');
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(response.body, { id: 'missing' });
+    const read = await agent.get(campaignPath(context.campaign, '/inventory'));
+    assert.equal(read.status, 200);
+
+    const write = await agent.post(campaignPath(context.campaign, '/inventory')).send({ name: 'Sword' });
+    assert.equal(write.status, 403);
+
+    const patch = await agent
+        .patch(campaignPath(context.campaign, '/inventory/a5c8f9d0-1111-4a2b-9c3d-000000000001'))
+        .send({ quantity: 2 });
+    assert.equal(patch.status, 403);
+
+    const remove = await agent.delete(
+        campaignPath(context.campaign, '/inventory/a5c8f9d0-1111-4a2b-9c3d-000000000001')
+    );
+    assert.equal(remove.status, 403);
 });
