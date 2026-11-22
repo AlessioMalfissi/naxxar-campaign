@@ -48,3 +48,60 @@
 .cdx-login-submit {
     margin-top: 20px;
 }
+
+.cdx-login-field {
+    margin-bottom: 12px;
+}
+
+.cdx-login-notice {
+    margin: 0 0 16px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--cdx-primary-tint);
+    color: var(--cdx-primary-text);
+    font-size: 12px;
+}
+
+.cdx-login-link {
+    align-self: center;
+    margin-top: 12px;
+    color: var(--cdx-primary-text);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.cdx-login-link:hover {
+    text-decoration: underline;
+}
+
+.cdx-login-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.cdx-login-divider::before,
+.cdx-login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--cdx-border);
+}
+
+.cdx-login-google {
+    display: flex;
+    justify-content: center;
+    min-height: 40px;
+}
+
+.cdx-login-footer {
+    margin: 20px 0 0;
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: center;
+}

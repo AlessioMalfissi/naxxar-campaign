@@ -131,5 +131,9 @@ export const codexReducer = createReducer<ICodexState>(
     on(CodexActions.filtersChanged, (state, { status, tags, query }): ICodexState => ({
         ...state,
         filters: { status, tags, query }
-    }))
+    })),
+
+    on(AuthActions.campaignActivated, resetForCampaign),
+
+    on(AuthActions.logout.success, AuthActions.sessionExpired, AuthActions.resetPassword.success, resetForSignOut)
 );

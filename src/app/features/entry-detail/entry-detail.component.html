@@ -4,17 +4,19 @@
 
         <div class="cdx-entry-title-row">
             <h1 class="cdx-entry-title">{{ openEntry.title }}</h1>
-            <button
-                mat-icon-button
-                type="button"
-                aria-label="Toggle favourite"
-                [class.cdx-entry-favourite]="openEntry.favourite"
-                matTooltip="Favourite"
-                data-help="entry-favourite"
-                (click)="toggleFavourite()"
-            >
-                <mat-icon>star</mat-icon>
-            </button>
+            @if (!isPlayer()) {
+                <button
+                    mat-icon-button
+                    type="button"
+                    aria-label="Toggle favourite"
+                    [class.cdx-entry-favourite]="openEntry.favourite"
+                    matTooltip="Favourite"
+                    data-help="entry-favourite"
+                    (click)="toggleFavourite()"
+                >
+                    <mat-icon>star</mat-icon>
+                </button>
+            }
             <span class="cdx-entry-spacer"></span>
             @if (isDmOnly()) {
                 <span class="cdx-entry-dm-badge">DM only</span>

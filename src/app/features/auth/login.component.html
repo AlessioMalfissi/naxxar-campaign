@@ -1,7 +1,27 @@
 <div class="cdx-login">
     <div class="cdx-login-card">
         <h1 class="cdx-login-title">Naxxar campaign</h1>
-        <p class="cdx-login-subtitle">Enter the campaign password to continue.</p>
+        <p class="cdx-login-subtitle">Sign in to your campaigns.</p>
+
+        @if (resetNotice) {
+            <p class="cdx-login-notice" role="status">
+                Your password has been changed. Sign in with the new password.
+            </p>
+        }
+
+        <mat-form-field appearance="outline" class="cdx-login-field" subscriptSizing="dynamic">
+            <mat-label>Email</mat-label>
+            <input
+                matInput
+                type="email"
+                autocomplete="email"
+                [formControl]="emailControl"
+                aria-label="Email"
+            />
+            @if (emailControl.touched && emailControl.invalid) {
+                <mat-error>Enter a valid email address.</mat-error>
+            }
+        </mat-form-field>
 
         <mat-form-field appearance="outline" class="cdx-login-field" subscriptSizing="dynamic">
             <mat-label>Password</mat-label>
@@ -13,6 +33,9 @@
                 aria-label="Password"
                 (keydown.enter)="submit()"
             />
+            @if (passwordControl.touched && passwordControl.invalid) {
+                <mat-error>Enter your password.</mat-error>
+            }
         </mat-form-field>
 
         @if (error(); as message) {
@@ -22,5 +45,25 @@
         <button mat-flat-button type="button" class="cdx-login-submit" [disabled]="pending()" (click)="submit()">
             {{ pending() ? 'Signing in…' : 'Sign in' }}
         </button>
+
+        <a
+            class="cdx-login-link"
+            routerLink="/forgot-password"
+            [queryParams]="returnUrl === null ? {} : { returnUrl }"
+        >
+            Forgot password?
+        </a>
+
+        @if (googleClientId() !== null) {
+            <div class="cdx-login-divider"><span>or</span></div>
+            <div #googleButton class="cdx-login-google" aria-label="Continue with Google"></div>
+            @if (googleError(); as message) {
+                <p class="cdx-login-error" role="alert">{{ message }}</p>
+            }
+        }
+
+        <p class="cdx-login-footer">
+            New here? Ask your DM for an invite link. Invite links are single-use and expire after seven days.
+        </p>
     </div>
 </div>

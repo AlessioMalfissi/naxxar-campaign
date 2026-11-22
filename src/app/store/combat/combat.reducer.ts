@@ -17,6 +17,7 @@ import {
     updateCombatant,
     updateCondition
 } from '@core/utils/combat.util';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as CombatActions from './combat.actions';
 import { ICombatState, INITIAL_COMBAT_STATE } from './combat.state';
 
@@ -136,5 +137,13 @@ export const combatReducer = createReducer<ICombatState>(
 
     on(CombatActions.turnReverted, (state): ICombatState => withEncounter(state, revertTurn(state.encounter))),
 
-    on(CombatActions.combatEnded, (state): ICombatState => withEncounter(state, endCombat(state.encounter)))
+    on(CombatActions.combatEnded, (state): ICombatState => withEncounter(state, endCombat(state.encounter))),
+
+    on(
+        AuthActions.campaignActivated,
+        AuthActions.logout.success,
+        AuthActions.sessionExpired,
+        AuthActions.resetPassword.success,
+        (): ICombatState => ({ ...INITIAL_COMBAT_STATE })
+    )
 );

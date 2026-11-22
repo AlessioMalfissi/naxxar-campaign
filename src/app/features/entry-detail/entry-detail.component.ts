@@ -21,10 +21,12 @@ import {
 import { MarkdownExportService } from '@core/services/markdown-export.service';
 import { MarkdownCommand } from '@core/services/markdown-command.service';
 import { MarkdownRendererService } from '@core/services/markdown-renderer.service';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { formatEuropeanDate, formatEuropeanDateTime } from '@core/utils/date-format.util';
 import { buildEntryId, formatReferenceValue, parseEntryId } from '@core/utils/entry-id.util';
 import { ICreateEntryResult } from '@shared/modal/i-modal';
 import { ModalService } from '@shared/modal/modal.service';
+import { selectActiveRole } from '@store/auth/auth.selectors';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
     selectEntryLoading,
@@ -71,6 +73,7 @@ export class EntryDetailComponent {
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly renderer = inject(MarkdownRendererService);
+    private readonly campaignContext = inject(CampaignContextService);
     private readonly exportService = inject(MarkdownExportService);
     private readonly modalService = inject(ModalService);
     private readonly destroyRef = inject(DestroyRef);
@@ -88,6 +91,8 @@ export class EntryDetailComponent {
     protected readonly showPreview = toSignal(this.store.select(selectShowPreview), { initialValue: false });
     protected readonly isDirty = toSignal(this.store.select(selectIsDirty), { initialValue: false });
     protected readonly playerMode = toSignal(this.store.select(selectPlayerMode), { initialValue: false });
+    protected readonly role = toSignal(this.store.select(selectActiveRole), { initialValue: null });
+    protected readonly isPlayer = computed(() => this.role() === 'player');
     protected readonly loading = toSignal(this.store.select(selectEntryLoading), { initialValue: false });
     protected readonly lastSavedAt = toSignal(this.store.select(selectLastSavedAt), { initialValue: null });
     protected readonly lastSavedBy = toSignal(this.store.select(selectLastSavedBy), { initialValue: null });
@@ -128,7 +133,8 @@ export class EntryDetailComponent {
     protected readonly renderedHtml = computed<string>(() =>
         this.renderer.render(this.draftBody(), {
             titles: this.titles(),
-            showDmBlocks: !this.playerMode()
+            showDmBlocks: !this.playerMode(),
+            campaignSlug: this.campaignContext.slug()
         })
     );
 
@@ -166,11 +172,12 @@ export class EntryDetailComponent {
 
     protected onEntryLink(entryId: string): void {
         const reference = parseEntryId(entryId);
-        if (reference === null) {
+        const campaignSlug = this.campaignContext.slug();
+        if (reference === null || campaignSlug === null) {
             return;
         }
 
-        void this.router.navigate(['/campaign', reference.section, reference.slug]);
+        void this.router.navigate(['/campaigns', campaignSlug, reference.section, reference.slug]);
     }
 
     protected save(): void {
@@ -285,7 +292,10 @@ export class EntryDetailComponent {
             )
             .subscribe(() => {
                 this.store.dispatch(CodexActions.deleteEntry.request({ id: entry.id }));
-                void this.router.navigate(['/campaign', entry.section]);
+                const campaignSlug = this.campaignContext.slug();
+                if (campaignSlug !== null) {
+                    void this.router.navigate(['/campaigns', campaignSlug, entry.section]);
+                }
             });
     }
 

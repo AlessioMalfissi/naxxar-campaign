@@ -1,6 +1,7 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 
 import { ApiCallStatus, CodexSection, EntryVisibility, ICodexEntry, ICodexEntrySummary } from '@core/models';
+import { selectActiveRole } from '@store/auth/auth.selectors';
 import { CODEX_FEATURE_KEY, ICodexState } from './codex.state';
 
 const mentionsEntry = (entry: ICodexEntrySummary, openEntry: ICodexEntry): boolean =>
@@ -17,7 +18,14 @@ const isMentionedByEntry = (openEntry: ICodexEntry, entry: ICodexEntrySummary): 
 
 export const selectCodexState = createFeatureSelector<ICodexState>(CODEX_FEATURE_KEY);
 
-export const selectPlayerMode = createSelector(selectCodexState, (state) => state.playerMode);
+export const selectDmPreview = createSelector(selectCodexState, (state) => state.dmPreview);
+
+// A real player is always read-only; a DM can opt into a preview of the same UI.
+export const selectPlayerMode = createSelector(
+    selectCodexState,
+    selectActiveRole,
+    (state, role) => role === 'player' || state.dmPreview
+);
 
 export const selectSidebarCollapsed = createSelector(selectCodexState, (state) => state.sidebarCollapsed);
 
@@ -39,8 +47,8 @@ export const selectEntryLoading = createSelector(
     (state) => state.openEntryStatus === ApiCallStatus.Pending
 );
 
-export const selectVisibleEntries = createSelector(selectCodexState, (state) =>
-    state.playerMode ? state.entries.filter((entry) => entry.visibility === EntryVisibility.Revealed) : state.entries
+export const selectVisibleEntries = createSelector(selectCodexState, selectPlayerMode, (state, playerMode) =>
+    playerMode ? state.entries.filter((entry) => entry.visibility === EntryVisibility.Revealed) : state.entries
 );
 
 export const selectEntryTitles = createSelector(selectVisibleEntries, (entries) =>

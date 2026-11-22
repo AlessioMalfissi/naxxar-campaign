@@ -1,6 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 
 import { ApiCallStatus } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as InventoryActions from './inventory.actions';
 import { IInventoryState, INITIAL_INVENTORY_STATE } from './inventory.state';
 
@@ -44,5 +45,13 @@ export const inventoryReducer = createReducer<IInventoryState>(
         items: state.items.filter((item) => item.id !== id)
     })),
 
-    on(InventoryActions.deleteItem.failure, (state, { error }): IInventoryState => ({ ...state, error }))
+    on(InventoryActions.deleteItem.failure, (state, { error }): IInventoryState => ({ ...state, error })),
+
+    on(
+        AuthActions.campaignActivated,
+        AuthActions.logout.success,
+        AuthActions.sessionExpired,
+        AuthActions.resetPassword.success,
+        (): IInventoryState => ({ ...INITIAL_INVENTORY_STATE })
+    )
 );

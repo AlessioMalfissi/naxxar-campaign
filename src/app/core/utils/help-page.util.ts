@@ -1,25 +1,27 @@
 import { HelpPage } from '../models';
 
-const CAMPAIGN_SEGMENT = 'campaign';
-
 // Maps a router URL inside the campaign shell onto the page whose help topics apply to it.
-// Mirrors the child routes in app.routes.ts: the fixed `inventory` and `combat` paths win over
-// the `:section` and `:section/:slug` patterns.
+// URLs look like `/campaigns/:slug/...`, so the campaign slug comes first and the page segment is
+// at index 2. The fixed `inventory`, `combat` and `members` paths win over `:section`/`:section/:slug`.
 export const resolveHelpPage = (url: string): HelpPage | null => {
     const path = url.split(/[?#]/)[0];
     const segments = path.split('/').filter((segment) => segment !== '');
 
-    if (segments[0] !== CAMPAIGN_SEGMENT || segments.length < 2) {
+    if (segments[0] !== 'campaigns' || segments.length < 3) {
         return null;
     }
 
-    if (segments[1] === 'inventory') {
+    if (segments[2] === 'inventory') {
         return HelpPage.Inventory;
     }
 
-    if (segments[1] === 'combat') {
+    if (segments[2] === 'combat') {
         return HelpPage.Combat;
     }
 
-    return segments.length === 2 ? HelpPage.Section : HelpPage.Entry;
+    if (segments[2] === 'members') {
+        return HelpPage.Members;
+    }
+
+    return segments.length === 3 ? HelpPage.Section : HelpPage.Entry;
 };

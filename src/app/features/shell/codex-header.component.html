@@ -11,9 +11,45 @@
         <mat-icon>menu</mat-icon>
     </button>
 
-    <span class="cdx-header-campaign">{{ campaignName() }}</span>
+    <mat-form-field appearance="outline" class="cdx-header-switcher" subscriptSizing="dynamic">
+        <mat-select
+            aria-label="Campaign"
+            [matTooltip]="campaignName()"
+            [value]="activeSlug()"
+            (selectionChange)="onCampaignSelected($event.value)"
+        >
+            @for (campaign of campaigns(); track campaign.id) {
+                <mat-option [value]="campaign.slug">{{ campaign.name }}</mat-option>
+            }
+            <mat-option [value]="allCampaignsOption">All campaigns</mat-option>
+        </mat-select>
+    </mat-form-field>
+
+    @if (role() === 'player') {
+        <span class="cdx-header-badge">Player view</span>
+    } @else if (dmPreview()) {
+        <button
+            type="button"
+            class="cdx-header-badge cdx-header-badge-action"
+            matTooltip="Return to DM view"
+            (click)="toggleDmPreview()"
+        >
+            Previewing as player
+        </button>
+    }
 
     <span class="cdx-header-spacer"></span>
+
+    <button
+        mat-icon-button
+        type="button"
+        class="cdx-header-icon"
+        aria-label="Campaign members"
+        matTooltip="Campaign members"
+        (click)="openMembers()"
+    >
+        <mat-icon>groups</mat-icon>
+    </button>
 
     <button
         mat-icon-button
@@ -57,13 +93,31 @@
         data-help="account-menu"
         [matMenuTriggerFor]="accountMenu"
     >
-        <span>DM</span>
+        <span>{{ initials() }}</span>
     </button>
 </header>
 
 <mat-menu #accountMenu="matMenu">
-    <button mat-menu-item type="button" (click)="togglePlayerMode()">
-        {{ playerMode() ? 'Switch to DM view' : 'Switch to player view' }}
+    <div class="cdx-header-account">
+        <span class="cdx-header-account-name">{{ user()?.displayName }}</span>
+        <span class="cdx-header-account-email">{{ user()?.email }}</span>
+    </div>
+    <button mat-menu-item type="button" (click)="openMembers()">
+        <mat-icon>groups</mat-icon>
+        <span>Members</span>
     </button>
-    <button mat-menu-item type="button" (click)="signOut()">Sign out</button>
+    <button mat-menu-item type="button" (click)="openAllCampaigns()">
+        <mat-icon>campaign</mat-icon>
+        <span>All campaigns</span>
+    </button>
+    @if (isDm()) {
+        <button mat-menu-item type="button" (click)="toggleDmPreview()">
+            <mat-icon>{{ dmPreview() ? 'visibility' : 'visibility_off' }}</mat-icon>
+            <span>{{ dmPreview() ? 'Return to DM view' : 'Preview as player' }}</span>
+        </button>
+    }
+    <button mat-menu-item type="button" (click)="signOut()">
+        <mat-icon>logout</mat-icon>
+        <span>Sign out</span>
+    </button>
 </mat-menu>

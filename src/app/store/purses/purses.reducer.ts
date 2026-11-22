@@ -1,6 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 
 import { ApiCallStatus } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as PursesActions from './purses.actions';
 import { INITIAL_PURSES_STATE, IPursesState } from './purses.state';
 
@@ -32,5 +33,13 @@ export const pursesReducer = createReducer<IPursesState>(
             : [...state.purses, purse]
     })),
 
-    on(PursesActions.updateGold.failure, (state, { error }): IPursesState => ({ ...state, error }))
+    on(PursesActions.updateGold.failure, (state, { error }): IPursesState => ({ ...state, error })),
+
+    on(
+        AuthActions.campaignActivated,
+        AuthActions.logout.success,
+        AuthActions.sessionExpired,
+        AuthActions.resetPassword.success,
+        (): IPursesState => ({ ...INITIAL_PURSES_STATE })
+    )
 );

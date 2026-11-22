@@ -7,7 +7,8 @@ export const HELP_PAGE_LABELS: Readonly<Record<HelpPage, string>> = {
     [HelpPage.Section]: 'Section list',
     [HelpPage.Entry]: 'Entry',
     [HelpPage.Inventory]: 'Inventory',
-    [HelpPage.Combat]: 'Combat'
+    [HelpPage.Combat]: 'Combat',
+    [HelpPage.Members]: 'Members'
 };
 
 const SECTION_TOPICS: readonly IHelpTopic[] = [
@@ -184,6 +185,21 @@ const COMBAT_TOPICS: readonly IHelpTopic[] = [
     }
 ];
 
+const MEMBERS_TOPICS: readonly IHelpTopic[] = [
+    {
+        id: 'members-roster',
+        category: HelpCategory.Navigation,
+        title: 'Campaign roster',
+        body: 'Everyone in this campaign and the role they hold. The DM also sees email addresses.'
+    },
+    {
+        id: 'members-invites',
+        category: HelpCategory.Actions,
+        title: 'Invite players',
+        body: 'Create a single-use invite link. It expires after seven days; copy it straight away because it is only shown once.'
+    }
+];
+
 const SHELL_TOPICS: readonly IHelpTopic[] = [
     {
         id: 'search',
@@ -195,7 +211,7 @@ const SHELL_TOPICS: readonly IHelpTopic[] = [
         id: 'account-menu',
         category: HelpCategory.Actions,
         title: 'Account',
-        body: 'Switch to player view to see the codex as the players do (DM-only entries and controls hidden), or sign out.'
+        body: 'Dungeon Masters can preview the player view, switch campaigns or go back to all campaigns, and sign out.'
     },
     {
         id: 'sidebar-toggle',
@@ -233,7 +249,8 @@ const PAGE_TOPICS: Readonly<Record<HelpPage, readonly IHelpTopic[]>> = {
     [HelpPage.Section]: SECTION_TOPICS,
     [HelpPage.Entry]: ENTRY_TOPICS,
     [HelpPage.Inventory]: INVENTORY_TOPICS,
-    [HelpPage.Combat]: COMBAT_TOPICS
+    [HelpPage.Combat]: COMBAT_TOPICS,
+    [HelpPage.Members]: MEMBERS_TOPICS
 };
 
 // Page topics come first so the tour starts with what's specific to the current page.

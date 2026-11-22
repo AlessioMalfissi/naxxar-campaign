@@ -1,0 +1,71 @@
+:host {
+    display: block;
+}
+
+.cdx-auth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    background: var(--cdx-surface-0);
+}
+
+.cdx-auth-card {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: min(400px, 100%);
+    padding: 28px 24px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 12px;
+    background: var(--cdx-surface-2);
+}
+
+.cdx-auth-title {
+    margin: 0 0 4px;
+    color: var(--cdx-text-primary);
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.cdx-auth-body {
+    margin: 0 0 20px;
+    color: var(--cdx-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.cdx-auth-field {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.cdx-auth-error {
+    margin: 4px 0 0;
+    color: var(--cdx-danger);
+    font-size: 12px;
+}
+
+.cdx-auth-submit {
+    margin-top: 8px;
+}
+
+.cdx-auth-link {
+    align-self: center;
+    margin-top: 16px;
+    color: var(--cdx-primary-text);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.cdx-auth-link:hover {
+    text-decoration: underline;
+}
+
+.cdx-auth-secondary {
+    margin-top: 12px;
+    color: var(--cdx-text-secondary);
+    font-size: 12px;
+    text-align: center;
+}

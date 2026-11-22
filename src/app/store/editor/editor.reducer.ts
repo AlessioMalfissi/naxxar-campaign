@@ -1,6 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 
 import { SaveStatus } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as EditorActions from './editor.actions';
 import { IEditorState, INITIAL_EDITOR_STATE } from './editor.state';
 
@@ -56,5 +57,13 @@ export const editorReducer = createReducer<IEditorState>(
         draftBody: state.baselineBody,
         saveStatus: SaveStatus.Idle,
         error: null
-    }))
+    })),
+
+    on(
+        AuthActions.campaignActivated,
+        AuthActions.logout.success,
+        AuthActions.sessionExpired,
+        AuthActions.resetPassword.success,
+        (): IEditorState => ({ ...INITIAL_EDITOR_STATE })
+    )
 );

@@ -8,11 +8,13 @@ import { Store } from '@ngrx/store';
 import { filter, map } from 'rxjs';
 
 import { CodexSection, findSectionDefinition, ICodexEntrySummary, SECTION_DEFINITIONS } from '@core/models';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { ICreateEntryResult } from '@shared/modal/i-modal';
 import { ModalService } from '@shared/modal/modal.service';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
     selectActiveSection,
+    selectPlayerMode,
     selectRecentEntries,
     selectSectionCounts,
     selectSidebarCollapsed
@@ -33,15 +35,18 @@ const EMPTY_COUNTS: Record<string, number> = {};
 export class CodexSidebarComponent {
     private readonly store = inject(Store);
     private readonly router = inject(Router);
+    private readonly campaignContext = inject(CampaignContextService);
     private readonly modalService = inject(ModalService);
     private readonly destroyRef = inject(DestroyRef);
 
     protected readonly sections = SECTION_DEFINITIONS;
+    protected readonly slug = this.campaignContext.slug;
     protected readonly counts = toSignal(this.store.select(selectSectionCounts), { initialValue: EMPTY_COUNTS });
     protected readonly activeSection = toSignal(this.store.select(selectActiveSection), {
         initialValue: CodexSection.Npcs
     });
     protected readonly collapsed = toSignal(this.store.select(selectSidebarCollapsed), { initialValue: false });
+    protected readonly playerMode = toSignal(this.store.select(selectPlayerMode), { initialValue: false });
     protected readonly recentEntries = toSignal(this.store.select(selectRecentEntries), { initialValue: [] });
     protected readonly inventoryCount = toSignal(this.store.select(selectInventoryItemCount), { initialValue: 0 });
     protected readonly combatInProgress = toSignal(this.store.select(selectCombatInProgress), { initialValue: false });
@@ -69,19 +74,29 @@ export class CodexSidebarComponent {
     }
 
     protected isActiveEntry(entry: ICodexEntrySummary): boolean {
-        return this.currentUrl().endsWith(`/${entry.slug}`);
+        const slug = this.slug();
+        return slug !== null && this.currentUrl().endsWith(`/campaigns/${slug}/${entry.section}/${entry.slug}`);
     }
 
     protected isInventoryActive(): boolean {
-        return this.currentUrl().startsWith('/campaign/inventory');
+        return this.isCampaignPageActive('inventory');
     }
 
     protected isCombatActive(): boolean {
-        return this.currentUrl().startsWith('/campaign/combat');
+        return this.isCampaignPageActive('combat');
+    }
+
+    protected isMembersActive(): boolean {
+        return this.isCampaignPageActive('members');
     }
 
     protected isSectionActive(section: CodexSection): boolean {
-        return section === this.activeSection() && !this.isInventoryActive() && !this.isCombatActive();
+        return (
+            section === this.activeSection() &&
+            !this.isInventoryActive() &&
+            !this.isCombatActive() &&
+            !this.isMembersActive()
+        );
     }
 
     protected closeSidebar(): void {
@@ -89,6 +104,10 @@ export class CodexSidebarComponent {
     }
 
     protected createEntry(): void {
+        if (this.playerMode()) {
+            return;
+        }
+
         const section = this.activeSection();
         const definition = findSectionDefinition(section);
 
@@ -115,5 +134,12 @@ export class CodexSidebarComponent {
                     })
                 );
             });
+    }
+
+    // Reads the slug and page segment from the current URL rather than trusting the shared
+    // active-section state, which cannot distinguish section lists from fixed pages.
+    private isCampaignPageActive(page: string): boolean {
+        const slug = this.slug();
+        return slug !== null && this.currentUrl().startsWith(`/campaigns/${slug}/${page}`);
     }
 }

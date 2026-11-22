@@ -5,9 +5,10 @@ import { parseEntryId } from '../utils/entry-id.util';
 export interface IRenderOptions {
     titles: Record<string, string>;
     showDmBlocks: boolean;
+    campaignSlug: string | null;
 }
 
-const DEFAULT_OPTIONS: IRenderOptions = { titles: {}, showDmBlocks: true };
+const DEFAULT_OPTIONS: IRenderOptions = { titles: {}, showDmBlocks: true, campaignSlug: null };
 
 const escapeHtml = (value: string): string =>
     value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -190,6 +191,11 @@ export class MarkdownRendererService {
         }
 
         const title = options.titles[id] ?? reference.slug.replace(/-/g, ' ');
-        return `<a class="codex-entity-link" data-entry-id="${id}" href="/campaign/${reference.section}/${reference.slug}">${title}</a>`;
+        if (options.campaignSlug === null) {
+            return `<span class="codex-entity-link" data-entry-id="${id}">${title}</span>`;
+        }
+
+        const href = `/campaigns/${encodeURIComponent(options.campaignSlug)}/${reference.section}/${reference.slug}`;
+        return `<a class="codex-entity-link" data-entry-id="${id}" href="${href}">${title}</a>`;
     }
 }

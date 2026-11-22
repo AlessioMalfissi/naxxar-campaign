@@ -4,6 +4,7 @@ import { Store } from '@ngrx/store';
 import { catchError, concatMap, map, of, switchMap, takeUntil, withLatestFrom } from 'rxjs';
 
 import { CombatLiveEventType } from '@core/models';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { CombatApiService } from '@core/services/combat-api.service';
 import { CombatLiveService } from '@core/services/combat-live.service';
 import * as CombatActions from './combat.actions';
@@ -15,6 +16,7 @@ export class CombatEffects {
     private readonly store = inject(Store);
     private readonly combatApi = inject(CombatApiService);
     private readonly combatLive = inject(CombatLiveService);
+    private readonly campaignContext = inject(CampaignContextService);
 
     readonly loadEncounter$ = createEffect(() =>
         this.actions$.pipe(
@@ -34,8 +36,13 @@ export class CombatEffects {
     readonly liveSync$ = createEffect(() =>
         this.actions$.pipe(
             ofType(CombatActions.liveSyncStarted),
-            switchMap(() =>
-                this.combatLive.connect().pipe(
+            switchMap(() => {
+                const slug = this.campaignContext.slug();
+                if (slug === null) {
+                    return of(CombatActions.liveStatusChanged({ connected: false }));
+                }
+
+                return this.combatLive.connect(slug).pipe(
                     map((event) =>
                         event.type === CombatLiveEventType.Encounter
                             ? CombatActions.encounterReceived({ encounter: event.encounter })
@@ -44,8 +51,8 @@ export class CombatEffects {
                               })
                     ),
                     takeUntil(this.actions$.pipe(ofType(CombatActions.liveSyncStopped)))
-                )
-            )
+                );
+            })
         )
     );
 

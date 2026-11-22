@@ -9,6 +9,7 @@ import { Store } from '@ngrx/store';
 import { map } from 'rxjs';
 
 import { CodexSection, findSectionDefinition, ICodexEntrySummary, SectionFieldKind } from '@core/models';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { formatEuropeanDate } from '@core/utils/date-format.util';
 import { formatReferenceValue } from '@core/utils/entry-id.util';
 import { DataTableComponent } from '@shared/datatable/data-table.component';
@@ -38,6 +39,7 @@ export class SectionListComponent {
     private readonly store = inject(Store);
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
+    private readonly campaignContext = inject(CampaignContextService);
     private readonly destroyRef = inject(DestroyRef);
 
     protected readonly view = signal<ListView>('table');
@@ -126,11 +128,12 @@ export class SectionListComponent {
 
     protected openEntry(id: string): void {
         const entry = this.entries().find((item) => item.id === id);
-        if (entry === undefined) {
+        const campaignSlug = this.campaignContext.slug();
+        if (entry === undefined || campaignSlug === null) {
             return;
         }
 
-        void this.router.navigate(['/campaign', entry.section, entry.slug]);
+        void this.router.navigate(['/campaigns', campaignSlug, entry.section, entry.slug]);
     }
 
     protected openSummary(entry: ICodexEntrySummary): void {
