@@ -1,0 +1,165 @@
+<div class="cdx-invite">
+    <div class="cdx-invite-card">
+        @if (!checked() || previewLoading()) {
+            <h1 class="cdx-invite-title">Checking your invite…</h1>
+            <p class="cdx-invite-body">One moment while we look up the campaign.</p>
+        } @else if (invalidInvite()) {
+            <h1 class="cdx-invite-title">Invite not found</h1>
+            <p class="cdx-invite-body">
+                This invite link isn't valid. Check that you copied the whole link, or ask your DM for a new one.
+            </p>
+            <a mat-flat-button [routerLink]="authenticated() ? ['/campaigns'] : ['/login']">
+                {{ authenticated() ? 'Go to your campaigns' : 'Go to sign in' }}
+            </a>
+        } @else if (expiredInvite()) {
+            <h1 class="cdx-invite-title">Invite no longer valid</h1>
+            <p class="cdx-invite-body">
+                {{ previewError() ?? 'This invite has already been used or has expired.' }} Ask your DM for a new
+                invite link.
+            </p>
+            @if (authenticated()) {
+                <a mat-flat-button routerLink="/campaigns">Go to your campaigns</a>
+            } @else {
+                <a mat-flat-button routerLink="/login">Go to sign in</a>
+            }
+        } @else if (failedInvite()) {
+            <h1 class="cdx-invite-title">Couldn't load the invite</h1>
+            <p class="cdx-invite-body">{{ previewError() ?? 'Retry in a moment.' }}</p>
+            <div class="cdx-invite-actions">
+                <button mat-flat-button type="button" (click)="retry()">Retry</button>
+                <a mat-button [routerLink]="authenticated() ? ['/campaigns'] : ['/login']">
+                    {{ authenticated() ? 'All campaigns' : 'Sign in' }}
+                </a>
+            </div>
+        } @else if (preview(); as invite) {
+            <p class="cdx-invite-eyebrow">Campaign invite</p>
+            <h1 class="cdx-invite-title">{{ invite.campaignName }}</h1>
+            <p class="cdx-invite-body">
+                This single-use invite expires on {{ expiry(invite) }}.
+            </p>
+
+            @if (authenticated()) {
+                @if (isMember()) {
+                    <p class="cdx-invite-body">You're already a member of this campaign.</p>
+                    <button mat-flat-button type="button" (click)="openCampaign()">Open campaign</button>
+                } @else {
+                    <p class="cdx-invite-body">Join the campaign to open its codex, inventory and combat tracker.</p>
+                    @if (acceptError(); as message) {
+                        <p class="cdx-invite-error" role="alert">{{ message }}</p>
+                    }
+                    <button
+                        mat-flat-button
+                        type="button"
+                        [disabled]="accepting()"
+                        (click)="join()"
+                    >
+                        {{ accepting() ? 'Joining…' : 'Join campaign' }}
+                    </button>
+                }
+            } @else {
+                <h2 class="cdx-invite-subtitle">Create your account</h2>
+
+                @if (accountExists()) {
+                    <p class="cdx-invite-notice" role="alert">
+                        An account already exists for this email.
+                        <a [routerLink]="['/login']" [queryParams]="{ returnUrl: returnToInvite }">Sign in to join</a>
+                        — the invite is still unused.
+                    </p>
+                } @else {
+                    <mat-form-field appearance="outline" class="cdx-invite-field" subscriptSizing="dynamic">
+                        <mat-label>Display name</mat-label>
+                        <input
+                            matInput
+                            type="text"
+                            autocomplete="name"
+                            [formControl]="displayNameControl"
+                            aria-label="Display name"
+                        />
+                        @if (displayNameControl.touched && displayNameControl.invalid) {
+                            <mat-error>Enter the name the party will see (1–80 characters).</mat-error>
+                        }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="cdx-invite-field" subscriptSizing="dynamic">
+                        <mat-label>Email</mat-label>
+                        <input
+                            matInput
+                            type="email"
+                            autocomplete="email"
+                            [formControl]="emailControl"
+                            aria-label="Email"
+                        />
+                        @if (emailControl.touched && emailControl.invalid) {
+                            <mat-error>Enter a valid email address.</mat-error>
+                        }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="cdx-invite-field" subscriptSizing="dynamic">
+                        <mat-label>Password</mat-label>
+                        <input
+                            matInput
+                            type="password"
+                            autocomplete="new-password"
+                            [formControl]="passwordControl"
+                            aria-label="Password"
+                        />
+                        @if (passwordControl.touched && passwordControl.invalid) {
+                            <mat-error>
+                                @if (passwordControl.hasError('minlength')) {
+                                    Use at least 8 characters.
+                                } @else if (passwordControl.hasError('maxlength')) {
+                                    Use at most 128 characters.
+                                } @else {
+                                    Choose a password.
+                                }
+                            </mat-error>
+                        }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="cdx-invite-field" subscriptSizing="dynamic">
+                        <mat-label>Confirm password</mat-label>
+                        <input
+                            matInput
+                            type="password"
+                            autocomplete="new-password"
+                            [formControl]="confirmControl"
+                            aria-label="Confirm password"
+                            (keydown.enter)="submitRegistration()"
+                        />
+                        @if (mismatch() && confirmControl.touched) {
+                            <mat-error>Passwords do not match.</mat-error>
+                        }
+                    </mat-form-field>
+
+                    @if (authError(); as message) {
+                        <p class="cdx-invite-error" role="alert">{{ message }}</p>
+                    }
+
+                    <button
+                        mat-flat-button
+                        type="button"
+                        class="cdx-invite-submit"
+                        [disabled]="pending()"
+                        (click)="submitRegistration()"
+                    >
+                        {{ pending() ? 'Creating account…' : 'Create account and join' }}
+                    </button>
+                }
+
+                @if (showGoogle()) {
+                    <div class="cdx-invite-divider"><span>or</span></div>
+                    <div #googleButton class="cdx-invite-google" aria-label="Continue with Google"></div>
+                    @if (googleError(); as message) {
+                        <p class="cdx-invite-error" role="alert">{{ message }}</p>
+                    }
+                }
+
+                <p class="cdx-invite-footer">
+                    Already have an account?
+                    <a [routerLink]="['/login']" [queryParams]="{ returnUrl: returnToInvite }">Sign in</a>
+                    to join this campaign.
+                </p>
+            }
+        }
+    </div>
+</div>

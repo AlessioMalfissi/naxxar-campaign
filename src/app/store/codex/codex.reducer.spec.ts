@@ -203,15 +203,15 @@ describe('codexReducer', () => {
         expect(state.openEntryStatus).toBe(ApiCallStatus.Idle);
     });
 
-    it('should toggle player mode', () => {
+    it('should toggle DM preview', () => {
         // Arrange
-        const action = CodexActions.playerModeToggled();
+        const action = CodexActions.dmPreviewToggled();
 
         // Act
         const state = codexReducer(INITIAL_CODEX_STATE, action);
 
         // Assert
-        expect(state.playerMode).toBe(true);
+        expect(state.dmPreview).toBe(true);
     });
 
     it('should toggle the help overlay', () => {

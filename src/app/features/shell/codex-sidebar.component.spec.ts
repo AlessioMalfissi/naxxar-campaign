@@ -6,11 +6,13 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of } from 'rxjs';
 
 import { CodexSection, EntryVisibility } from '@core/models';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { ModalService } from '@shared/modal/modal.service';
 import { buildSummary } from '@testing/entry.fixtures';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
     selectActiveSection,
+    selectPlayerMode,
     selectRecentEntries,
     selectSectionCounts,
     selectSidebarCollapsed
@@ -60,13 +62,15 @@ describe('CodexSidebarComponent', () => {
         store.overrideSelector(selectInventoryItemCount, 2);
         store.overrideSelector(selectCombatInProgress, false);
         store.overrideSelector(selectCombatRound, 0);
+        store.overrideSelector(selectPlayerMode, false);
+        TestBed.inject(CampaignContextService).setSlug('naxxar');
 
         fixture = TestBed.createComponent(CodexSidebarComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });
 
-    it('should render a nav item per section plus the inventory and combat links', () => {
+    it('should render a nav item per section plus the party links', () => {
         // Arrange
         const items = fixture.nativeElement.querySelectorAll('.cdx-sidebar-item') as NodeListOf<HTMLElement>;
 
@@ -74,7 +78,7 @@ describe('CodexSidebarComponent', () => {
         const activeItem = fixture.nativeElement.querySelector('.cdx-sidebar-item-active') as HTMLElement;
 
         // Assert
-        expect(items.length).toBe(8);
+        expect(items.length).toBe(9);
         expect((activeItem.textContent ?? '').includes('3')).toBe(true);
     });
 
@@ -91,7 +95,7 @@ describe('CodexSidebarComponent', () => {
     it('should mark the inventory link active when on the inventory route', async () => {
         // Arrange
         const router = TestBed.inject(Router);
-        await router.navigateByUrl('/campaign/inventory');
+        await router.navigateByUrl('/campaigns/naxxar/inventory');
 
         // Act
         const active = component['isInventoryActive']();
@@ -103,7 +107,7 @@ describe('CodexSidebarComponent', () => {
     it('should mark the inventory link inactive on other routes', async () => {
         // Arrange
         const router = TestBed.inject(Router);
-        await router.navigateByUrl('/campaign/npcs');
+        await router.navigateByUrl('/campaigns/naxxar/npcs');
 
         // Act
         const active = component['isInventoryActive']();
@@ -115,7 +119,7 @@ describe('CodexSidebarComponent', () => {
     it('should mark the last-opened section active while its own route is showing', async () => {
         // Arrange
         const router = TestBed.inject(Router);
-        await router.navigateByUrl('/campaign/npcs');
+        await router.navigateByUrl('/campaigns/naxxar/npcs');
 
         // Act
         const active = component['isSectionActive'](CodexSection.Npcs);
@@ -127,7 +131,7 @@ describe('CodexSidebarComponent', () => {
     it('should not leave a stale section highlighted once the inventory route is showing', async () => {
         // Arrange - store still remembers npcs as the last section opened before navigating away
         const router = TestBed.inject(Router);
-        await router.navigateByUrl('/campaign/inventory');
+        await router.navigateByUrl('/campaigns/naxxar/inventory');
 
         // Act
         const active = component['isSectionActive'](CodexSection.Npcs);
@@ -143,7 +147,7 @@ describe('CodexSidebarComponent', () => {
         const router = TestBed.inject(Router);
 
         // Act
-        await router.navigateByUrl('/campaign/inventory');
+        await router.navigateByUrl('/campaigns/naxxar/inventory');
         fixture.detectChanges();
         const activeSectionItems = fixture.nativeElement.querySelectorAll(
             '[aria-label="Codex sections"] .cdx-sidebar-item-active'
@@ -167,10 +171,11 @@ describe('CodexSidebarComponent', () => {
         const labels = [...partyLinks].map((link) => (link.textContent ?? '').trim());
 
         // Assert
-        expect(labels.length).toBe(2);
+        expect(labels.length).toBe(3);
         expect(labels[0].startsWith('inventory_2')).toBe(true);
         expect(labels[1].includes('Combat')).toBe(true);
         expect(labels[1].includes('Round')).toBe(false);
+        expect(labels[2].includes('Members')).toBe(true);
     });
 
     it('should show the current round on the combat link while a fight is running', () => {
@@ -194,7 +199,7 @@ describe('CodexSidebarComponent', () => {
         const router = TestBed.inject(Router);
 
         // Act
-        await router.navigateByUrl('/campaign/combat');
+        await router.navigateByUrl('/campaigns/naxxar/combat');
         fixture.detectChanges();
         const activeItems = fixture.nativeElement.querySelectorAll(
             '.cdx-sidebar-item-active'
@@ -234,7 +239,7 @@ describe('CodexSidebarComponent', () => {
     it('should mark the open entry as active', async () => {
         // Arrange
         const router = TestBed.inject(Router);
-        await router.navigateByUrl('/campaign/npcs/vaelith-corrun');
+        await router.navigateByUrl('/campaigns/naxxar/npcs/vaelith-corrun');
 
         // Act
         const active = component['isActiveEntry'](buildSummary());

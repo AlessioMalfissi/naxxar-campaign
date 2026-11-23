@@ -7,6 +7,7 @@ export interface ICampaignMembersState {
     invites: ICampaignInvite[];
     invitePreview: IInvitePreview | null;
     createdInviteUrl: string | null;
+    createdInviteExpiresAt: string | null;
     status: ApiCallStatus;
     error: string | null;
     errorStatus: number | null;
@@ -17,6 +18,7 @@ export const INITIAL_CAMPAIGN_MEMBERS_STATE: ICampaignMembersState = {
     invites: [],
     invitePreview: null,
     createdInviteUrl: null,
+    createdInviteExpiresAt: null,
     status: ApiCallStatus.Idle,
     error: null,
     errorStatus: null

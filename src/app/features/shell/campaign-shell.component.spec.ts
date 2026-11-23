@@ -1,16 +1,19 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 
 import { CodexSection } from '@core/models';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { HelpOverlayComponent } from '@features/help/help-overlay.component';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as CodexActions from '@store/codex/codex.actions';
 import { selectActiveSection, selectHelpOpen, selectSidebarCollapsed } from '@store/codex/codex.selectors';
 import * as CombatActions from '@store/combat/combat.actions';
 import * as InventoryActions from '@store/inventory/inventory.actions';
+import * as PursesActions from '@store/purses/purses.actions';
 import { CampaignShellComponent } from './campaign-shell.component';
 import { CodexHeaderComponent } from './codex-header.component';
 import { CodexSidebarComponent } from './codex-sidebar.component';
@@ -33,7 +36,20 @@ describe('CampaignShellComponent', () => {
         // Arrange
         await TestBed.configureTestingModule({
             imports: [CampaignShellComponent, NoopAnimationsModule],
-            providers: [provideRouter([]), provideMockStore({ initialState: {} })]
+            providers: [
+                provideRouter([]),
+                provideMockStore({ initialState: {} }),
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: {
+                            paramMap: {
+                                get: (key: string): string | null => (key === 'campaignSlug' ? 'naxxar' : null)
+                            }
+                        }
+                    }
+                }
+            ]
         })
             .overrideComponent(CampaignShellComponent, {
                 remove: { imports: [CodexHeaderComponent, CodexSidebarComponent, HelpOverlayComponent] },
@@ -84,6 +100,41 @@ describe('CampaignShellComponent', () => {
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(CombatActions.loadEncounter.request({}));
+    });
+
+    it('should request the purses on init', () => {
+        // Arrange
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(PursesActions.loadPurses.request({}));
+    });
+
+    it('should activate the campaign from the route and set the API context', () => {
+        // Arrange
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        expect(dispatchSpy).toHaveBeenCalledWith(AuthActions.campaignActivated({ slug: 'naxxar' }));
+        expect(TestBed.inject(CampaignContextService).slug()).toBe('naxxar');
+    });
+
+    it('should clear the API context when the shell is destroyed', () => {
+        // Arrange
+        fixture.detectChanges();
+        const context = TestBed.inject(CampaignContextService);
+
+        // Act
+        fixture.destroy();
+
+        // Assert
+        expect(context.slug()).toBeNull();
     });
 
     it('should start the sidebar collapsed on tablet and phone viewports', () => {

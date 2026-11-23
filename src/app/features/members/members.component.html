@@ -1,0 +1,74 @@
+<div class="cdx-members" [class.pane-is-loading]="loading()">
+    <header class="cdx-members-header">
+        <h1 class="cdx-members-title">Members</h1>
+        @if (campaign(); as activeCampaign) {
+            <p class="cdx-members-subtitle">{{ activeCampaign.name }}</p>
+        }
+    </header>
+
+    @if (error(); as message) {
+        <p class="cdx-members-error" role="alert">{{ message }}</p>
+    }
+
+    <section class="cdx-members-section" data-help="members-roster">
+        <h2 class="cdx-members-section-title">Campaign roster</h2>
+        <p class="cdx-members-section-hint">
+            @if (isDm()) {
+                Everyone with access to this campaign. Email addresses are only visible to the Dungeon Master.
+            } @else {
+                Everyone with access to this campaign.
+            }
+        </p>
+        <cdx-data-table
+            [columns]="columns()"
+            [rows]="rows()"
+            emptyMessage="No members yet."
+        />
+    </section>
+
+    @if (isDm()) {
+        <section class="cdx-members-section" data-help="members-invites">
+            <h2 class="cdx-members-section-title">Invite players</h2>
+            <p class="cdx-members-section-hint">
+                Each link can be used once and expires after seven days. Copy it straight away — the full link is
+                only shown when it is created.
+            </p>
+
+            <button mat-flat-button type="button" class="cdx-members-invite-button" (click)="createInvite()">
+                <mat-icon>person_add</mat-icon>
+                Create invite
+            </button>
+
+            @if (createdInviteUrl(); as url) {
+                <div class="cdx-members-created">
+                    <label class="cdx-members-created-label" for="cdx-invite-url">New invite link</label>
+                    <div class="cdx-members-created-row">
+                        <input
+                            #inviteUrlInput
+                            id="cdx-invite-url"
+                            class="cdx-members-created-input"
+                            type="text"
+                            readonly
+                            [value]="url"
+                            aria-label="New invite link"
+                        />
+                        <button mat-stroked-button type="button" (click)="copyInviteUrl()">Copy</button>
+                    </div>
+                    @if (createdInviteExpiresAt(); as expiresAt) {
+                        <p class="cdx-members-created-expiry">Expires {{ expiryLabel(expiresAt) }}.</p>
+                    }
+                    @if (copyState(); as message) {
+                        <p class="cdx-members-created-copy" role="status">{{ message }}</p>
+                    }
+                </div>
+            }
+
+            <h3 class="cdx-members-subsection-title">Previous invites</h3>
+            <cdx-data-table
+                [columns]="inviteColumns"
+                [rows]="inviteRows()"
+                emptyMessage="No invites created yet."
+            />
+        </section>
+    }
+</div>

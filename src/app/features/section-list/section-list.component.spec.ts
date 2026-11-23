@@ -6,6 +6,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { BehaviorSubject } from 'rxjs';
 
 import { CodexSection } from '@core/models';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { DataTableComponent } from '@shared/datatable/data-table.component';
 import { IDataTableColumn, IDataTableRow } from '@shared/datatable/i-data-table';
 import { buildSummary } from '@testing/entry.fixtures';
@@ -60,6 +61,7 @@ describe('SectionListComponent', () => {
         store.overrideSelector(selectFilters, { status: null, tags: [], query: '' });
         store.overrideSelector(selectIndexLoading, false);
         store.overrideSelector(selectEntryTitles, {});
+        TestBed.inject(CampaignContextService).setSlug('naxxar');
 
         fixture = TestBed.createComponent(SectionListComponent);
         component = fixture.componentInstance;
@@ -219,7 +221,7 @@ describe('SectionListComponent', () => {
         component['openEntry']('npcs:vaelith-corrun');
 
         // Assert
-        expect(router.navigate).toHaveBeenCalledWith(['/campaign', 'npcs', 'vaelith-corrun']);
+        expect(router.navigate).toHaveBeenCalledWith(['/campaigns', 'naxxar', 'npcs', 'vaelith-corrun']);
     });
 
     it('should ignore an activation for an unknown id', () => {
@@ -241,6 +243,6 @@ describe('SectionListComponent', () => {
         component['openSummary'](buildSummary());
 
         // Assert
-        expect(router.navigate).toHaveBeenCalledWith(['/campaign', 'npcs', 'vaelith-corrun']);
+        expect(router.navigate).toHaveBeenCalledWith(['/campaigns', 'naxxar', 'npcs', 'vaelith-corrun']);
     });
 });

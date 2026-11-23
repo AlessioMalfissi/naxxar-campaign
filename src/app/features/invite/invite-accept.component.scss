@@ -1,0 +1,129 @@
+:host {
+    display: block;
+}
+
+.cdx-invite {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    background: var(--cdx-surface-0);
+}
+
+.cdx-invite-card {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: min(440px, 100%);
+    padding: 28px 24px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 12px;
+    background: var(--cdx-surface-2);
+}
+
+.cdx-invite-eyebrow {
+    margin: 0 0 4px;
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.cdx-invite-title {
+    margin: 0 0 4px;
+    color: var(--cdx-text-primary);
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.cdx-invite-subtitle {
+    margin: 20px 0 12px;
+    color: var(--cdx-text-primary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.cdx-invite-body {
+    margin: 0 0 16px;
+    color: var(--cdx-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.cdx-invite-field {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.cdx-invite-error {
+    margin: 4px 0 0;
+    color: var(--cdx-danger);
+    font-size: 12px;
+}
+
+.cdx-invite-notice {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--cdx-primary-tint);
+    color: var(--cdx-primary-text);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.cdx-invite-notice a {
+    color: inherit;
+    font-weight: 500;
+}
+
+.cdx-invite-submit {
+    margin-top: 8px;
+}
+
+.cdx-invite-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cdx-invite-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.cdx-invite-divider::before,
+.cdx-invite-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--cdx-border);
+}
+
+.cdx-invite-google {
+    display: flex;
+    justify-content: center;
+    min-height: 40px;
+}
+
+.cdx-invite-footer {
+    margin: 20px 0 0;
+    color: var(--cdx-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.cdx-invite-footer a {
+    color: var(--cdx-primary-text);
+    text-decoration: none;
+}
+
+.cdx-invite-footer a:hover {
+    text-decoration: underline;
+}

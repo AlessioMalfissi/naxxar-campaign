@@ -18,6 +18,11 @@ export const selectCreatedInviteUrl = createSelector(
     (state) => state.createdInviteUrl
 );
 
+export const selectCreatedInviteExpiresAt = createSelector(
+    selectCampaignMembersState,
+    (state) => state.createdInviteExpiresAt
+);
+
 export const selectCampaignMembersStatus = createSelector(selectCampaignMembersState, (state) => state.status);
 
 export const selectCampaignMembersLoading = createSelector(

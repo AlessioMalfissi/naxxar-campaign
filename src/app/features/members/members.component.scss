@@ -1,0 +1,116 @@
+:host {
+    display: block;
+}
+
+.cdx-members {
+    max-width: 960px;
+    padding: 8px 4px 32px;
+}
+
+.cdx-members-header {
+    margin-bottom: 20px;
+}
+
+.cdx-members-title {
+    margin: 0;
+    color: var(--cdx-text-primary);
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.cdx-members-subtitle {
+    margin: 2px 0 0;
+    color: var(--cdx-text-secondary);
+    font-size: 13px;
+}
+
+.cdx-members-error {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--cdx-danger-tint, rgb(179 38 30 / 12%));
+    color: var(--cdx-danger);
+    font-size: 12px;
+}
+
+.cdx-members-section {
+    margin-bottom: 28px;
+}
+
+.cdx-members-section-title {
+    margin: 0 0 4px;
+    color: var(--cdx-text-primary);
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.cdx-members-section-hint {
+    margin: 0 0 12px;
+    color: var(--cdx-text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.cdx-members-subsection-title {
+    margin: 24px 0 8px;
+    color: var(--cdx-text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.cdx-members-invite-button {
+    margin-bottom: 12px;
+}
+
+.cdx-members-created {
+    margin: 0 0 8px;
+    padding: 14px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 10px;
+    background: var(--cdx-surface-2);
+}
+
+.cdx-members-created-label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--cdx-text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.cdx-members-created-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cdx-members-created-input {
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 6px;
+    background: var(--cdx-surface-1);
+    color: var(--cdx-text-primary);
+    font-family: var(--cdx-font-mono, monospace);
+    font-size: 11px;
+}
+
+.cdx-members-created-expiry {
+    margin: 8px 0 0;
+    color: var(--cdx-text-muted);
+    font-size: 11px;
+}
+
+.cdx-members-created-copy {
+    margin: 6px 0 0;
+    color: var(--cdx-primary-text);
+    font-size: 11px;
+}
+
+.pane-is-loading {
+    opacity: 0.65;
+}

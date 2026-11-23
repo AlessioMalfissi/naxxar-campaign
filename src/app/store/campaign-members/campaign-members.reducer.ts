@@ -34,7 +34,8 @@ export const campaignMembersReducer = createReducer<ICampaignMembersState>(
 
     on(CampaignMembersActions.createInvite.request, (state): ICampaignMembersState => ({
         ...pending(state),
-        createdInviteUrl: null
+        createdInviteUrl: null,
+        createdInviteExpiresAt: null
     })),
 
     on(CampaignMembersActions.loadMembers.success, (state, { members }): ICampaignMembersState => ({
@@ -56,6 +57,7 @@ export const campaignMembersReducer = createReducer<ICampaignMembersState>(
     on(CampaignMembersActions.createInvite.success, (state, { invite }): ICampaignMembersState => ({
         ...state,
         createdInviteUrl: invite.url,
+        createdInviteExpiresAt: invite.expiresAt,
         status: ApiCallStatus.Success,
         error: null,
         errorStatus: null

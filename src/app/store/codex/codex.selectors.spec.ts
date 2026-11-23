@@ -50,7 +50,7 @@ describe('codexSelectors', () => {
     it('should expose the simple slices of state', () => {
         // Arrange
         const state = buildState({
-            playerMode: true,
+            dmPreview: true,
             sidebarCollapsed: true,
             helpOpen: true,
             error: 'offline',
@@ -59,7 +59,7 @@ describe('codexSelectors', () => {
 
         // Act
         const projected = {
-            playerMode: selectPlayerMode.projector(state),
+            playerMode: selectPlayerMode.projector(state, 'dm'),
             collapsed: selectSidebarCollapsed.projector(state),
             helpOpen: selectHelpOpen.projector(state),
             section: selectActiveSection.projector(state),
@@ -92,12 +92,21 @@ describe('codexSelectors', () => {
         expect(entryLoading).toBe(true);
     });
 
+    it('should derive player mode from the role and the DM preview toggle', () => {
+        const state = buildState({ dmPreview: false });
+
+        expect(selectPlayerMode.projector(state, 'player')).toBe(true);
+        expect(selectPlayerMode.projector({ ...state, dmPreview: true }, 'dm')).toBe(true);
+        expect(selectPlayerMode.projector(state, 'dm')).toBe(false);
+        expect(selectPlayerMode.projector(state, null)).toBe(false);
+    });
+
     it('should hide DM-only entries in player mode', () => {
         // Arrange
-        const state = buildState({ playerMode: true });
+        const state = buildState({ dmPreview: true });
 
         // Act
-        const entries = selectVisibleEntries.projector(state);
+        const entries = selectVisibleEntries.projector(state, true);
 
         // Assert
         expect(entries.length).toBe(2);

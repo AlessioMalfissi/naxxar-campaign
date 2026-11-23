@@ -44,7 +44,7 @@ describe('CombatLiveService', () => {
     };
 
     const listen = (): void => {
-        subscription = service.connect().subscribe((event) => events.push(event));
+        subscription = service.connect('naxxar').subscribe((event) => events.push(event));
     };
 
     const latest = (): IFakeSocket => sockets[sockets.length - 1];
@@ -70,7 +70,7 @@ describe('CombatLiveService', () => {
         listen();
 
         // Assert
-        expect(latest().url).toBe('ws://table.example:4200/api/combat/live');
+        expect(latest().url).toBe('ws://table.example:4200/api/campaigns/naxxar/combat/live');
     });
 
     it('should open a wss socket for an https page', () => {
@@ -81,7 +81,7 @@ describe('CombatLiveService', () => {
         listen();
 
         // Assert
-        expect(latest().url).toBe('wss://table.example:4200/api/combat/live');
+        expect(latest().url).toBe('wss://table.example:4200/api/campaigns/naxxar/combat/live');
     });
 
     it('should report the connection and every pushed encounter', () => {

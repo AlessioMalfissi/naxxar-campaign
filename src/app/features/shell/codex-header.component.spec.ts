@@ -5,17 +5,29 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { buildSummary } from '@testing/entry.fixtures';
 import * as AuthActions from '@store/auth/auth.actions';
+import {
+    selectActiveCampaign,
+    selectActiveRole,
+    selectCampaigns,
+    selectUser
+} from '@store/auth/auth.selectors';
 import * as CodexActions from '@store/codex/codex.actions';
-import { selectHelpOpen, selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
+import {
+    selectDmPreview,
+    selectHelpOpen,
+    selectPlayerMode,
+    selectVisibleEntries
+} from '@store/codex/codex.selectors';
 import { CodexHeaderComponent } from './codex-header.component';
 
 describe('CodexHeaderComponent', () => {
     let fixture: ComponentFixture<CodexHeaderComponent>;
     let component: CodexHeaderComponent;
     let store: MockStore;
-    let router: { navigate: jest.Mock };
+    let router: { navigate: jest.Mock; navigateByUrl: jest.Mock };
 
     const typeQuery = (value: string): void => {
         component['searchControl'].setValue(value);
@@ -26,7 +38,7 @@ describe('CodexHeaderComponent', () => {
     beforeEach(async () => {
         // Arrange
         jest.useFakeTimers();
-        router = { navigate: jest.fn().mockResolvedValue(true) };
+        router = { navigate: jest.fn().mockResolvedValue(true), navigateByUrl: jest.fn().mockResolvedValue(true) };
 
         await TestBed.configureTestingModule({
             imports: [CodexHeaderComponent, NoopAnimationsModule],
@@ -34,6 +46,22 @@ describe('CodexHeaderComponent', () => {
         }).compileComponents();
 
         store = TestBed.inject(MockStore);
+        store.overrideSelector(selectUser, {
+            id: 'user-1',
+            email: 'dm@naxxar.local',
+            displayName: 'Dungeon Master'
+        });
+        store.overrideSelector(selectCampaigns, [
+            { id: 'campaign-1', slug: 'naxxar', name: 'Naxxar', role: 'dm' }
+        ]);
+        store.overrideSelector(selectActiveCampaign, {
+            id: 'campaign-1',
+            slug: 'naxxar',
+            name: 'Naxxar',
+            role: 'dm'
+        });
+        store.overrideSelector(selectActiveRole, 'dm');
+        store.overrideSelector(selectDmPreview, false);
         store.overrideSelector(selectPlayerMode, false);
         store.overrideSelector(selectHelpOpen, false);
         store.overrideSelector(selectVisibleEntries, [
@@ -46,6 +74,7 @@ describe('CodexHeaderComponent', () => {
                 excerpt: 'Ash on every roof.'
             })
         ]);
+        TestBed.inject(CampaignContextService).setSlug('naxxar');
 
         fixture = TestBed.createComponent(CodexHeaderComponent);
         component = fixture.componentInstance;
@@ -99,7 +128,7 @@ describe('CodexHeaderComponent', () => {
 
         // Assert
         expect(component['searchControl'].value).toBe('');
-        expect(router.navigate).toHaveBeenCalledWith(['/campaign', 'npcs', 'vaelith-corrun']);
+        expect(router.navigate).toHaveBeenCalledWith(['/campaigns', 'naxxar', 'npcs', 'vaelith-corrun']);
     });
 
     it('should dispatch the sidebar toggle', () => {
@@ -152,15 +181,15 @@ describe('CodexHeaderComponent', () => {
         expect(tooltip.disabled).toBe(true);
     });
 
-    it('should dispatch the player mode toggle', () => {
+    it('should dispatch the DM preview toggle', () => {
         // Arrange
         const dispatchSpy = jest.spyOn(store, 'dispatch');
 
         // Act
-        component['togglePlayerMode']();
+        component['toggleDmPreview']();
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.playerModeToggled());
+        expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.dmPreviewToggled());
     });
 
     it('should dispatch a logout request on sign out', () => {
@@ -172,6 +201,43 @@ describe('CodexHeaderComponent', () => {
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(AuthActions.logout.request({}));
+    });
+
+    it('should navigate to the members page of the active campaign', () => {
+        // Act
+        component['openMembers']();
+
+        // Assert
+        expect(router.navigate).toHaveBeenCalledWith(['/campaigns', 'naxxar', 'members']);
+    });
+
+    it('should switch campaigns from the campaign menu', () => {
+        // Act
+        component['onCampaignSelected']('other-campaign');
+
+        // Assert
+        expect(router.navigate).toHaveBeenCalledWith(['/campaigns', 'other-campaign', 'npcs']);
+    });
+
+    it('should go to the campaign list from the campaign menu', () => {
+        // Act
+        component['onCampaignSelected']('__all-campaigns__');
+
+        // Assert
+        expect(router.navigateByUrl).toHaveBeenCalledWith('/campaigns');
+    });
+
+    it('should show a read-only player badge for players', () => {
+        // Arrange
+        store.overrideSelector(selectActiveRole, 'player');
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        const badge: HTMLElement = fixture.nativeElement.querySelector('.cdx-header-badge');
+        expect(badge.textContent).toContain('Player view');
     });
 
     it('should keep the autocomplete field blank when a result is picked', () => {

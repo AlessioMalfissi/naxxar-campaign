@@ -49,7 +49,7 @@
         <a
             class="cdx-login-link"
             routerLink="/forgot-password"
-            [queryParams]="returnUrl === null ? {} : { returnUrl }"
+            [queryParams]="returnUrl === null ? {} : { returnUrl: returnUrl }"
         >
             Forgot password?
         </a>

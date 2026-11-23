@@ -38,6 +38,30 @@ describe('MarkdownRendererService', () => {
         expect(html.includes('Mother Ilsabeth')).toBe(true);
     });
 
+    it('should link entity references to the active campaign', () => {
+        // Arrange
+        const markdown = 'Terrified of [[npcs:mother-ilsabeth]]';
+
+        // Act
+        const html = service.render(markdown, { campaignSlug: 'naxxar' });
+
+        // Assert
+        expect(html.includes('href="/campaigns/naxxar/npcs/mother-ilsabeth"')).toBe(true);
+        expect(html.includes('<a class="codex-entity-link"')).toBe(true);
+    });
+
+    it('should render inline entity references for entry fields', () => {
+        // Arrange
+        const text = 'Seen in [[places:ashfall-city]]';
+
+        // Act
+        const html = service.renderInline(text, { campaignSlug: 'naxxar' });
+
+        // Assert
+        expect(html.includes('href="/campaigns/naxxar/places/ashfall-city"')).toBe(true);
+        expect(html.includes('ashfall city')).toBe(true);
+    });
+
     it('should hide dm blocks when dm blocks are disabled', () => {
         // Arrange
         const markdown = 'Public line\n\n:::dm\nSecret line\n:::';

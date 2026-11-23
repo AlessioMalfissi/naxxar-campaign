@@ -60,7 +60,7 @@ describe('HelpOverlayComponent', () => {
         // Arrange
         anchors = [];
         routerEvents = new Subject<RouterEvent>();
-        router = { url: '/campaign/npcs', events: routerEvents };
+        router = { url: '/campaigns/naxxar/npcs', events: routerEvents };
 
         await TestBed.configureTestingModule({
             imports: [HelpOverlayComponent, NoopAnimationsModule],
@@ -80,7 +80,7 @@ describe('HelpOverlayComponent', () => {
         addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
 
         // Act
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Assert
         const dots = queryAll('.cdx-help-dot');
@@ -97,7 +97,7 @@ describe('HelpOverlayComponent', () => {
         addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
 
         // Act
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Assert
         const dots = queryAll('.cdx-help-dot');
@@ -110,7 +110,7 @@ describe('HelpOverlayComponent', () => {
         addAnchor('account-menu', { top: -40, left: 1000, width: 40, height: 40 });
 
         // Act
-        createComponent('/campaign/npcs');
+        createComponent('/campaigns/naxxar/npcs');
 
         // Assert
         const dot = queryAll('.cdx-help-dot')[0];
@@ -123,7 +123,7 @@ describe('HelpOverlayComponent', () => {
         addAnchor('section-status-filter', { top: 100, left: 100, width: 200, height: 32 });
 
         // Act
-        createComponent('/campaign/npcs');
+        createComponent('/campaigns/naxxar/npcs');
 
         // Assert
         const dot = queryAll('.cdx-help-dot')[0];
@@ -135,7 +135,7 @@ describe('HelpOverlayComponent', () => {
         addAnchor('inventory-filters', { top: 100, left: 100, width: 600, height: 40 });
 
         // Act
-        createComponent('/campaign/inventory');
+        createComponent('/campaigns/naxxar/inventory');
 
         // Assert
         expect(query('.cdx-help-banner-title')?.textContent?.trim()).toBe('Inventory guide');
@@ -146,7 +146,7 @@ describe('HelpOverlayComponent', () => {
         addAnchor('search', { top: 10, left: 600, width: 240, height: 40 });
 
         // Act
-        createComponent('/campaign');
+        createComponent('/campaigns/naxxar');
 
         // Assert
         expect(query('.cdx-help-banner-title')?.textContent?.trim()).toBe('Campaign guide');
@@ -155,7 +155,7 @@ describe('HelpOverlayComponent', () => {
 
     it('should say so when the page has nothing to point out', () => {
         // Arrange
-        const url = '/campaign/combat';
+        const url = '/campaigns/naxxar/combat';
 
         // Act
         createComponent(url);
@@ -170,7 +170,7 @@ describe('HelpOverlayComponent', () => {
         // Arrange
         addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
         addAnchor('search', { top: 10, left: 600, width: 240, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Act
         queryAll('.cdx-help-dot')[1].click();
@@ -187,7 +187,7 @@ describe('HelpOverlayComponent', () => {
     it('should place the card below the dot when there is room', () => {
         // Arrange
         addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Act
         queryAll('.cdx-help-dot')[0].click();
@@ -204,7 +204,7 @@ describe('HelpOverlayComponent', () => {
         // Arrange
         const top = window.innerHeight - 60;
         addAnchor('combat-controls', { top, left: 0, width: 40, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Act
         queryAll('.cdx-help-dot')[0].click();
@@ -221,7 +221,7 @@ describe('HelpOverlayComponent', () => {
         // Arrange
         addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
         addAnchor('search', { top: 10, left: 600, width: 240, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Act
         buttonWithText('Start tour')?.click();
@@ -248,7 +248,7 @@ describe('HelpOverlayComponent', () => {
         // Arrange
         addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
         addAnchor('search', { top: 10, left: 600, width: 240, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Act
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
@@ -264,7 +264,7 @@ describe('HelpOverlayComponent', () => {
     it('should ignore back before the tour has started', () => {
         // Arrange
         addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Act
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
@@ -277,7 +277,7 @@ describe('HelpOverlayComponent', () => {
     it('should close from the Done button', () => {
         // Arrange
         addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
         const dispatchSpy = jest.spyOn(store, 'dispatch');
         queryAll('.cdx-help-dot')[0].click();
         fixture.detectChanges();
@@ -299,7 +299,7 @@ describe('HelpOverlayComponent', () => {
         });
         const scrollSpy = jest.fn();
         anchor.scrollIntoView = scrollSpy;
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Act
         buttonWithText('Start tour')?.click();
@@ -313,7 +313,7 @@ describe('HelpOverlayComponent', () => {
         const anchor = addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
         const scrollSpy = jest.fn();
         anchor.scrollIntoView = scrollSpy;
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
 
         // Act
         buttonWithText('Start tour')?.click();
@@ -325,7 +325,7 @@ describe('HelpOverlayComponent', () => {
     it('should move the dots when the page scrolls', () => {
         // Arrange
         const anchor = addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
         const bounds = { top: 60, left: 300, width: 400, height: 40, x: 300, y: 60, right: 700, bottom: 100 };
         anchor.getBoundingClientRect = (): DOMRect => ({ ...bounds, toJSON: () => bounds });
 
@@ -340,7 +340,7 @@ describe('HelpOverlayComponent', () => {
     it('should drop the open card when its target disappears', () => {
         // Arrange
         const anchor = addAnchor('combat-controls', { top: 120, left: 300, width: 400, height: 40 });
-        createComponent('/campaign/combat');
+        createComponent('/campaigns/naxxar/combat');
         queryAll('.cdx-help-dot')[0].click();
         fixture.detectChanges();
         anchor.remove();
@@ -355,7 +355,7 @@ describe('HelpOverlayComponent', () => {
 
     it('should close from the close button', () => {
         // Arrange
-        createComponent('/campaign/npcs');
+        createComponent('/campaigns/naxxar/npcs');
         const dispatchSpy = jest.spyOn(store, 'dispatch');
         const button = query('[aria-label="Close help"]');
 
@@ -368,7 +368,7 @@ describe('HelpOverlayComponent', () => {
 
     it('should close when the backdrop is clicked', () => {
         // Arrange
-        createComponent('/campaign/npcs');
+        createComponent('/campaigns/naxxar/npcs');
         const dispatchSpy = jest.spyOn(store, 'dispatch');
 
         // Act
@@ -380,7 +380,7 @@ describe('HelpOverlayComponent', () => {
 
     it('should close on Escape', () => {
         // Arrange
-        createComponent('/campaign/npcs');
+        createComponent('/campaigns/naxxar/npcs');
         const dispatchSpy = jest.spyOn(store, 'dispatch');
 
         // Act
@@ -392,11 +392,11 @@ describe('HelpOverlayComponent', () => {
 
     it('should close when navigating away', () => {
         // Arrange
-        createComponent('/campaign/npcs');
+        createComponent('/campaigns/naxxar/npcs');
         const dispatchSpy = jest.spyOn(store, 'dispatch');
 
         // Act
-        routerEvents.next(new NavigationStart(1, '/campaign/places'));
+        routerEvents.next(new NavigationStart(1, '/campaigns/naxxar/places'));
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.helpClosed());

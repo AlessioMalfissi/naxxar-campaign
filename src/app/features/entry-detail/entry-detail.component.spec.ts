@@ -6,11 +6,13 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { BehaviorSubject, of } from 'rxjs';
 
 import { CodexSection, EntryVisibility, SaveStatus, ViewMode } from '@core/models';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { MarkdownCommand } from '@core/services/markdown-command.service';
 import { MarkdownExportService } from '@core/services/markdown-export.service';
 import { ICreateEntryResult } from '@shared/modal/i-modal';
 import { ModalService } from '@shared/modal/modal.service';
 import { buildEntry, buildSummary } from '@testing/entry.fixtures';
+import { selectActiveRole } from '@store/auth/auth.selectors';
 import * as CodexActions from '@store/codex/codex.actions';
 import {
     selectEntryLoading,
@@ -94,12 +96,15 @@ describe('EntryDetailComponent', () => {
         store.overrideSelector(selectShowPreview, false);
         store.overrideSelector(selectIsDirty, false);
         store.overrideSelector(selectPlayerMode, false);
+        store.overrideSelector(selectActiveRole, 'dm');
         store.overrideSelector(selectEntryLoading, false);
         store.overrideSelector(selectLastSavedAt, new Date().toISOString());
         store.overrideSelector(selectLastSavedBy, 'DM');
         store.overrideSelector(selectEntryTitles, { 'organizations:silver-ledger': 'Silver ledger' });
         store.overrideSelector(selectReferencingEntries, []);
         store.overrideSelector(selectReferencedEntries, []);
+
+        TestBed.inject(CampaignContextService).setSlug('naxxar');
 
         fixture = TestBed.createComponent(EntryDetailComponent);
         component = fixture.componentInstance;
@@ -265,7 +270,7 @@ describe('EntryDetailComponent', () => {
         component['onEntryLink']('places:ashfall-city');
 
         // Assert
-        expect(router.navigate).toHaveBeenCalledWith(['/campaign', 'places', 'ashfall-city']);
+        expect(router.navigate).toHaveBeenCalledWith(['/campaigns', 'naxxar', 'places', 'ashfall-city']);
     });
 
     it('should ignore an entity link with a malformed id', () => {
@@ -545,7 +550,7 @@ describe('EntryDetailComponent', () => {
 
         // Assert
         expect(dispatchSpy).toHaveBeenCalledWith(CodexActions.deleteEntry.request({ id: 'npcs:vaelith-corrun' }));
-        expect(router.navigate).toHaveBeenCalledWith(['/campaign', 'npcs']);
+        expect(router.navigate).toHaveBeenCalledWith(['/campaigns', 'naxxar', 'npcs']);
     });
 
     it('should keep the entry when the deletion is declined', () => {

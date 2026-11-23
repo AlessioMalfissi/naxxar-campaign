@@ -5,6 +5,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Observable, of, ReplaySubject, Subject, throwError, toArray } from 'rxjs';
 
 import { CombatLiveEvent, CombatLiveEventType } from '@core/models';
+import { CampaignContextService } from '@core/services/campaign-context.service';
 import { CombatApiService } from '@core/services/combat-api.service';
 import { CombatLiveService } from '@core/services/combat-live.service';
 import { buildEncounter } from '@testing/combat.fixtures';
@@ -19,6 +20,7 @@ describe('CombatEffects', () => {
     let combatApi: jest.Mocked<Pick<CombatApiService, 'loadEncounter' | 'saveEncounter'>>;
     let combatLive: jest.Mocked<Pick<CombatLiveService, 'connect'>>;
     let liveEvents: Subject<CombatLiveEvent>;
+    let currentSlug: string | null;
 
     const dispatched = <T>(source: Observable<T>): Promise<T> =>
         new Promise<T>((resolve) => source.subscribe((action) => resolve(action)));
@@ -28,6 +30,7 @@ describe('CombatEffects', () => {
         actions$ = new ReplaySubject<Action>(1);
         combatApi = { loadEncounter: jest.fn(), saveEncounter: jest.fn() };
         liveEvents = new Subject<CombatLiveEvent>();
+        currentSlug = 'naxxar';
         combatLive = { connect: jest.fn(() => liveEvents.asObservable()) };
 
         TestBed.configureTestingModule({
@@ -35,6 +38,7 @@ describe('CombatEffects', () => {
                 CombatEffects,
                 provideMockActions(() => actions$),
                 provideMockStore({ initialState: {} }),
+                { provide: CampaignContextService, useValue: { slug: () => currentSlug } },
                 { provide: CombatApiService, useValue: combatApi },
                 { provide: CombatLiveService, useValue: combatLive }
             ]
@@ -127,6 +131,7 @@ describe('CombatEffects', () => {
         const result = await collected;
 
         // Assert
+        expect(combatLive.connect).toHaveBeenCalledWith('naxxar');
         expect(combatLive.connect).toHaveBeenCalledTimes(1);
         expect(result).toEqual([
             CombatActions.liveStatusChanged({ connected: true }),
@@ -134,5 +139,18 @@ describe('CombatEffects', () => {
             CombatActions.liveStatusChanged({ connected: false })
         ]);
         expect(liveEvents.observed).toBe(false);
+    });
+
+    it('should report a disconnected live status when there is no active campaign', async () => {
+        // Arrange
+        currentSlug = null;
+
+        // Act
+        actions$.next(CombatActions.liveSyncStarted());
+        const result = await dispatched(effects.liveSync$);
+
+        // Assert
+        expect(combatLive.connect).not.toHaveBeenCalled();
+        expect(result).toEqual(CombatActions.liveStatusChanged({ connected: false }));
     });
 });

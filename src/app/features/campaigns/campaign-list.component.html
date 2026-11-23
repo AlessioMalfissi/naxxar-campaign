@@ -1,0 +1,90 @@
+<div class="cdx-campaigns">
+    <header class="cdx-campaigns-header">
+        <div>
+            <h1 class="cdx-campaigns-title">Your campaigns</h1>
+            <p class="cdx-campaigns-subtitle">
+                Signed in as {{ user()?.displayName }}
+                @if (user()?.email; as email) {
+                    <span class="cdx-campaigns-email">({{ email }})</span>
+                }
+            </p>
+        </div>
+        <button mat-stroked-button type="button" (click)="signOut()">
+            <mat-icon>logout</mat-icon>
+            Sign out
+        </button>
+    </header>
+
+    @if (error(); as message) {
+        <p class="cdx-campaigns-error" role="alert">{{ message }}</p>
+    }
+
+    @if (campaigns().length === 0) {
+        <section class="cdx-campaigns-empty">
+            <h2>No campaigns yet</h2>
+            <p>
+                Campaigns you create or join appear here. To join someone else's campaign, open the single-use
+                invite link your DM sent you.
+            </p>
+        </section>
+    } @else {
+        <div class="cdx-campaign-grid">
+            @for (campaign of campaigns(); track campaign.id) {
+                <article class="cdx-campaign-card">
+                    <div class="cdx-campaign-card-head">
+                        <h2 class="cdx-campaign-name">{{ campaign.name }}</h2>
+                        <span
+                            class="cdx-campaign-role"
+                            [class.cdx-campaign-role-dm]="campaign.role === 'dm'"
+                        >
+                            {{ roleLabel(campaign.role) }}
+                        </span>
+                    </div>
+                    <p class="cdx-campaign-slug">/campaigns/{{ campaign.slug }}</p>
+                    <button mat-flat-button type="button" class="cdx-campaign-open" (click)="open(campaign)">
+                        Open campaign
+                    </button>
+                </article>
+            }
+        </div>
+    }
+
+    <section class="cdx-campaign-create">
+        <h2 class="cdx-campaign-create-title">Create a campaign</h2>
+        <p class="cdx-campaign-create-hint">
+            You become the Dungeon Master. The campaign address is generated from the name; players join with invite
+            links.
+        </p>
+
+        <div class="cdx-campaign-create-row">
+            <mat-form-field appearance="outline" class="cdx-campaign-name-field" subscriptSizing="dynamic">
+                <mat-label>Campaign name</mat-label>
+                <input
+                    matInput
+                    type="text"
+                    maxlength="80"
+                    [formControl]="nameControl"
+                    aria-label="Campaign name"
+                    (keydown.enter)="create()"
+                />
+                @if (nameControl.touched && nameControl.invalid) {
+                    <mat-error>Use between 2 and 80 characters.</mat-error>
+                }
+            </mat-form-field>
+            <button
+                mat-flat-button
+                type="button"
+                class="cdx-campaign-create-button"
+                [disabled]="pending()"
+                (click)="create()"
+            >
+                {{ pending() ? 'Creating…' : 'Create campaign' }}
+            </button>
+        </div>
+
+        <p class="cdx-campaign-join-hint">
+            <mat-icon class="cdx-campaign-join-icon">link</mat-icon>
+            Joining with an invite? Open the invite link in the same browser you use for this site.
+        </p>
+    </section>
+</div>
