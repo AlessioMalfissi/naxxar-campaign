@@ -13,6 +13,10 @@ export class ApiError extends Error {
 }
 
 export const toApiError = (error: unknown, fallback: string): ApiError => {
+    if (error instanceof ApiError) {
+        return error;
+    }
+
     if (error instanceof HttpErrorResponse) {
         const body = error.error as { error?: unknown } | null;
         const message = typeof body?.error === 'string' && body.error.trim() !== '' ? body.error : fallback;

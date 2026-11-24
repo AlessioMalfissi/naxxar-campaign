@@ -1,4 +1,6 @@
+import { Action } from '@ngrx/store';
 import { ApiCallStatus } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import { buildInventoryItem } from '@testing/inventory.fixtures';
 import * as InventoryActions from './inventory.actions';
 import { inventoryReducer } from './inventory.reducer';
@@ -127,4 +129,24 @@ describe('inventoryReducer', () => {
         expect(state === INITIAL_INVENTORY_STATE).toBe(false);
         expect(INITIAL_INVENTORY_STATE.itemsStatus).toBe(ApiCallStatus.Idle);
     });
+
+    it.each([
+        ['campaignActivated', AuthActions.campaignActivated({ slug: 'other' })],
+        ['logout.success', AuthActions.logout.success({})],
+        ['sessionExpired', AuthActions.sessionExpired()],
+        ['resetPassword.success', AuthActions.resetPassword.success({})]
+    ] as Array<[string, Action]>)('should reset the items on %s', (_label, action) => {
+        // Arrange
+        const populated = inventoryReducer(
+            INITIAL_INVENTORY_STATE,
+            InventoryActions.loadItems.success({ items: [buildInventoryItem()] })
+        );
+
+        // Act
+        const state = inventoryReducer(populated, action);
+
+        // Assert
+        expect(state).toEqual(INITIAL_INVENTORY_STATE);
+    });
+
 });

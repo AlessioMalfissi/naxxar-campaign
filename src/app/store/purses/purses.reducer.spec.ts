@@ -1,4 +1,6 @@
+import { Action } from '@ngrx/store';
 import { ApiCallStatus } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import { buildPurse } from '@testing/purse.fixtures';
 import * as PursesActions from './purses.actions';
 import { pursesReducer } from './purses.reducer';
@@ -88,4 +90,24 @@ describe('pursesReducer', () => {
         expect(state === INITIAL_PURSES_STATE).toBe(false);
         expect(INITIAL_PURSES_STATE.status).toBe(ApiCallStatus.Idle);
     });
+
+    it.each([
+        ['campaignActivated', AuthActions.campaignActivated({ slug: 'other' })],
+        ['logout.success', AuthActions.logout.success({})],
+        ['sessionExpired', AuthActions.sessionExpired()],
+        ['resetPassword.success', AuthActions.resetPassword.success({})]
+    ] as Array<[string, Action]>)('should reset the purses on %s', (_label, action) => {
+        // Arrange
+        const populated = pursesReducer(
+            INITIAL_PURSES_STATE,
+            PursesActions.loadPurses.success({ purses: [buildPurse()] })
+        );
+
+        // Act
+        const state = pursesReducer(populated, action);
+
+        // Assert
+        expect(state).toEqual(INITIAL_PURSES_STATE);
+    });
+
 });

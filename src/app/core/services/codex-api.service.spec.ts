@@ -2,6 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { CampaignContextService } from './campaign-context.service';
+
 import { CodexSection, EntryVisibility, ICodexEntry } from '@core/models';
 import { buildEntry, buildSummary } from '@testing/entry.fixtures';
 import { CodexApiService } from './codex-api.service';
@@ -13,7 +15,11 @@ describe('CodexApiService', () => {
     beforeEach(() => {
         // Arrange
         TestBed.configureTestingModule({
-            providers: [provideHttpClient(), provideHttpClientTesting()]
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: CampaignContextService, useValue: { baseUrl: () => '/api/campaigns/naxxar' } }
+            ]
         });
         service = TestBed.inject(CodexApiService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -29,7 +35,7 @@ describe('CodexApiService', () => {
         service.loadIndex().subscribe((result) => (entries = result));
 
         // Act
-        httpMock.expectOne('/api/entries').flush([buildSummary()]);
+        httpMock.expectOne('/api/campaigns/naxxar/entries').flush([buildSummary()]);
 
         // Assert
         expect(entries.length).toBe(1);
@@ -49,7 +55,7 @@ describe('CodexApiService', () => {
             .subscribe();
 
         // Act
-        const request = httpMock.expectOne((req) => req.url === '/api/entries' && req.method === 'GET');
+        const request = httpMock.expectOne((req) => req.url === '/api/campaigns/naxxar/entries' && req.method === 'GET');
 
         // Assert
         expect(request.request.params.get('section')).toBe('npcs');
@@ -67,7 +73,7 @@ describe('CodexApiService', () => {
         service.loadEntry(summary).subscribe((result) => (entry = result));
 
         // Act
-        httpMock.expectOne('/api/entries/npcs/vaelith-corrun').flush(buildEntry());
+        httpMock.expectOne('/api/campaigns/naxxar/entries/npcs/vaelith-corrun').flush(buildEntry());
 
         // Assert
         expect(entry!.body).toBe('# Who he is\n\nBroker of debts.');
@@ -81,7 +87,7 @@ describe('CodexApiService', () => {
 
         // Act
         service.saveEntry(entry).subscribe((response) => (result = response));
-        const request = httpMock.expectOne('/api/entries/npcs/vaelith-corrun');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/entries/npcs/vaelith-corrun');
         expect(request.request.method).toBe('PUT');
         request.flush(saved);
 
@@ -96,7 +102,7 @@ describe('CodexApiService', () => {
         // Act
         service.saveEntry(buildEntry()).subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
-            .expectOne('/api/entries/npcs/vaelith-corrun')
+            .expectOne('/api/campaigns/naxxar/entries/npcs/vaelith-corrun')
             .flush({ error: 'Entry not found.' }, { status: 404, statusText: 'Not Found' });
 
         // Assert
@@ -109,7 +115,7 @@ describe('CodexApiService', () => {
 
         // Act
         service.saveEntry(buildEntry()).subscribe({ error: (thrown: Error) => (error = thrown) });
-        httpMock.expectOne('/api/entries/npcs/vaelith-corrun').flush(null, { status: 500, statusText: 'Server Error' });
+        httpMock.expectOne('/api/campaigns/naxxar/entries/npcs/vaelith-corrun').flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert
         expect(error!.message).toBe("Couldn't save the entry. Retry.");
@@ -131,7 +137,7 @@ describe('CodexApiService', () => {
             )
             .subscribe((result) => (created = result));
 
-        const request = httpMock.expectOne('/api/entries');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/entries');
         expect(request.request.method).toBe('POST');
         expect(request.request.body).toEqual({
             section: CodexSection.Npcs,
@@ -174,7 +180,7 @@ describe('CodexApiService', () => {
             .createEntry(CodexSection.Npcs, 'Vaelith Corrun', 'Alive')
             .subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
-            .expectOne('/api/entries')
+            .expectOne('/api/campaigns/naxxar/entries')
             .flush({ error: 'That name is already taken in this section.' }, { status: 409, statusText: 'Conflict' });
 
         // Assert
@@ -187,7 +193,7 @@ describe('CodexApiService', () => {
 
         // Act
         service.deleteEntry('npcs:vaelith-corrun').subscribe((result) => (deletedId = result));
-        const request = httpMock.expectOne('/api/entries/npcs/vaelith-corrun');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/entries/npcs/vaelith-corrun');
         expect(request.request.method).toBe('DELETE');
         request.flush(null);
 

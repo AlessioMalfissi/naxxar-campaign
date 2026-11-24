@@ -90,5 +90,11 @@ export const campaignMembersReducer = createReducer<ICampaignMembersState>(
     on(CampaignMembersActions.membersCleared, cleared),
 
     // Never keep another account's or another campaign's roster.
-    on(AuthActions.campaignActivated, AuthActions.logout.success, AuthActions.sessionExpired, cleared)
+    on(
+        AuthActions.campaignActivated,
+        AuthActions.logout.success,
+        AuthActions.sessionExpired,
+        AuthActions.resetPassword.success,
+        cleared
+    )
 );

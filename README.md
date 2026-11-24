@@ -3,7 +3,9 @@
 Dungeons & Dragons campaign dashboard: lore split across six sections, each entry stored as a markdown
 file and edited in place with a formatting toolbar. Dark theme, green primary, light-gray secondary.
 
-Built to the specification in `naxxar-campaign-dashboard-spec.pdf`.
+Multiple campaigns share one deployment. Each account sees only the campaigns it belongs to, with a
+`dm` or `player` role deciding what it can change. Built to the specification in
+`naxxar-campaign-dashboard-spec.pdf`, extended for public, invite-only sign-in.
 
 ## Stack
 
@@ -22,39 +24,76 @@ The app is a static Angular front end talking to a small Node/Express API in `se
 MongoDB. Both live in this repo as a pnpm workspace.
 
 ```bash
-pn install                         # installs both the app and server/
-pn run dev                         # runs the API (:3000) and `ng serve` (:57571) together
+pnpm install                 # installs both the app and server/
+pnpm run dev                 # runs the API (:3000) and `ng serve` (:57571) together
 ```
 
-Without a `MONGODB_URI`, `pn run dev` uses an in-memory database seeded from `server/seed-data`; changes
-reset when the server restarts. To use a real MongoDB in dev, copy `server/.env.example` to
-`server/.env`, uncomment `MONGODB_URI`, and run `pn run server:seed` once. The normal `pn run server`
-and the deployed app always connect to MongoDB, not the in-memory store.
+`pnpm run dev` falls back to an in-memory database seeded from `server/seed-data` when `MONGODB_URI`
+is unset; changes reset when the server restarts. It seeds one DM account and one campaign:
 
-`ng serve` proxies `/api/*` to `http://localhost:3000` (see `proxy.conf.json`), so the app at
-`http://localhost:57571` talks to the local API transparently. To run them separately instead of
-`pn run dev`: `pn run server` (or `pn run server:dev` to restart on file changes) in one terminal, `pn start`
-in another.
+| Field    | Value             |
+| -------- | ----------------- |
+| Email    | `dm@naxxar.local` |
+| Password | `app`             |
+| Campaign | `naxxar`          |
+
+To use a real MongoDB in dev, copy `server/.env.example` to `server/.env`, uncomment `MONGODB_URI`,
+and create the first DM and campaign once (see `server/README.md` for the full flags). The normal
+`pnpm run server` and the deployed app always connect to MongoDB, not the in-memory store.
 
 ```bash
-pn run build       # production Angular bundle in dist/naxxar-campaign/browser
-pn test            # Angular specs
-pn run test:coverage
-pn run server:test # API specs (no live MongoDB needed - routes are tested against an in-memory fake)
-pn run lint        # Prettier check (fails on unformatted files)
-pn run format      # Prettier rewrite of every file
+pnpm --dir server run bootstrap -- user \
+  --email dm@example.com --name "Dungeon Master" --password "change-me-now"
+pnpm --dir server run bootstrap -- campaign \
+  --slug naxxar --name Naxxar --dm-email dm@example.com
+pnpm run server:seed -- --campaign naxxar
 ```
 
-See `server/README.md` for the API's endpoints, environment variables, and how to point it at a real
-MongoDB (local or Atlas) in production, including serving the built Angular app from the same process.
+`ng serve` proxies `/api/*` (including the combat websocket) to `http://localhost:3000`; see
+`proxy.conf.json`. To run the two processes separately: `pnpm run server` (or `pnpm run server:dev` to
+restart on file changes) in one terminal, `pnpm start` in another.
+
+```bash
+pnpm run build       # production Angular bundle in dist/naxxar-campaign/browser
+pnpm test            # Angular specs
+pnpm run test:coverage
+pnpm run server:test # API specs (no live MongoDB needed - routes use an in-memory fake)
+pnpm run lint        # Prettier check (fails on unformatted files)
+pnpm run format      # Prettier rewrite of every file
+```
+
+See `server/README.md` for endpoints, environment variables, the role matrix, the migration and
+bootstrap commands, and how to serve the built Angular app from the same process.
+
+## Accounts and campaigns
+
+There is no public sign-up. A DM creates an invite from the campaign's **Members** page, and the invite
+link is the only way a new account is created or an existing account joins a campaign. Invites expire
+after seven days and are single-use.
+
+- Email and password sign-in uses Argon2id hashes.
+- **Continue with Google** appears only when the server exposes a `GOOGLE_CLIENT_ID`; Google
+  sign-in never creates an account outside an invite.
+- Sessions are opaque, database-backed tokens in an httpOnly, SameSite=Lax cookie. Signing out, a
+  password reset, or a `401` from the API ends the session locally and returns to the login page.
+- **Forgot password** emails a one-hour reset link. In development, without `SMTP_URL`, the link is
+  printed to the server console instead.
+- The campaign picker at `/campaigns` lists the signed-in user's campaigns. A user with exactly one
+  campaign lands directly in it after login.
+- `dm` accounts can create, edit and delete campaign content, manage members and invites, and use the
+  DM preview of the player view. `player` accounts can read everything except `dm`-only entries and
+  blocks, and cannot change campaign content. The API enforces this on every write.
+- **Members** is at `/campaigns/:campaignSlug/members`. Only a DM can open invite management there;
+  players see the roster without email addresses.
 
 ## Where the lore lives
 
 Entries live in MongoDB, one document per entry, shaped like `ICodexEntry` in
-`src/app/core/models/i-codex-entry.ts`. The eleven sample entries used to seed a fresh database are kept
-as markdown files under `server/seed-data/codex/<section>/<slug>.md`, one folder per section - `pn run
-server:seed` reads them and upserts them into the `entries` collection. They're backend seed data, not an
-Angular asset, so they live under `server/` and are never shipped in the Angular build:
+`src/app/core/models/i-codex-entry.ts`, scoped to a campaign. The sample entries used to seed a fresh
+database are kept as markdown files under `server/seed-data/codex/<section>/<slug>.md`, one folder per
+section - `pnpm run server:seed` reads them and upserts them into the `entries` collection for the
+campaign you name. They're backend seed data, not an Angular asset, so they live under `server/` and
+are never shipped in the Angular build:
 
 ```
 server/seed-data/codex/
@@ -88,9 +127,9 @@ Broker of debts in the **Silver ledger**, and the only man in Ashfall who will l
 against a memory.
 ```
 
-`visibility: dm` hides the entry in player mode. `fields` are section-specific; the keys accepted by each
-section are declared in `src/app/core/models/i-section-definition.ts`. Values shaped `section:slug` render
-as links to the target entry.
+`visibility: dm` hides the entry from players. `fields` are section-specific; the keys accepted by each
+section are declared in `src/app/core/models/i-section-definition.ts`. Values shaped `section:slug`
+render as links to the target entry.
 
 ### Markdown supported
 
@@ -104,9 +143,10 @@ Raw HTML in the source is escaped, never rendered.
 
 ### Saving
 
-Saves go through `CodexApiService` to the Express API in `server/`, which persists to MongoDB - nothing
-else in the app reaches for storage. The overflow menu on any entry additionally exports its current state
-to a markdown file, front matter included, for archiving or diffing outside the app.
+Saves go through the campaign-scoped `CodexApiService` to the Express API in `server/`, which persists
+to MongoDB - nothing else in the app reaches for storage. The overflow menu on any entry additionally
+exports its current state to a markdown file, front matter included, for archiving or diffing outside
+the app.
 
 ### Combat
 
@@ -116,7 +156,8 @@ numbered, "Goblin 1", "Goblin 2") and an initiative - a blank initiative rolls a
 carry no HP or AC; only players do. The turn order sorts by initiative, highest first; among equal
 initiatives the higher **nudge** (the small field beside initiative) acts first, so tied monsters can be
 ordered. Names, initiative and nudge are editable in place. Each row has a colour - players and enemies
-default to two different colours, and the swatch beside the name picks another.
+default to two different colours, and the swatch beside the name picks another. Players get a read-only
+tracker.
 
 **Start combat** begins round 1 on the highest initiative; **Next turn** walks down the order and starts a
 new round after the last combatant, and **Previous** steps back. Each combatant carries conditions - the
@@ -126,33 +167,44 @@ combatant's conditions stay sorted alphabetically. **End combat** clears the ene
 round; the party stays with its hit points and conditions.
 
 The encounter is saved to the API after every change, so it survives a reload and the sidebar shows the
-current round. In player view the tracker is read-only.
+current round.
 
-The tracker syncs live: while it is open it holds a websocket to the API, and every change saved from any
-device shows up on every other open tracker straight away - the DM runs the fight on a laptop and the
-players follow on their phones without refreshing. A **Live** / **Offline** marker next to the refresh
-button shows the connection; a dropped connection reconnects on its own (backing off up to 15 seconds)
-and picks up the current encounter as soon as it is back. Edits still save over HTTP, and each saved
-encounter carries a server-side revision, so a stale snapshot never overwrites a newer one whichever
-channel delivers it first. When two devices edit at once, the last save wins.
+The tracker syncs live: while it is open it holds a websocket to
+`/api/campaigns/:campaignSlug/combat/live`, and every change saved from any device shows up on every
+other open tracker straight away - the DM runs the fight on a laptop and the players follow on their
+phones without refreshing. A **Live** / **Offline** marker next to the refresh button shows the
+connection; a dropped connection reconnects on its own (backing off up to 15 seconds) and picks up the
+current encounter as soon as it is back. Edits still save over HTTP, and each saved encounter carries a
+server-side revision, so a stale snapshot never overwrites a newer one whichever channel delivers it
+first. When two devices edit at once, the last save wins.
 
 ## Layout
 
 ```
 src/app/
 ├── core/
+│   ├── guards/            auth, guest and campaign-membership guards
+│   ├── interceptors/      turns a protected 401 into sessionExpired
 │   ├── models/            enums, I-prefixed interfaces, section definitions
-│   ├── services/          codex, inventory, purse and combat api, combat live socket, markdown render / command / export
+│   ├── routing/           route reuse that recreates the shell when the slug changes
+│   ├── services/          auth, campaign, members/invite and campaign-scoped content APIs,
+│   │                       combat live socket, Google sign-in, markdown render / command / export
 │   └── utils/             front matter parsing, entry ids, slugs, combat turn rules
 ├── shared/
 │   ├── datatable/         DataTableComponent - read-only tables
 │   └── modal/             ModalService over the CDK Dialog, confirm/prompt/create-entry/condition modals
 ├── store/
 │   ├── create-api-action.ts
-│   ├── codex/             entries, index, filters, active section, player mode, help overlay
+│   ├── auth/              user, campaigns, active campaign, public config
+│   ├── campaign-members/  roster, invites, invite preview and acceptance
+│   ├── codex/             entries, index, filters, active section, DM preview, help overlay
 │   ├── combat/            encounter, turn order, round, saves after every change, live sync
 │   └── editor/            draft body, dirty flag, save status, view mode, autosave
 └── features/
+    ├── auth/              login, forgot password, reset password
+    ├── invite/            invite preview, registration and join flow
+    ├── campaigns/         campaign picker and create form
+    ├── members/           roster and DM invite management
     ├── shell/             campaign shell, header, tab bar, sidebar
     ├── section-list/      table and card views with status and tag filters
     ├── entry-detail/      entry header, markdown toolbar, markdown editor
@@ -161,14 +213,17 @@ src/app/
     └── help/              "?" overlay: coloured tutorial dots for the current page
 
 server/
-├── src/                   Express app, MongoDB access, routes (see server/README.md)
+├── src/                   Express app, auth/sessions, MongoDB access, routes (see server/README.md)
 ├── seed-data/codex/       sample entries as markdown, seeded into MongoDB
-├── scripts/seed.mjs       loads seed-data/codex/**/*.md into MongoDB
+├── scripts/               seed, bootstrap (users/campaigns/passwords) and legacy migration
 └── test/                  route specs, run against an in-memory fake collection
 ```
 
-Routes are lazy: `/campaign/:section` for a list, `/campaign/:section/:slug` for an entry. Both are
-bookmarkable and restore the correct tab and sidebar selection.
+Public routes are `/login`, `/forgot-password`, `/reset-password/:token`, `/invite/:token` and
+`/campaigns`. Everything under `/campaigns/:campaignSlug` requires a session and a membership:
+`npcs`, `players`, `places`, `organizations`, `story`, `rules`, `inventory`, `combat` and `members`.
+`/campaigns/:campaignSlug/:section` lists a section and `/:section/:slug` opens an entry. All are
+bookmarkable and restore the correct tab, sidebar selection and campaign.
 
 ## Help overlay
 
@@ -190,8 +245,8 @@ subscriptions; interfaces prefixed `I`; observables suffixed `$`; explicit retur
 `.ts`, `.html` and `.scss`.
 
 Formatting is owned by Prettier (`.prettierrc.json`): 120-column lines, 4-space indent (2 for JSON, Markdown
-and YAML), single quotes, no trailing commas, Angular parser for templates. `pn run lint` checks it,
-`pn run format` applies it. Seed lore in `server/seed-data` and the generated `src/_theme-colors.scss` are
+and YAML), single quotes, no trailing commas, Angular parser for templates. `pnpm run lint` checks it,
+`pnpm run format` applies it. Seed lore in `server/seed-data` and the generated `src/_theme-colors.scss` are
 excluded via `.prettierignore`.
 
 All HTTP goes through NgRx effects — no `HttpClient` in a component. API actions are built with

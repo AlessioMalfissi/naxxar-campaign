@@ -1,6 +1,5 @@
 import { HttpErrorResponse, HttpRequest, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
@@ -9,78 +8,94 @@ import { authInterceptor } from './auth.interceptor';
 
 describe('authInterceptor', () => {
     let store: MockStore;
-    let router: { navigateByUrl: jest.Mock };
+
+    const run = (url: string, error: unknown): Promise<unknown> => {
+        const req = new HttpRequest('GET', url);
+        const next = jest.fn().mockReturnValue(throwError(() => error));
+        return firstValueFrom(TestBed.runInInjectionContext(() => authInterceptor(req, next))).catch(
+            (thrown: unknown) => thrown
+        );
+    };
 
     beforeEach(() => {
         // Arrange
-        router = { navigateByUrl: jest.fn().mockResolvedValue(true) };
-
-        TestBed.configureTestingModule({
-            providers: [provideMockStore({ initialState: {} }), { provide: Router, useValue: router }]
-        });
-
+        TestBed.configureTestingModule({ providers: [provideMockStore({ initialState: {} })] });
         store = TestBed.inject(MockStore);
     });
 
     it('should pass a successful response through unchanged', async () => {
         // Arrange
-        const req = new HttpRequest('GET', '/api/entries');
+        const req = new HttpRequest('GET', '/api/campaigns/naxxar/entries');
         const response = new HttpResponse({ status: 200 });
         const next = jest.fn().mockReturnValue(of(response));
 
         // Act
-        const result = await firstValueFrom(TestBed.runInInjectionContext(() => authInterceptor(req, next)));
+        const result = await firstValueFrom(
+            TestBed.runInInjectionContext(() => authInterceptor(req, next))
+        );
 
         // Assert
         expect(result).toBe(response);
     });
 
-    it('should sign the session out and redirect to login on a 401 from a protected endpoint', async () => {
+    it('should clear the session on a 401 from a protected endpoint', async () => {
         // Arrange
-        const req = new HttpRequest('GET', '/api/entries');
-        const error = new HttpErrorResponse({ status: 401, url: '/api/entries' });
-        const next = jest.fn().mockReturnValue(throwError(() => error));
         const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const error = new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' });
 
         // Act
-        await expect(firstValueFrom(TestBed.runInInjectionContext(() => authInterceptor(req, next)))).rejects.toBe(
-            error
-        );
+        const thrown = await run('/api/campaigns/naxxar/entries', error);
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(AuthActions.checkSession.success({ authenticated: false }));
-        expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+        expect(thrown).toBe(error);
+        expect(dispatchSpy).toHaveBeenCalledWith(AuthActions.sessionExpired());
     });
 
-    it('should not redirect for a 401 on the login endpoint itself', async () => {
+    it('should leave the session alone on a 401 from the auth endpoints', async () => {
         // Arrange
-        const req = new HttpRequest('POST', '/api/auth/login', { password: 'wrong' });
-        const error = new HttpErrorResponse({ status: 401, url: '/api/auth/login' });
-        const next = jest.fn().mockReturnValue(throwError(() => error));
         const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const error = new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' });
 
         // Act
-        await expect(firstValueFrom(TestBed.runInInjectionContext(() => authInterceptor(req, next)))).rejects.toBe(
-            error
-        );
+        await run('/api/auth/login', error);
 
         // Assert
-        expect(dispatchSpy).not.toHaveBeenCalled();
-        expect(router.navigateByUrl).not.toHaveBeenCalled();
+        expect(dispatchSpy).not.toHaveBeenCalledWith(AuthActions.sessionExpired());
     });
 
-    it('should leave other error statuses untouched', async () => {
+    it('should leave the session alone on a 401 from invite registration', async () => {
         // Arrange
-        const req = new HttpRequest('GET', '/api/entries');
-        const error = new HttpErrorResponse({ status: 500, url: '/api/entries' });
-        const next = jest.fn().mockReturnValue(throwError(() => error));
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const error = new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' });
 
         // Act
-        await expect(firstValueFrom(TestBed.runInInjectionContext(() => authInterceptor(req, next)))).rejects.toBe(
-            error
-        );
+        await run('/api/invites/token/register', error);
 
         // Assert
-        expect(router.navigateByUrl).not.toHaveBeenCalled();
+        expect(dispatchSpy).not.toHaveBeenCalledWith(AuthActions.sessionExpired());
+    });
+
+    it('should leave the session alone on other HTTP errors', async () => {
+        // Arrange
+        const dispatchSpy = jest.spyOn(store, 'dispatch');
+        const error = new HttpErrorResponse({ status: 500, statusText: 'Server Error' });
+
+        // Act
+        const thrown = await run('/api/campaigns/naxxar/entries', error);
+
+        // Assert
+        expect(thrown).toBe(error);
+        expect(dispatchSpy).not.toHaveBeenCalledWith(AuthActions.sessionExpired());
+    });
+
+    it('should rethrow non-HTTP errors untouched', async () => {
+        // Arrange
+        const error = new Error('network down');
+
+        // Act
+        const thrown = await run('/api/campaigns/naxxar/entries', error);
+
+        // Assert
+        expect(thrown).toBe(error);
     });
 });

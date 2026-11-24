@@ -2,6 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { CampaignContextService } from './campaign-context.service';
+
 import { IPurse } from '@core/models';
 import { buildPurse } from '@testing/purse.fixtures';
 import { PurseApiService } from './purse-api.service';
@@ -13,7 +15,11 @@ describe('PurseApiService', () => {
     beforeEach(() => {
         // Arrange
         TestBed.configureTestingModule({
-            providers: [provideHttpClient(), provideHttpClientTesting()]
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: CampaignContextService, useValue: { baseUrl: () => '/api/campaigns/naxxar' } }
+            ]
         });
         service = TestBed.inject(PurseApiService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -29,7 +35,7 @@ describe('PurseApiService', () => {
         service.loadPurses().subscribe((result) => (purses = result));
 
         // Act
-        httpMock.expectOne('/api/purses').flush([buildPurse()]);
+        httpMock.expectOne('/api/campaigns/naxxar/purses').flush([buildPurse()]);
 
         // Assert
         expect(purses.length).toBe(1);
@@ -42,7 +48,7 @@ describe('PurseApiService', () => {
 
         // Act
         service.updateGold('party', 50).subscribe((result) => (updated = result));
-        const request = httpMock.expectOne('/api/purses/party');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/purses/party');
         expect(request.request.method).toBe('PUT');
         expect(request.request.body).toEqual({ gold: 50 });
         request.flush(buildPurse({ gold: 50 }));
@@ -54,7 +60,7 @@ describe('PurseApiService', () => {
     it('should URL-encode an owner id containing special characters', () => {
         // Act
         service.updateGold('players:tessaly-oakhand', 15).subscribe();
-        const request = httpMock.expectOne('/api/purses/players%3Atessaly-oakhand');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/purses/players%3Atessaly-oakhand');
 
         // Assert
         expect(request.request.method).toBe('PUT');
@@ -68,7 +74,7 @@ describe('PurseApiService', () => {
         // Act
         service.updateGold('party', -5).subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
-            .expectOne('/api/purses/party')
+            .expectOne('/api/campaigns/naxxar/purses/party')
             .flush({ error: 'Gold must be a non-negative number.' }, { status: 400, statusText: 'Bad Request' });
 
         // Assert
@@ -81,7 +87,7 @@ describe('PurseApiService', () => {
 
         // Act
         service.updateGold('party', 50).subscribe({ error: (thrown: Error) => (error = thrown) });
-        httpMock.expectOne('/api/purses/party').flush(null, { status: 500, statusText: 'Server Error' });
+        httpMock.expectOne('/api/campaigns/naxxar/purses/party').flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert
         expect(error!.message).toBe("Couldn't update gold. Retry.");

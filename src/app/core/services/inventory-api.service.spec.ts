@@ -2,6 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { CampaignContextService } from './campaign-context.service';
+
 import { IInventoryItem, ItemRarity, ItemStatus } from '@core/models';
 import { buildInventoryItem } from '@testing/inventory.fixtures';
 import { InventoryApiService } from './inventory-api.service';
@@ -13,7 +15,11 @@ describe('InventoryApiService', () => {
     beforeEach(() => {
         // Arrange
         TestBed.configureTestingModule({
-            providers: [provideHttpClient(), provideHttpClientTesting()]
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: CampaignContextService, useValue: { baseUrl: () => '/api/campaigns/naxxar' } }
+            ]
         });
         service = TestBed.inject(InventoryApiService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -29,7 +35,7 @@ describe('InventoryApiService', () => {
         service.loadItems().subscribe((result) => (items = result));
 
         // Act
-        httpMock.expectOne('/api/inventory').flush([buildInventoryItem()]);
+        httpMock.expectOne('/api/campaigns/naxxar/inventory').flush([buildInventoryItem()]);
 
         // Assert
         expect(items.length).toBe(1);
@@ -44,7 +50,7 @@ describe('InventoryApiService', () => {
         service
             .createItem('Torch', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, true, false, 'Cromwell')
             .subscribe((result) => (created = result));
-        const request = httpMock.expectOne('/api/inventory');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/inventory');
         expect(request.request.method).toBe('POST');
         expect(request.request.body).toEqual({
             name: 'Torch',
@@ -72,7 +78,7 @@ describe('InventoryApiService', () => {
             .createItem('', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, false, false, '')
             .subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
-            .expectOne('/api/inventory')
+            .expectOne('/api/campaigns/naxxar/inventory')
             .flush({ error: 'Name is required.' }, { status: 400, statusText: 'Bad Request' });
 
         // Assert
@@ -87,7 +93,7 @@ describe('InventoryApiService', () => {
         service
             .createItem('Torch', '', 1, 'party', ItemRarity.None, ItemStatus.Mundane, false, false, '')
             .subscribe({ error: (thrown: Error) => (error = thrown) });
-        httpMock.expectOne('/api/inventory').flush(null, { status: 500, statusText: 'Server Error' });
+        httpMock.expectOne('/api/campaigns/naxxar/inventory').flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert
         expect(error!.message).toBe("Couldn't create the item. Retry.");
@@ -99,7 +105,7 @@ describe('InventoryApiService', () => {
 
         // Act
         service.updateItem('item-1', { quantity: 5 }).subscribe((result) => (updated = result));
-        const request = httpMock.expectOne('/api/inventory/item-1');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/inventory/item-1');
         expect(request.request.method).toBe('PATCH');
         expect(request.request.body).toEqual({ quantity: 5 });
         request.flush(buildInventoryItem({ quantity: 5 }));
@@ -115,7 +121,7 @@ describe('InventoryApiService', () => {
         // Act
         service.updateItem('missing', { quantity: 1 }).subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
-            .expectOne('/api/inventory/missing')
+            .expectOne('/api/campaigns/naxxar/inventory/missing')
             .flush({ error: 'Item not found.' }, { status: 404, statusText: 'Not Found' });
 
         // Assert
@@ -128,7 +134,7 @@ describe('InventoryApiService', () => {
 
         // Act
         service.deleteItem('item-1').subscribe((result) => (deletedId = result));
-        const request = httpMock.expectOne('/api/inventory/item-1');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/inventory/item-1');
         expect(request.request.method).toBe('DELETE');
         request.flush({ id: 'item-1' });
 
@@ -142,7 +148,7 @@ describe('InventoryApiService', () => {
 
         // Act
         service.deleteItem('item-1').subscribe({ error: (thrown: Error) => (error = thrown) });
-        httpMock.expectOne('/api/inventory/item-1').flush(null, { status: 500, statusText: 'Server Error' });
+        httpMock.expectOne('/api/campaigns/naxxar/inventory/item-1').flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert
         expect(error!.message).toBe("Couldn't delete the item. Retry.");

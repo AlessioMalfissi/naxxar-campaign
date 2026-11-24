@@ -1,4 +1,6 @@
+import { Action } from '@ngrx/store';
 import { SaveStatus, ViewMode } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import { buildEntry } from '@testing/entry.fixtures';
 import * as EditorActions from './editor.actions';
 import { editorReducer } from './editor.reducer';
@@ -123,4 +125,21 @@ describe('editorReducer', () => {
         expect(state === previous).toBe(false);
         expect(previous.draftBody === state.draftBody).toBe(false);
     });
+
+    it.each([
+        ['campaignActivated', AuthActions.campaignActivated({ slug: 'other' })],
+        ['logout.success', AuthActions.logout.success({})],
+        ['sessionExpired', AuthActions.sessionExpired()],
+        ['resetPassword.success', AuthActions.resetPassword.success({})]
+    ] as Array<[string, Action]>)('should reset the editor on %s', (_label, action) => {
+        // Arrange
+        const dirty = editorReducer(OPENED, EditorActions.bodyChanged({ body: '# Edited' }));
+
+        // Act
+        const state = editorReducer(dirty, action);
+
+        // Assert
+        expect(state).toEqual(INITIAL_EDITOR_STATE);
+    });
+
 });

@@ -2,6 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { CampaignContextService } from './campaign-context.service';
+
 import { IEncounter } from '@core/models';
 import { buildEncounter } from '@testing/combat.fixtures';
 import { CombatApiService } from './combat-api.service';
@@ -13,7 +15,11 @@ describe('CombatApiService', () => {
     beforeEach(() => {
         // Arrange
         TestBed.configureTestingModule({
-            providers: [provideHttpClient(), provideHttpClientTesting()]
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: CampaignContextService, useValue: { baseUrl: () => '/api/campaigns/naxxar' } }
+            ]
         });
         service = TestBed.inject(CombatApiService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -29,7 +35,7 @@ describe('CombatApiService', () => {
         service.loadEncounter().subscribe((result) => (encounter = result));
 
         // Act
-        httpMock.expectOne('/api/combat').flush(buildEncounter({ round: 2 }));
+        httpMock.expectOne('/api/campaigns/naxxar/combat').flush(buildEncounter({ round: 2 }));
 
         // Assert
         expect(encounter!.round).toBe(2);
@@ -42,7 +48,7 @@ describe('CombatApiService', () => {
 
         // Act
         service.saveEncounter(encounter).subscribe((result) => (saved = result));
-        const request = httpMock.expectOne('/api/combat');
+        const request = httpMock.expectOne('/api/campaigns/naxxar/combat');
         expect(request.request.method).toBe('PUT');
         expect(request.request.body).toEqual(encounter);
         request.flush(encounter);
@@ -58,7 +64,7 @@ describe('CombatApiService', () => {
         // Act
         service.saveEncounter(buildEncounter()).subscribe({ error: (thrown: Error) => (error = thrown) });
         httpMock
-            .expectOne('/api/combat')
+            .expectOne('/api/campaigns/naxxar/combat')
             .flush({ error: 'Combatant ids must be unique.' }, { status: 400, statusText: 'Bad Request' });
 
         // Assert
@@ -71,7 +77,7 @@ describe('CombatApiService', () => {
 
         // Act
         service.saveEncounter(buildEncounter()).subscribe({ error: (thrown: Error) => (error = thrown) });
-        httpMock.expectOne('/api/combat').flush(null, { status: 500, statusText: 'Server Error' });
+        httpMock.expectOne('/api/campaigns/naxxar/combat').flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert
         expect(error!.message).toBe("Couldn't save the combat tracker. Retry.");

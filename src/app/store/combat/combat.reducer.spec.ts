@@ -1,4 +1,6 @@
+import { Action } from '@ngrx/store';
 import { ApiCallStatus } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import { buildCombatant, buildEncounter } from '@testing/combat.fixtures';
 import * as CombatActions from './combat.actions';
 import { combatReducer } from './combat.reducer';
@@ -373,4 +375,21 @@ describe('combatReducer', () => {
         expect(state === previous).toBe(false);
         expect(previous.encounter.combatants.length).toBe(2);
     });
+
+    it.each([
+        ['campaignActivated', AuthActions.campaignActivated({ slug: 'other' })],
+        ['logout.success', AuthActions.logout.success({})],
+        ['sessionExpired', AuthActions.sessionExpired()],
+        ['resetPassword.success', AuthActions.resetPassword.success({})]
+    ] as Array<[string, Action]>)('should reset the encounter on %s', (_label, action) => {
+        // Arrange
+        const populated = withEncounter({ live: true, pendingSaves: 2 });
+
+        // Act
+        const state = combatReducer(populated, action);
+
+        // Assert
+        expect(state).toEqual(INITIAL_COMBAT_STATE);
+    });
+
 });

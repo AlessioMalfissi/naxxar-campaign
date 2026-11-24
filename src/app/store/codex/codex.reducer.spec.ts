@@ -1,4 +1,5 @@
 import { ApiCallStatus, CodexSection, EntryVisibility, ICodexEntry, ICodexEntrySummary } from '@core/models';
+import * as AuthActions from '@store/auth/auth.actions';
 import * as CodexActions from './codex.actions';
 import { codexReducer } from './codex.reducer';
 import { INITIAL_CODEX_STATE } from './codex.state';
@@ -264,4 +265,43 @@ describe('codexReducer', () => {
         // Assert
         expect(state.filters).toEqual({ status: 'Dead', tags: ['ally'], query: 'ledger' });
     });
+
+    it('should reset campaign data on campaign switch but keep the shell preferences', () => {
+        // Arrange
+        const populated = {
+            ...INITIAL_CODEX_STATE,
+            entries: [buildEntry('npcs:vaelith-corrun', 'Vaelith Corrun')],
+            activeSection: CodexSection.Places,
+            sidebarCollapsed: true,
+            helpOpen: true
+        };
+
+        // Act
+        const state = codexReducer(populated, AuthActions.campaignActivated({ slug: 'other' }));
+
+        // Assert
+        expect(state.entries).toEqual([]);
+        expect(state.activeSection).toBe(CodexSection.Npcs);
+        expect(state.sidebarCollapsed).toBe(true);
+        expect(state.helpOpen).toBe(true);
+    });
+
+    it('should reset campaign data on sign out', () => {
+        // Arrange
+        const populated = {
+            ...INITIAL_CODEX_STATE,
+            entries: [buildEntry('npcs:vaelith-corrun', 'Vaelith Corrun')],
+            sidebarCollapsed: true,
+            helpOpen: true
+        };
+
+        // Act
+        const state = codexReducer(populated, AuthActions.sessionExpired());
+
+        // Assert
+        expect(state.entries).toEqual([]);
+        expect(state.sidebarCollapsed).toBe(true);
+        expect(state.helpOpen).toBe(false);
+    });
+
 });
