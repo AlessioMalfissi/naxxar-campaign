@@ -4,6 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 
 import { ICampaignSummary, IUser } from '@core/models';
+import { GUEST_STORAGE_KEY } from '@core/guest/guest-data';
 import * as AuthActions from '@store/auth/auth.actions';
 import { selectAuthError, selectAuthPending, selectCampaigns, selectUser } from '@store/auth/auth.selectors';
 import { CampaignListComponent } from './campaign-list.component';
@@ -41,6 +42,14 @@ describe('CampaignListComponent', () => {
         fixture.detectChanges();
     };
 
+    beforeEach(() => {
+        sessionStorage.clear();
+    });
+
+    afterEach(() => {
+        sessionStorage.clear();
+    });
+
     it('should refresh the campaign list on init', async () => {
         // Act
         await create();
@@ -75,6 +84,20 @@ describe('CampaignListComponent', () => {
         // Assert
         const error: HTMLElement = fixture.nativeElement.querySelector('.cdx-campaigns-error');
         expect(error.textContent).toContain("Couldn't load your campaigns.");
+    });
+
+    it('should explain the read-only demo and hide campaign creation', async () => {
+        // Arrange
+        sessionStorage.setItem(GUEST_STORAGE_KEY, 'true');
+
+        // Act
+        await create([NAXXAR]);
+
+        // Assert
+        const notice: HTMLElement = fixture.nativeElement.querySelector('.cdx-campaigns-demo');
+        expect(notice.textContent).toContain('read-only demo');
+        expect(fixture.nativeElement.querySelector('.cdx-campaign-create')).toBeNull();
+        expect(fixture.nativeElement.querySelector('.cdx-campaigns-email')).toBeNull();
     });
 
     it('should open a campaign', async () => {

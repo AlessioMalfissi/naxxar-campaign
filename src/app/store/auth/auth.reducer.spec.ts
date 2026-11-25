@@ -57,6 +57,32 @@ describe('authReducer', () => {
         expect(state.checked).toBe(true);
     });
 
+    it('should enter a guest session without a server account', () => {
+        // Arrange
+        const previous = {
+            ...INITIAL_AUTH_STATE,
+            config: { googleClientId: 'client-id' },
+            activeCampaignSlug: 'naxxar'
+        };
+        const guestCampaign: ICampaignSummary = {
+            id: 'guest-campaign',
+            slug: 'demo',
+            name: 'Naxxar (demo)',
+            role: 'player'
+        };
+
+        // Act
+        const state = authReducer(previous, AuthActions.guestEntered({ user: USER, campaigns: [guestCampaign] }));
+
+        // Assert
+        expect(state.user).toEqual(USER);
+        expect(state.campaigns).toEqual([guestCampaign]);
+        expect(state.activeCampaignSlug).toBeNull();
+        expect(state.config).toEqual({ googleClientId: 'client-id' });
+        expect(state.checked).toBe(true);
+        expect(state.status).toBe(ApiCallStatus.Success);
+    });
+
     it('should keep the active campaign when the refreshed list still contains it', () => {
         // Arrange
         const previous = { ...signedIn, activeCampaignSlug: 'other' };

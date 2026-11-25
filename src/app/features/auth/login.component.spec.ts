@@ -171,4 +171,13 @@ describe('LoginComponent', () => {
         expect(link.getAttribute('href')).toContain('/forgot-password');
         expect(link.getAttribute('href')).toContain('returnUrl=%2Fcampaigns%2Fnaxxar%2Fnpcs');
     });
+
+    it('should offer a read-only demo from the sign-in screen', async () => {
+        // Arrange / Act
+        await configure();
+
+        // Assert
+        const link: HTMLAnchorElement = fixture.nativeElement.querySelector('.cdx-login-demo');
+        expect(link.getAttribute('href')).toBe('/demo');
+    });
 });

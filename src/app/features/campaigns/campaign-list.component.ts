@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 
 import { CampaignRole, ICampaignSummary } from '@core/models';
+import { GuestModeService } from '@core/guest/guest-mode.service';
 import * as AuthActions from '@store/auth/auth.actions';
 import { selectAuthError, selectAuthPending, selectCampaigns, selectUser } from '@store/auth/auth.selectors';
 
@@ -23,7 +24,9 @@ import { selectAuthError, selectAuthPending, selectCampaigns, selectUser } from 
 export class CampaignListComponent implements OnInit {
     private readonly store = inject(Store);
     private readonly router = inject(Router);
+    private readonly guestMode = inject(GuestModeService);
 
+    protected readonly guest = this.guestMode.isGuest;
     protected readonly user = toSignal(this.store.select(selectUser), { initialValue: null });
     protected readonly campaigns = toSignal(this.store.select(selectCampaigns), { initialValue: [] });
     protected readonly pending = toSignal(this.store.select(selectAuthPending), { initialValue: false });

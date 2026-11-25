@@ -44,6 +44,17 @@
     font-size: 12px;
 }
 
+.cdx-campaigns-demo {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--cdx-border);
+    border-radius: 8px;
+    background: var(--cdx-primary-tint);
+    color: var(--cdx-primary-text);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
 .cdx-campaign-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

@@ -86,6 +86,18 @@ after seven days and are single-use.
 - **Members** is at `/campaigns/:campaignSlug/members`. Only a DM can open invite management there;
   players see the roster without email addresses.
 
+## Guest demo mode
+
+The sign-in screen offers **Explore the demo campaign**, and `/demo` enters the same mode directly.
+It is a client-side-only sample: one campaign named **Naxxar (demo)**, with static codex entries,
+inventory, purses, members and a combat encounter. No API request leaves the browser for `/api/*`,
+no combat WebSocket opens, and every write is rejected as read-only. The demo session lives in
+`sessionStorage`, so a refresh stays in the demo while closing the tab or signing out leaves it.
+
+The demo is part of the production bundle and does not touch MongoDB or require an account. All of
+its data lives in `src/app/core/guest/guest-data.ts`; remove the `demo` route and the
+`guestApiInterceptor` registration if a deployment should not expose it.
+
 ## Where the lore lives
 
 Entries live in MongoDB, one document per entry, shaped like `ICodexEntry` in
@@ -184,7 +196,8 @@ first. When two devices edit at once, the last save wins.
 src/app/
 ├── core/
 │   ├── guards/            auth, guest and campaign-membership guards
-│   ├── interceptors/      turns a protected 401 into sessionExpired
+│   ├── guest/             static demo campaign data and the session lifecycle
+│   ├── interceptors/      guest demo mocking and protected-401 session handling
 │   ├── models/            enums, I-prefixed interfaces, section definitions
 │   ├── routing/           route reuse that recreates the shell when the slug changes
 │   ├── services/          auth, campaign, members/invite and campaign-scoped content APIs,
@@ -202,6 +215,7 @@ src/app/
 │   └── editor/            draft body, dirty flag, save status, view mode, autosave
 └── features/
     ├── auth/              login, forgot password, reset password
+    ├── guest/             demo entry point behind /demo
     ├── invite/            invite preview, registration and join flow
     ├── campaigns/         campaign picker and create form
     ├── members/           roster and DM invite management

@@ -24,6 +24,11 @@ export const APP_ROUTES: Routes = [
         loadComponent: () =>
             import('@features/invite/invite-accept.component').then((module) => module.InviteAcceptComponent)
     },
+    {
+        path: 'demo',
+        loadComponent: () =>
+            import('@features/guest/guest-entry.component').then((module) => module.GuestEntryComponent)
+    },
     { path: 'register', redirectTo: 'login', pathMatch: 'full' },
     {
         path: 'campaigns',

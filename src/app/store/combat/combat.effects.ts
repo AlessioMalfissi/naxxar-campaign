@@ -4,6 +4,7 @@ import { Store } from '@ngrx/store';
 import { catchError, concatMap, map, of, switchMap, takeUntil, withLatestFrom } from 'rxjs';
 
 import { CombatLiveEventType } from '@core/models';
+import { GuestModeService } from '@core/guest/guest-mode.service';
 import { CampaignContextService } from '@core/services/campaign-context.service';
 import { CombatApiService } from '@core/services/combat-api.service';
 import { CombatLiveService } from '@core/services/combat-live.service';
@@ -17,6 +18,7 @@ export class CombatEffects {
     private readonly combatApi = inject(CombatApiService);
     private readonly combatLive = inject(CombatLiveService);
     private readonly campaignContext = inject(CampaignContextService);
+    private readonly guestMode = inject(GuestModeService);
 
     readonly loadEncounter$ = createEffect(() =>
         this.actions$.pipe(
@@ -39,6 +41,11 @@ export class CombatEffects {
             switchMap(() => {
                 const slug = this.campaignContext.slug();
                 if (slug === null) {
+                    return of(CombatActions.liveStatusChanged({ connected: false }));
+                }
+
+                // The demo has no websocket endpoint and no other devices to sync with.
+                if (this.guestMode.isGuest()) {
                     return of(CombatActions.liveStatusChanged({ connected: false }));
                 }
 

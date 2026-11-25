@@ -5,6 +5,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Observable, of, ReplaySubject, Subject, throwError, toArray } from 'rxjs';
 
 import { CombatLiveEvent, CombatLiveEventType } from '@core/models';
+import { GuestModeService } from '@core/guest/guest-mode.service';
 import { CampaignContextService } from '@core/services/campaign-context.service';
 import { CombatApiService } from '@core/services/combat-api.service';
 import { CombatLiveService } from '@core/services/combat-live.service';
@@ -21,6 +22,7 @@ describe('CombatEffects', () => {
     let combatLive: jest.Mocked<Pick<CombatLiveService, 'connect'>>;
     let liveEvents: Subject<CombatLiveEvent>;
     let currentSlug: string | null;
+    let guestMode: { isGuest: jest.Mock };
 
     const dispatched = <T>(source: Observable<T>): Promise<T> =>
         new Promise<T>((resolve) => source.subscribe((action) => resolve(action)));
@@ -32,6 +34,7 @@ describe('CombatEffects', () => {
         liveEvents = new Subject<CombatLiveEvent>();
         currentSlug = 'naxxar';
         combatLive = { connect: jest.fn(() => liveEvents.asObservable()) };
+        guestMode = { isGuest: jest.fn().mockReturnValue(false) };
 
         TestBed.configureTestingModule({
             providers: [
@@ -40,7 +43,8 @@ describe('CombatEffects', () => {
                 provideMockStore({ initialState: {} }),
                 { provide: CampaignContextService, useValue: { slug: () => currentSlug } },
                 { provide: CombatApiService, useValue: combatApi },
-                { provide: CombatLiveService, useValue: combatLive }
+                { provide: CombatLiveService, useValue: combatLive },
+                { provide: GuestModeService, useValue: guestMode }
             ]
         });
 
@@ -144,6 +148,19 @@ describe('CombatEffects', () => {
     it('should report a disconnected live status when there is no active campaign', async () => {
         // Arrange
         currentSlug = null;
+
+        // Act
+        actions$.next(CombatActions.liveSyncStarted());
+        const result = await dispatched(effects.liveSync$);
+
+        // Assert
+        expect(combatLive.connect).not.toHaveBeenCalled();
+        expect(result).toEqual(CombatActions.liveStatusChanged({ connected: false }));
+    });
+
+    it('should not open a live socket in the read-only demo', async () => {
+        // Arrange
+        guestMode.isGuest.mockReturnValue(true);
 
         // Act
         actions$.next(CombatActions.liveSyncStarted());

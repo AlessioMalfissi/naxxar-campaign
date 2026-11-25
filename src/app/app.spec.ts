@@ -53,6 +53,17 @@ describe('APP_ROUTES', () => {
         expect(redirect).toBe('campaigns');
     });
 
+    it('should lazily load the guest demo entry point', async () => {
+        // Arrange
+        const demo = findRoute(APP_ROUTES, 'demo');
+
+        // Act
+        const component = await demo?.loadComponent?.();
+
+        // Assert
+        expect(component?.name).toBe('GuestEntryComponent');
+    });
+
     it('should lazily load the campaign shell and its children', async () => {
         // Arrange
         const campaign = findRoute(APP_ROUTES, 'campaigns/:campaignSlug');

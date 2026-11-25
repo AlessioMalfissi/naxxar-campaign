@@ -1,6 +1,13 @@
 import { createAction, props } from '@ngrx/store';
 
-import { IAuthResponse, ICampaignSummary, IInviteAuthResponse, IPublicConfig, ISessionResponse } from '@core/models';
+import {
+    IAuthResponse,
+    ICampaignSummary,
+    IInviteAuthResponse,
+    IPublicConfig,
+    ISessionResponse,
+    IUser
+} from '@core/models';
 import { createApiAction } from '../create-api-action';
 
 const SOURCE = 'Auth';
@@ -43,6 +50,12 @@ export const resetPassword = createApiAction<{ token: string; password: string }
 );
 
 export const campaignActivated = createAction(`[${SOURCE}] campaign activated`, props<{ slug: string }>());
+
+// Seeds the local auth state used by the client-side demo campaign. No server session exists.
+export const guestEntered = createAction(
+    `[${SOURCE}] guest entered`,
+    props<{ user: IUser; campaigns: ICampaignSummary[] }>()
+);
 
 // Dispatched by the HTTP interceptor on a 401 from a protected endpoint. Never navigates directly.
 export const sessionExpired = createAction(`[${SOURCE}] session expired`);

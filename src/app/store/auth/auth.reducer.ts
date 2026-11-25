@@ -58,6 +58,17 @@ export const authReducer = createReducer<IAuthState>(
         errorStatus: null
     })),
 
+    on(AuthActions.guestEntered, (state, { user, campaigns }): IAuthState => ({
+        ...state,
+        user,
+        campaigns,
+        activeCampaignSlug: withCampaigns(campaigns, state.activeCampaignSlug),
+        checked: true,
+        status: ApiCallStatus.Success,
+        error: null,
+        errorStatus: null
+    })),
+
     on(AuthActions.login.success, AuthActions.googleLogin.success, (state, { user, campaigns }): IAuthState => ({
         ...state,
         user,

@@ -7,6 +7,8 @@ import { provideStore, Store } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
+import { guestApiInterceptor } from '@core/interceptors/guest-api.interceptor';
+import { GuestModeService } from '@core/guest/guest-mode.service';
 import { CampaignRouteReuseStrategy } from '@core/routing/campaign-route-reuse.strategy';
 import { AuthEffects } from '@store/auth/auth.effects';
 import * as AuthActions from '@store/auth/auth.actions';
@@ -41,7 +43,7 @@ export const APP_CONFIG: ApplicationConfig = {
             withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })
         ),
         { provide: RouteReuseStrategy, useClass: CampaignRouteReuseStrategy },
-        provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+        provideHttpClient(withFetch(), withInterceptors([guestApiInterceptor, authInterceptor])),
         provideAnimationsAsync(),
         provideStore({
             [AUTH_FEATURE_KEY]: authReducer,
@@ -61,6 +63,11 @@ export const APP_CONFIG: ApplicationConfig = {
             InventoryEffects,
             PursesEffects
         ]),
+        // Restore a demo tab before the first guard or config request runs, so a refresh never
+        // falls back to the real API.
+        provideAppInitializer(() => {
+            inject(GuestModeService).restore();
+        }),
         // The login and invite screens need to know whether Google is enabled before they render.
         provideAppInitializer(() => {
             inject(Store).dispatch(AuthActions.loadConfig.request({}));
