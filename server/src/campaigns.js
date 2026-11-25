@@ -20,8 +20,15 @@ export const toCampaignSummary = (campaign, role) => ({
     role
 });
 
-export const loadCampaignSummaries = async (userId, { memberships, campaigns }) => {
-    const rows = await memberships.find({ userId }).toArray();
+export const loadCampaignSummaries = async (user, { memberships, campaigns }) => {
+    if (user.isSuperAdmin === true) {
+        const docs = await campaigns.find({}).toArray();
+        return docs
+            .map((campaign) => toCampaignSummary(campaign, 'dm'))
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    const rows = await memberships.find({ userId: user._id }).toArray();
     if (rows.length === 0) {
         return [];
     }
@@ -60,7 +67,7 @@ export const createCampaignsRouter = ({ campaigns, memberships }) => {
 
     router.get('/', async (req, res, next) => {
         try {
-            res.json(await loadCampaignSummaries(req.auth.user._id, { memberships, campaigns }));
+            res.json(await loadCampaignSummaries(req.auth.user, { memberships, campaigns }));
         } catch (error) {
             next(error);
         }

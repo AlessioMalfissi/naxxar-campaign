@@ -24,7 +24,7 @@ const readString = (value) => (typeof value === 'string' ? value.trim() : '');
 
 const authPayload = async (user, { memberships, campaigns }) => ({
     user: toPublicUser(user),
-    campaigns: await loadCampaignSummaries(user._id, { memberships, campaigns })
+    campaigns: await loadCampaignSummaries(user, { memberships, campaigns })
 });
 
 const startSession = async (res, sessions, user, { secure }) => {

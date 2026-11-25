@@ -75,7 +75,7 @@ const requireCampaign = async (campaigns, campaignId) => {
 
 const authPayload = async (user, { memberships, campaigns }) => ({
     user: toPublicUser(user),
-    campaigns: await loadCampaignSummaries(user._id, { memberships, campaigns })
+    campaigns: await loadCampaignSummaries(user, { memberships, campaigns })
 });
 
 const signIn = async (res, sessions, user, { secure }) => {

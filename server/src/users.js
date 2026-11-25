@@ -14,7 +14,9 @@ export const isValidDisplayName = (value) =>
 export const toPublicUser = (user) => ({
     id: user._id,
     email: user.email,
-    displayName: user.displayName
+    displayName: user.displayName,
+    // Omit the flag for normal accounts so existing auth payloads keep their shape.
+    ...(user.isSuperAdmin === true ? { isSuperAdmin: true } : {})
 });
 
 export const findUserByEmail = (users, email) => users.findOne({ emailNormalized: normalizeEmail(email) });
