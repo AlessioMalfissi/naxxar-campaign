@@ -11,14 +11,19 @@ import { CodexApiService } from './codex-api.service';
 describe('CodexApiService', () => {
     let service: CodexApiService;
     let httpMock: HttpTestingController;
+    let campaignSlug = 'naxxar';
 
     beforeEach(() => {
         // Arrange
+        campaignSlug = 'naxxar';
         TestBed.configureTestingModule({
             providers: [
                 provideHttpClient(),
                 provideHttpClientTesting(),
-                { provide: CampaignContextService, useValue: { baseUrl: () => '/api/campaigns/naxxar' } }
+                {
+                    provide: CampaignContextService,
+                    useValue: { baseUrl: () => `/api/campaigns/${campaignSlug}` }
+                }
             ]
         });
         service = TestBed.inject(CodexApiService);
@@ -55,7 +60,9 @@ describe('CodexApiService', () => {
             .subscribe();
 
         // Act
-        const request = httpMock.expectOne((req) => req.url === '/api/campaigns/naxxar/entries' && req.method === 'GET');
+        const request = httpMock.expectOne(
+            (req) => req.url === '/api/campaigns/naxxar/entries' && req.method === 'GET'
+        );
 
         // Assert
         expect(request.request.params.get('section')).toBe('npcs');
@@ -115,7 +122,9 @@ describe('CodexApiService', () => {
 
         // Act
         service.saveEntry(buildEntry()).subscribe({ error: (thrown: Error) => (error = thrown) });
-        httpMock.expectOne('/api/campaigns/naxxar/entries/npcs/vaelith-corrun').flush(null, { status: 500, statusText: 'Server Error' });
+        httpMock
+            .expectOne('/api/campaigns/naxxar/entries/npcs/vaelith-corrun')
+            .flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert
         expect(error!.message).toBe("Couldn't save the entry. Retry.");
@@ -210,5 +219,18 @@ describe('CodexApiService', () => {
 
         // Assert
         expect(error!.message).toBe('Invalid entry id.');
+    });
+
+    it('should read the campaign slug for every request', () => {
+        // Arrange
+        campaignSlug = 'other';
+
+        // Act
+        service.loadIndex().subscribe();
+        const request = httpMock.expectOne(`/api/campaigns/other/entries`);
+
+        // Assert
+        expect(request.request.method).toBe('GET');
+        request.flush([]);
     });
 });

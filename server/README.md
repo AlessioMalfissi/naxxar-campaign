@@ -3,18 +3,18 @@
 Express + MongoDB API for the Naxxar campaign dashboard. Accounts, campaigns and campaign content all
 live in MongoDB:
 
-| Collection       | Contents                                                                 |
-| ---------------- | ------------------------------------------------------------------------ |
-| `users`          | One document per account: email, display name, Argon2id hash, Google sub |
-| `sessions`       | Opaque session tokens, stored as SHA-256 hashes with an expiry            |
-| `campaigns`      | Campaign name and URL slug                                                |
-| `memberships`    | `{ campaignId, userId, role }`, `_id` is `${campaignId}:${userId}`          |
-| `invites`        | Single-use invite tokens, stored hashed, with a seven-day expiry          |
-| `password_resets`| Single-use reset tokens, stored hashed, with a one-hour expiry            |
-| `entries`        | Codex entries, shaped like `ICodexEntry`, `_id` is `${campaignId}:${section}:${slug}` |
-| `inventory`      | Items, shaped like `IInventoryItem`, `_id` stays a UUID                    |
-| `purses`         | Gold by owner, shaped like `IPurse`, `_id` is `${campaignId}:${owner}`     |
-| `combat`         | One encounter per campaign, `_id` is `${campaignId}:current`               |
+| Collection        | Contents                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| `users`           | One document per account: email, display name, Argon2id hash, Google sub              |
+| `sessions`        | Opaque session tokens, stored as SHA-256 hashes with an expiry                        |
+| `campaigns`       | Campaign name and URL slug                                                            |
+| `memberships`     | `{ campaignId, userId, role }`, `_id` is `${campaignId}:${userId}`                    |
+| `invites`         | Single-use invite tokens, stored hashed, with a seven-day expiry                      |
+| `password_resets` | Single-use reset tokens, stored hashed, with a one-hour expiry                        |
+| `entries`         | Codex entries, shaped like `ICodexEntry`, `_id` is `${campaignId}:${section}:${slug}` |
+| `inventory`       | Items, shaped like `IInventoryItem`, `_id` stays a UUID                               |
+| `purses`          | Gold by owner, shaped like `IPurse`, `_id` is `${campaignId}:${owner}`                |
+| `combat`          | One encounter per campaign, `_id` is `${campaignId}:current`                          |
 
 The interfaces are in `../src/app/core/models/`.
 
@@ -65,22 +65,22 @@ pnpm run server:test    # from the repo root, or `npm test` from here
 
 ## Environment variables
 
-| Variable           | Default                     | Purpose                                                                                                                                                                                                                  |
-| ------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PORT`             | `8000`                      | Port the API listens on. The dev script defaults it to `3000` to match the Angular proxy.                                                                                                                                |
-| `NODE_ENV`         | `development`               | `production` enables the fail-fast config check and disables the dev reset-link log.                                                                                                                                      |
-| `MONGODB_URI`      | `mongodb://127.0.0.1:27017` | Connection string. When unset in dev, the API uses the seeded in-memory database instead.                                                                                                                                |
-| `MONGODB_DB`       | `naxxar_campaign`           | Database name.                                                                                                                                                                                                           |
-| `APP_ORIGIN`       | `http://localhost:57571`    | Public origin of the app. Session cookies are `Secure` on an `https://` origin, and state-changing requests are rejected when their `Origin` is different. Required in production.                                        |
-| `GOOGLE_CLIENT_ID` | unset                       | Google Identity Services client id. When unset, `/api/config` reports no client id and Google sign-in endpoints return `503`.                                                                                              |
-| `SMTP_URL`         | unset                       | SMTP connection URL for password-reset email, e.g. `smtp://user:pass@smtp.example.com:587`. Required in production; in development the reset link is logged instead.                                                       |
-| `MAIL_FROM`        | `Naxxar <no-reply@localhost>` | From address on reset email.                                                                                                                                                                                            |
-| `STATIC_DIR`       | unset                       | If set, also serves this directory as the Angular app (SPA fallback to `index.html` for any non-`/api` route). Point it at `../dist/naxxar-campaign/browser` after `pnpm run build` to run the whole app from one process. |
-| `TRUST_PROXY`      | unset                       | `1` or `true` behind a trusted reverse proxy, so rate limits and cookies see the client IP and protocol correctly.                                                                                                        |
-| `DEV_IN_MEMORY_DB` | unset                       | `1` uses the seeded in-memory database. The dev script sets it when `MONGODB_URI` is missing; the normal `start` script never sets it.                                                                                   |
-| `DEV_DM_EMAIL`     | `dm@naxxar.local`           | Dev-only seed account email. Never used with MongoDB.                                                                                                                                                                    |
-| `DEV_DM_PASSWORD`  | `app`                       | Dev-only seed account password. Never used with MongoDB.                                                                                                                                                                 |
-| `DEV_CAMPAIGN_NAME`| `Naxxar`                    | Dev-only seed campaign name. Never used with MongoDB.                                                                                                                                                                     |
+| Variable            | Default                       | Purpose                                                                                                                                                                                                                    |
+| ------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`              | `8000`                        | Port the API listens on. The dev script defaults it to `3000` to match the Angular proxy.                                                                                                                                  |
+| `NODE_ENV`          | `development`                 | `production` enables the fail-fast config check and disables the dev reset-link log.                                                                                                                                       |
+| `MONGODB_URI`       | `mongodb://127.0.0.1:27017`   | Connection string. When unset in dev, the API uses the seeded in-memory database instead.                                                                                                                                  |
+| `MONGODB_DB`        | `naxxar_campaign`             | Database name.                                                                                                                                                                                                             |
+| `APP_ORIGIN`        | `http://localhost:57571`      | Public origin of the app. Session cookies are `Secure` on an `https://` origin, and state-changing requests are rejected when their `Origin` is different. Required in production.                                         |
+| `GOOGLE_CLIENT_ID`  | unset                         | Google Identity Services client id. When unset, `/api/config` reports no client id and Google sign-in endpoints return `503`.                                                                                              |
+| `SMTP_URL`          | unset                         | SMTP connection URL for password-reset email, e.g. `smtp://user:pass@smtp.example.com:587`. Required in production; in development the reset link is logged instead.                                                       |
+| `MAIL_FROM`         | `Naxxar <no-reply@localhost>` | From address on reset email.                                                                                                                                                                                               |
+| `STATIC_DIR`        | unset                         | If set, also serves this directory as the Angular app (SPA fallback to `index.html` for any non-`/api` route). Point it at `../dist/naxxar-campaign/browser` after `pnpm run build` to run the whole app from one process. |
+| `TRUST_PROXY`       | unset                         | `1` or `true` behind a trusted reverse proxy, so rate limits and cookies see the client IP and protocol correctly.                                                                                                         |
+| `DEV_IN_MEMORY_DB`  | unset                         | `1` uses the seeded in-memory database. The dev script sets it when `MONGODB_URI` is missing; the normal `start` script never sets it.                                                                                     |
+| `DEV_DM_EMAIL`      | `dm@naxxar.local`             | Dev-only seed account email. Never used with MongoDB.                                                                                                                                                                      |
+| `DEV_DM_PASSWORD`   | `app`                         | Dev-only seed account password. Never used with MongoDB.                                                                                                                                                                   |
+| `DEV_CAMPAIGN_NAME` | `Naxxar`                      | Dev-only seed campaign name. Never used with MongoDB.                                                                                                                                                                      |
 
 `APP_PASSWORD` and `SESSION_SECRET` have been removed. Sessions are database records, so there is no
 shared password and no cookie-signing secret to configure.
@@ -101,33 +101,33 @@ Password reset is enumeration-safe: `POST /api/auth/forgot-password` always retu
 not the email exists. A valid request stores a hashed, single-use, one-hour token and emails a link to
 `${APP_ORIGIN}/reset-password/<token>`. Completing the reset revokes every session for that user.
 
-| Method | Path                        | Description                                                                                       |
-| ------ | --------------------------- | ------------------------------------------------------------------------------------------------- |
-| `GET`  | `/api/config`               | Public runtime config: `{ "googleClientId": string \| null }`, `Cache-Control: no-store`.          |
+| Method | Path                        | Description                                                                                         |
+| ------ | --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/config`               | Public runtime config: `{ "googleClientId": string or null }`, `Cache-Control: no-store`.           |
 | `POST` | `/api/auth/login`           | Body `{ email, password }`. Sets the session cookie. `401` with a generic error on bad credentials. |
-| `POST` | `/api/auth/google`          | Body `{ credential }`. Signs in an existing account. `403` if no account exists; never registers. |
-| `POST` | `/api/auth/logout`          | Revokes the current session and clears the cookie. Always `200`.                                   |
-| `GET`  | `/api/auth/me`              | Current `{ user, campaigns }`, or `{ user: null, campaigns: [] }` when anonymous.                 |
-| `POST` | `/api/auth/forgot-password` | Body `{ email }`. Always `202`; emails a reset link if the account exists.                        |
-| `POST` | `/api/auth/reset-password`  | Body `{ token, password }`. Password must be 8-128 characters. Revokes the user's sessions.       |
+| `POST` | `/api/auth/google`          | Body `{ credential }`. Signs in an existing account. `403` if no account exists; never registers.   |
+| `POST` | `/api/auth/logout`          | Revokes the current session and clears the cookie. Always `200`.                                    |
+| `GET`  | `/api/auth/me`              | Current `{ user, campaigns }`, or `{ user: null, campaigns: [] }` when anonymous.                   |
+| `POST` | `/api/auth/forgot-password` | Body `{ email }`. Always `202`; emails a reset link if the account exists.                          |
+| `POST` | `/api/auth/reset-password`  | Body `{ token, password }`. Password must be 8-128 characters. Revokes the user's sessions.         |
 
 Auth payloads use `{ user: { id, email, displayName }, campaigns: [{ id, slug, name, role }] }`.
 Invite registration adds the joined campaign as `campaign`.
 
 ## Invites and campaigns
 
-| Method | Path                                  | Description                                                                                                     |
-| ------ | ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `GET`  | `/api/invites/:token`                 | Public preview: `{ campaignName, campaignSlug, expiresAt }`. `404` unknown, `410` used/expired.                  |
-| `POST` | `/api/invites/:token/register`        | Public. Body `{ displayName, email, password }`. Creates the account and a `player` membership, then signs in.  |
-| `POST` | `/api/invites/:token/google`          | Public. Body `{ credential, displayName? }`. Creates or links a Google account and a `player` membership.       |
-| `POST` | `/api/invites/:token/accept`          | Session required. Adds the signed-in user to the campaign as `player`.                                          |
-| `GET`  | `/api/campaigns`                      | Campaigns the current user belongs to, sorted by name.                                                          |
-| `POST` | `/api/campaigns`                      | Body `{ name }`. Creates a campaign and makes the caller its `dm`. Name is 2-80 characters; slug is generated.  |
-| `GET`  | `/api/campaigns/:campaignSlug`        | `{ campaign }` for a member. `404` for a non-member, so campaign existence is not disclosed.                     |
-| `GET`  | `/api/campaigns/:campaignSlug/members`| Roster. Email addresses are included only for the campaign DM.                                                   |
-| `GET`  | `/api/campaigns/:campaignSlug/invites`| DM only. `{ invites: [{ createdAt, expiresAt, usedAt, status }] }`, newest first.                               |
-| `POST` | `/api/campaigns/:campaignSlug/invites`| DM only. Creates a seven-day, single-use invite. Returns `{ invite: { url, expiresAt } }` once - the URL is never listed again. |
+| Method | Path                                   | Description                                                                                                                     |
+| ------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/invites/:token`                  | Public preview: `{ campaignName, campaignSlug, expiresAt }`. `404` unknown, `410` used/expired.                                 |
+| `POST` | `/api/invites/:token/register`         | Public. Body `{ displayName, email, password }`. Creates the account and a `player` membership, then signs in.                  |
+| `POST` | `/api/invites/:token/google`           | Public. Body `{ credential, displayName? }`. Creates or links a Google account and a `player` membership.                       |
+| `POST` | `/api/invites/:token/accept`           | Session required. Adds the signed-in user to the campaign as `player`.                                                          |
+| `GET`  | `/api/campaigns`                       | Campaigns the current user belongs to, sorted by name.                                                                          |
+| `POST` | `/api/campaigns`                       | Body `{ name }`. Creates a campaign and makes the caller its `dm`. Name is 2-80 characters; slug is generated.                  |
+| `GET`  | `/api/campaigns/:campaignSlug`         | `{ campaign }` for a member. `404` for a non-member, so campaign existence is not disclosed.                                    |
+| `GET`  | `/api/campaigns/:campaignSlug/members` | Roster. Email addresses are included only for the campaign DM.                                                                  |
+| `GET`  | `/api/campaigns/:campaignSlug/invites` | DM only. `{ invites: [{ createdAt, expiresAt, usedAt, status }] }`, newest first.                                               |
+| `POST` | `/api/campaigns/:campaignSlug/invites` | DM only. Creates a seven-day, single-use invite. Returns `{ invite: { url, expiresAt } }` once - the URL is never listed again. |
 
 Every campaign route runs a membership check first. A missing campaign and a campaign the user has not
 joined both return `404 Campaign not found.`; a member whose role is too low gets
@@ -142,22 +142,22 @@ All routes below require a session and a campaign membership. They are mounted u
 `/api/campaigns/:campaignSlug`; `entries`, `inventory`, `purses` and `combat` are scoped to that campaign
 server-side, so a client cannot address another campaign's data by changing an id.
 
-| Method   | Path                                  | Description                                                                                          |
-| -------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `GET`    | `/api/campaigns/:slug/entries`        | List entry summaries (no `body`), optionally filtered. Players never see `visibility: dm` entries.   |
-| `GET`    | `/api/campaigns/:slug/entries/:section/:slug` | Fetch one entry including `body`. `404` if missing or DM-only for a player.                    |
-| `POST`   | `/api/campaigns/:slug/entries`        | DM only. Create an entry; slug is derived from `title`. `409` on a duplicate in the section.         |
-| `PUT`    | `/api/campaigns/:slug/entries/:section/:slug` | DM only. Replace an entry.                                                                  |
-| `DELETE` | `/api/campaigns/:slug/entries/:section/:slug` | DM only. Delete an entry. Idempotent.                                                       |
-| `GET`    | `/api/campaigns/:slug/inventory`      | List every item, sorted by name.                                                                     |
-| `POST`   | `/api/campaigns/:slug/inventory`      | DM only. Create an item.                                                                             |
-| `PATCH`  | `/api/campaigns/:slug/inventory/:id`  | DM only. Update item fields. `404` if missing.                                                       |
-| `DELETE` | `/api/campaigns/:slug/inventory/:id`  | DM only. Delete an item. Idempotent.                                                                 |
-| `GET`    | `/api/campaigns/:slug/purses`         | List every purse that has been set.                                                                  |
-| `PUT`    | `/api/campaigns/:slug/purses/:owner`  | DM only. Create or replace the purse for `owner` with `{ gold }`.                                    |
-| `GET`    | `/api/campaigns/:slug/combat`         | The current encounter. Before anything is saved: `{ revision: 0, round: 0, turnId: null, combatants: [] }`. |
-| `PUT`    | `/api/campaigns/:slug/combat`         | DM only. Replace the encounter. Returns it with a new server-set `revision`.                         |
-| `GET`    | `/api/campaigns/:slug/combat/live`    | WebSocket upgrade for live encounter sync (see below).                                                |
+| Method   | Path                                          | Description                                                                                                 |
+| -------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/campaigns/:slug/entries`                | List entry summaries (no `body`), optionally filtered. Players never see `visibility: dm` entries.          |
+| `GET`    | `/api/campaigns/:slug/entries/:section/:slug` | Fetch one entry including `body`. `404` if missing or DM-only for a player.                                 |
+| `POST`   | `/api/campaigns/:slug/entries`                | DM only. Create an entry; slug is derived from `title`. `409` on a duplicate in the section.                |
+| `PUT`    | `/api/campaigns/:slug/entries/:section/:slug` | DM only. Replace an entry.                                                                                  |
+| `DELETE` | `/api/campaigns/:slug/entries/:section/:slug` | DM only. Delete an entry. Idempotent.                                                                       |
+| `GET`    | `/api/campaigns/:slug/inventory`              | List every item, sorted by name.                                                                            |
+| `POST`   | `/api/campaigns/:slug/inventory`              | DM only. Create an item.                                                                                    |
+| `PATCH`  | `/api/campaigns/:slug/inventory/:id`          | DM only. Update item fields. `404` if missing.                                                              |
+| `DELETE` | `/api/campaigns/:slug/inventory/:id`          | DM only. Delete an item. Idempotent.                                                                        |
+| `GET`    | `/api/campaigns/:slug/purses`                 | List every purse that has been set.                                                                         |
+| `PUT`    | `/api/campaigns/:slug/purses/:owner`          | DM only. Create or replace the purse for `owner` with `{ gold }`.                                           |
+| `GET`    | `/api/campaigns/:slug/combat`                 | The current encounter. Before anything is saved: `{ revision: 0, round: 0, turnId: null, combatants: [] }`. |
+| `PUT`    | `/api/campaigns/:slug/combat`                 | DM only. Replace the encounter. Returns it with a new server-set `revision`.                                |
+| `GET`    | `/api/campaigns/:slug/combat/live`            | WebSocket upgrade for live encounter sync (see below).                                                      |
 
 ### Role matrix
 

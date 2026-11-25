@@ -41,7 +41,9 @@ describe('GoogleSignInService', () => {
     afterEach(() => {
         delete googleWindow.google;
         parent.remove();
-        document.querySelectorAll('script[src="https://accounts.google.com/gsi/client"]').forEach((node) => node.remove());
+        document
+            .querySelectorAll('script[src="https://accounts.google.com/gsi/client"]')
+            .forEach((node) => node.remove());
     });
 
     it('should initialize the Google client with the configured id', async () => {
@@ -52,9 +54,7 @@ describe('GoogleSignInService', () => {
         await service.renderButton(parent, 'client-id', jest.fn());
 
         // Assert
-        expect(google.accounts.id.initialize).toHaveBeenCalledWith(
-            expect.objectContaining({ client_id: 'client-id' })
-        );
+        expect(google.accounts.id.initialize).toHaveBeenCalledWith(expect.objectContaining({ client_id: 'client-id' }));
     });
 
     it('should render the button into the supplied element', async () => {
@@ -82,10 +82,7 @@ describe('GoogleSignInService', () => {
         await service.renderButton(parent, 'client-id', jest.fn());
 
         // Assert
-        expect(google.accounts.id.renderButton).toHaveBeenCalledWith(
-            parent,
-            expect.objectContaining({ width: 320 })
-        );
+        expect(google.accounts.id.renderButton).toHaveBeenCalledWith(parent, expect.objectContaining({ width: 320 }));
     });
 
     it('should forward a non-empty credential to the caller', async () => {

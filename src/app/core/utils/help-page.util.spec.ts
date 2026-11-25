@@ -26,11 +26,7 @@ describe('helpPageUtil', () => {
 
     it('should resolve the fixed campaign pages ahead of the section pattern', () => {
         // Arrange
-        const urls = [
-            '/campaigns/naxxar/inventory',
-            '/campaigns/naxxar/combat',
-            '/campaigns/naxxar/members'
-        ];
+        const urls = ['/campaigns/naxxar/inventory', '/campaigns/naxxar/combat', '/campaigns/naxxar/members'];
 
         // Act
         const pages = urls.map((url) => resolveHelpPage(url));

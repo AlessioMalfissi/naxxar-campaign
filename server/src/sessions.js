@@ -36,6 +36,11 @@ export const hashToken = (token) => {
         return null;
     }
 
+    const bytes = Buffer.from(token, 'base64url');
+    if (bytes.length !== 32 || bytes.toString('base64url') !== token) {
+        return null;
+    }
+
     return createHash('sha256').update(token).digest('hex');
 };
 

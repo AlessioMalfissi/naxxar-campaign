@@ -107,19 +107,13 @@ test('each campaign has its own encounter and revision sequence', async () => {
     const context = await buildFixture();
     const agent = await loginAs(context.app, 'dm@example.com');
 
-    const first = await agent
-        .put(campaignPath(context.campaign, '/combat'))
-        .send({ round: 0, combatants: [] });
-    const second = await agent
-        .put(campaignPath(context.other, '/combat'))
-        .send({ round: 0, combatants: [] });
+    const first = await agent.put(campaignPath(context.campaign, '/combat')).send({ round: 0, combatants: [] });
+    const second = await agent.put(campaignPath(context.other, '/combat')).send({ round: 0, combatants: [] });
 
     assert.equal(first.body.revision, 1);
     assert.equal(second.body.revision, 1);
 
-    const again = await agent
-        .put(campaignPath(context.campaign, '/combat'))
-        .send({ round: 1, combatants: [] });
+    const again = await agent.put(campaignPath(context.campaign, '/combat')).send({ round: 1, combatants: [] });
     assert.equal(again.body.revision, 2);
     assert.equal((await agent.get(campaignPath(context.other, '/combat'))).body.revision, 1);
 });
@@ -186,32 +180,30 @@ test('normalization trims combatants, clamps values and drops blank conditions',
     const context = await buildFixture();
     const agent = await loginAs(context.app, 'dm@example.com');
 
-    const response = await agent
-        .put(campaignPath(context.campaign, '/combat'))
-        .send({
-            round: -3,
-            turnId: 'missing',
-            combatants: [
-                {
-                    id: ' tessaly ',
-                    name: '  Tessaly Oakhand ',
-                    kind: 'player',
-                    entryId: ' players:tessaly-oakhand ',
-                    initiative: '14.7',
-                    initiativeNudge: '2.9',
-                    color: '#AABBCC',
-                    hp: -4,
-                    maxHp: '',
-                    ac: 'tough',
-                    conditions: [
-                        { name: ' Prone ', rounds: null, description: '   ' },
-                        { name: 'Poisoned', rounds: 0 },
-                        { name: '  ' },
-                        { name: 'Hexed', rounds: 2, description: ` ${'x'.repeat(600)} ` }
-                    ]
-                }
-            ]
-        });
+    const response = await agent.put(campaignPath(context.campaign, '/combat')).send({
+        round: -3,
+        turnId: 'missing',
+        combatants: [
+            {
+                id: ' tessaly ',
+                name: '  Tessaly Oakhand ',
+                kind: 'player',
+                entryId: ' players:tessaly-oakhand ',
+                initiative: '14.7',
+                initiativeNudge: '2.9',
+                color: '#AABBCC',
+                hp: -4,
+                maxHp: '',
+                ac: 'tough',
+                conditions: [
+                    { name: ' Prone ', rounds: null, description: '   ' },
+                    { name: 'Poisoned', rounds: 0 },
+                    { name: '  ' },
+                    { name: 'Hexed', rounds: 2, description: ` ${'x'.repeat(600)} ` }
+                ]
+            }
+        ]
+    });
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, {
@@ -280,10 +272,7 @@ test('PUT rejects a body without a combatant list, a nameless combatant, duplica
     const base = campaignPath(context.campaign, '/combat');
 
     assert.equal((await agent.put(base).send({ round: 1 })).status, 400);
-    assert.equal(
-        (await agent.put(base).send({ round: 0, combatants: [goblin({ name: ' ' })] })).status,
-        400
-    );
+    assert.equal((await agent.put(base).send({ round: 0, combatants: [goblin({ name: ' ' })] })).status, 400);
     assert.equal((await agent.put(base).send({ round: 0, combatants: [goblin(), goblin()] })).status, 400);
 
     const combatants = Array.from({ length: MAX_COMBATANTS + 1 }, (_, index) => goblin({ id: `goblin-${index}` }));

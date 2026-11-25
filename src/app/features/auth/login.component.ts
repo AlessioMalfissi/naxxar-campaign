@@ -75,6 +75,8 @@ export class LoginComponent {
     }
 
     protected submit(): void {
+        this.emailControl.setValue(this.emailControl.value.trim());
+
         if (this.emailControl.invalid || this.passwordControl.invalid) {
             this.emailControl.markAsTouched();
             this.passwordControl.markAsTouched();
@@ -83,7 +85,7 @@ export class LoginComponent {
 
         this.store.dispatch(
             AuthActions.login.request({
-                email: this.emailControl.value.trim(),
+                email: this.emailControl.value,
                 password: this.passwordControl.value
             })
         );

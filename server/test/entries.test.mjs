@@ -39,9 +39,7 @@ const sampleEntry = (campaignId, overrides = {}) =>
 test('the same section and slug in two campaigns are two independent entries', async () => {
     const context = await buildFixture();
     await context.entries.insertOne(sampleEntry(context.campaign._id, { body: '# Campaign one\n' }));
-    await context.entries.insertOne(
-        sampleEntry(context.other._id, { body: '# Campaign two\n' })
-    );
+    await context.entries.insertOne(sampleEntry(context.other._id, { body: '# Campaign two\n' }));
     const agent = await loginAs(context.app, 'dm@example.com');
 
     const first = await agent.get(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'));
@@ -102,12 +100,16 @@ test('a player never receives a visibility:dm entry in the list', async () => {
     const agent = await loginAs(context.app, 'player@example.com');
 
     const response = await agent.get(campaignPath(context.campaign, '/entries'));
-    assert.deepEqual(response.body.map((entry) => entry.id), ['npcs:vaelith-corrun']);
+    assert.deepEqual(
+        response.body.map((entry) => entry.id),
+        ['npcs:vaelith-corrun']
+    );
 
-    const forced = await agent
-        .get(campaignPath(context.campaign, '/entries'))
-        .query({ visibility: 'dm' });
-    assert.deepEqual(forced.body.map((entry) => entry.id), ['npcs:vaelith-corrun']);
+    const forced = await agent.get(campaignPath(context.campaign, '/entries')).query({ visibility: 'dm' });
+    assert.deepEqual(
+        forced.body.map((entry) => entry.id),
+        ['npcs:vaelith-corrun']
+    );
 });
 
 test('a player gets a 404 for a DM-only entry and cannot read :::dm blocks', async () => {
@@ -134,9 +136,7 @@ test('a player gets a 404 for a DM-only entry and cannot read :::dm blocks', asy
 
 test('the DM still sees :::dm content', async () => {
     const context = await buildFixture();
-    await context.entries.insertOne(
-        sampleEntry(context.campaign._id, { body: '# Public\n\n:::dm\nSecret.\n:::\n' })
-    );
+    await context.entries.insertOne(sampleEntry(context.campaign._id, { body: '# Public\n\n:::dm\nSecret.\n:::\n' }));
     const agent = await loginAs(context.app, 'dm@example.com');
 
     const response = await agent.get(campaignPath(context.campaign, '/entries/npcs/vaelith-corrun'));

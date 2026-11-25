@@ -1,18 +1,7 @@
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import {
-    ApplicationConfig,
-    inject,
-    isDevMode,
-    provideAppInitializer,
-    provideZoneChangeDetection
-} from '@angular/core';
+import { ApplicationConfig, inject, isDevMode, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import {
-    provideRouter,
-    RouteReuseStrategy,
-    withComponentInputBinding,
-    withInMemoryScrolling
-} from '@angular/router';
+import { provideRouter, RouteReuseStrategy, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideStore, Store } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';

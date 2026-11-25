@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -113,12 +113,7 @@ describe('MembersComponent', () => {
         await create('dm');
 
         // Assert
-        expect(component['columns']().map((column) => column.key)).toEqual([
-            'name',
-            'status',
-            'joined',
-            'email'
-        ]);
+        expect(component['columns']().map((column) => column.key)).toEqual(['name', 'status', 'joined', 'email']);
         expect(component['rows']()[0].cells['email']).toBe('dm@naxxar.local');
     });
 
@@ -197,4 +192,8 @@ describe('MembersComponent', () => {
 });
 
 @Component({ selector: 'cdx-data-table', standalone: true, template: '' })
-class DataTableMockComponent {}
+class DataTableMockComponent {
+    @Input() columns: unknown[] = [];
+    @Input() rows: unknown[] = [];
+    @Input() emptyMessage = '';
+}

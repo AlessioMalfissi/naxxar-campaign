@@ -8,19 +8,9 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { CampaignContextService } from '@core/services/campaign-context.service';
 import { buildSummary } from '@testing/entry.fixtures';
 import * as AuthActions from '@store/auth/auth.actions';
-import {
-    selectActiveCampaign,
-    selectActiveRole,
-    selectCampaigns,
-    selectUser
-} from '@store/auth/auth.selectors';
+import { selectActiveCampaign, selectActiveRole, selectCampaigns, selectUser } from '@store/auth/auth.selectors';
 import * as CodexActions from '@store/codex/codex.actions';
-import {
-    selectDmPreview,
-    selectHelpOpen,
-    selectPlayerMode,
-    selectVisibleEntries
-} from '@store/codex/codex.selectors';
+import { selectDmPreview, selectHelpOpen, selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
 import { CodexHeaderComponent } from './codex-header.component';
 
 describe('CodexHeaderComponent', () => {
@@ -51,9 +41,7 @@ describe('CodexHeaderComponent', () => {
             email: 'dm@naxxar.local',
             displayName: 'Dungeon Master'
         });
-        store.overrideSelector(selectCampaigns, [
-            { id: 'campaign-1', slug: 'naxxar', name: 'Naxxar', role: 'dm' }
-        ]);
+        store.overrideSelector(selectCampaigns, [{ id: 'campaign-1', slug: 'naxxar', name: 'Naxxar', role: 'dm' }]);
         store.overrideSelector(selectActiveCampaign, {
             id: 'campaign-1',
             slug: 'naxxar',

@@ -18,11 +18,11 @@ describe('ResetPasswordComponent', () => {
             imports: [ResetPasswordComponent, NoopAnimationsModule],
             providers: [
                 provideMockStore({ initialState: {} }),
+                provideRouter([]),
                 {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { paramMap: convertToParamMap({ token: 'reset-token' }) } }
-                },
-                provideRouter([])
+                }
             ]
         }).compileComponents();
 

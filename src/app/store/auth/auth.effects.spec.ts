@@ -121,18 +121,14 @@ describe('AuthEffects', () => {
 
     it('should carry the message and status of a failed login', async () => {
         // Arrange
-        authApi.login.mockReturnValue(
-            throwError(() => new ApiError(401, 'Incorrect email or password.'))
-        );
+        authApi.login.mockReturnValue(throwError(() => new ApiError(401, 'Incorrect email or password.')));
         actions$.next(AuthActions.login.request({ email: 'dm@naxxar.local', password: 'wrong' }));
 
         // Act
         const result = await dispatched(effects.login$);
 
         // Assert
-        expect(result).toEqual(
-            AuthActions.login.failure({ error: 'Incorrect email or password.', status: 401 })
-        );
+        expect(result).toEqual(AuthActions.login.failure({ error: 'Incorrect email or password.', status: 401 }));
     });
 
     it('should map Google sign-in onto a success action', async () => {
@@ -150,9 +146,7 @@ describe('AuthEffects', () => {
 
     it('should register through an invite', async () => {
         // Arrange
-        authApi.registerWithInvite.mockReturnValue(
-            of({ user: USER, campaigns: [NAXXAR], campaign: NAXXAR })
-        );
+        authApi.registerWithInvite.mockReturnValue(of({ user: USER, campaigns: [NAXXAR], campaign: NAXXAR }));
         actions$.next(
             AuthActions.registerViaInvite.request({
                 token: 'token',
@@ -314,9 +308,7 @@ describe('AuthEffects', () => {
 
     it('should navigate to the joined campaign after invite registration', async () => {
         // Arrange
-        actions$.next(
-            AuthActions.registerViaInvite.success({ user: USER, campaigns: [NAXXAR], campaign: NAXXAR })
-        );
+        actions$.next(AuthActions.registerViaInvite.success({ user: USER, campaigns: [NAXXAR], campaign: NAXXAR }));
 
         // Act
         await dispatched(effects.inviteRegistrationSuccess$);

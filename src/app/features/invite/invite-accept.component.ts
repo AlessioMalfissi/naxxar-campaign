@@ -139,16 +139,19 @@ export class InviteAcceptComponent implements OnInit {
         effect(() => {
             const clientId = this.googleClientId();
             const element = this.googleButton()?.nativeElement;
-            if (!this.showGoogle() || clientId === null || element === undefined || this.renderedClientId === clientId) {
+            if (
+                !this.showGoogle() ||
+                clientId === null ||
+                element === undefined ||
+                this.renderedClientId === clientId
+            ) {
                 return;
             }
 
             this.renderedClientId = clientId;
             void this.googleSignIn
                 .renderButton(element, clientId, (credential) => {
-                    this.store.dispatch(
-                        AuthActions.googleRegisterViaInvite.request({ token: this.token, credential })
-                    );
+                    this.store.dispatch(AuthActions.googleRegisterViaInvite.request({ token: this.token, credential }));
                 })
                 .catch(() => {
                     this.renderedClientId = null;
@@ -172,8 +175,13 @@ export class InviteAcceptComponent implements OnInit {
     }
 
     protected submitRegistration(): void {
+        const displayName = this.displayNameControl.value.trim();
+        const email = this.emailControl.value.trim();
         const password = this.passwordControl.value;
         const confirm = this.confirmControl.value;
+
+        this.displayNameControl.setValue(displayName);
+        this.emailControl.setValue(email);
 
         if (
             this.displayNameControl.invalid ||
@@ -194,8 +202,8 @@ export class InviteAcceptComponent implements OnInit {
         this.store.dispatch(
             AuthActions.registerViaInvite.request({
                 token: this.token,
-                displayName: this.displayNameControl.value.trim(),
-                email: this.emailControl.value.trim(),
+                displayName,
+                email,
                 password
             })
         );

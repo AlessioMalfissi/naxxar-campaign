@@ -11,14 +11,19 @@ import { PurseApiService } from './purse-api.service';
 describe('PurseApiService', () => {
     let service: PurseApiService;
     let httpMock: HttpTestingController;
+    let campaignSlug = 'naxxar';
 
     beforeEach(() => {
         // Arrange
+        campaignSlug = 'naxxar';
         TestBed.configureTestingModule({
             providers: [
                 provideHttpClient(),
                 provideHttpClientTesting(),
-                { provide: CampaignContextService, useValue: { baseUrl: () => '/api/campaigns/naxxar' } }
+                {
+                    provide: CampaignContextService,
+                    useValue: { baseUrl: () => `/api/campaigns/${campaignSlug}` }
+                }
             ]
         });
         service = TestBed.inject(PurseApiService);
@@ -87,9 +92,24 @@ describe('PurseApiService', () => {
 
         // Act
         service.updateGold('party', 50).subscribe({ error: (thrown: Error) => (error = thrown) });
-        httpMock.expectOne('/api/campaigns/naxxar/purses/party').flush(null, { status: 500, statusText: 'Server Error' });
+        httpMock
+            .expectOne('/api/campaigns/naxxar/purses/party')
+            .flush(null, { status: 500, statusText: 'Server Error' });
 
         // Assert
         expect(error!.message).toBe("Couldn't update gold. Retry.");
+    });
+
+    it('should read the campaign slug for every request', () => {
+        // Arrange
+        campaignSlug = 'other';
+
+        // Act
+        service.loadPurses().subscribe();
+        const request = httpMock.expectOne(`/api/campaigns/other/purses`);
+
+        // Assert
+        expect(request.request.method).toBe('GET');
+        request.flush([]);
     });
 });

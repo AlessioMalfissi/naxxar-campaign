@@ -23,8 +23,8 @@
         <section class="cdx-campaigns-empty">
             <h2>No campaigns yet</h2>
             <p>
-                Campaigns you create or join appear here. To join someone else's campaign, open the single-use
-                invite link your DM sent you.
+                Campaigns you create or join appear here. To join someone else's campaign, open the single-use invite
+                link your DM sent you.
             </p>
         </section>
     } @else {
@@ -33,10 +33,7 @@
                 <article class="cdx-campaign-card">
                     <div class="cdx-campaign-card-head">
                         <h2 class="cdx-campaign-name">{{ campaign.name }}</h2>
-                        <span
-                            class="cdx-campaign-role"
-                            [class.cdx-campaign-role-dm]="campaign.role === 'dm'"
-                        >
+                        <span class="cdx-campaign-role" [class.cdx-campaign-role-dm]="campaign.role === 'dm'">
                             {{ roleLabel(campaign.role) }}
                         </span>
                     </div>

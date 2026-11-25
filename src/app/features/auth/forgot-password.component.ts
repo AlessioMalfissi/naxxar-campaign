@@ -28,12 +28,14 @@ export class ForgotPasswordComponent {
     protected readonly returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
 
     protected submit(): void {
+        this.emailControl.setValue(this.emailControl.value.trim());
+
         if (this.emailControl.invalid) {
             this.emailControl.markAsTouched();
             return;
         }
 
-        this.store.dispatch(AuthActions.forgotPassword.request({ email: this.emailControl.value.trim() }));
+        this.store.dispatch(AuthActions.forgotPassword.request({ email: this.emailControl.value }));
         // The API always answers 202, so the confirmation is shown without waiting and does not
         // reveal whether the address belongs to an account.
         this.submitted.set(true);

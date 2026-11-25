@@ -148,5 +148,4 @@ describe('inventoryReducer', () => {
         // Assert
         expect(state).toEqual(INITIAL_INVENTORY_STATE);
     });
-
 });

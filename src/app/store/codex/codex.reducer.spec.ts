@@ -303,5 +303,4 @@ describe('codexReducer', () => {
         expect(state.sidebarCollapsed).toBe(true);
         expect(state.helpOpen).toBe(false);
     });
-
 });

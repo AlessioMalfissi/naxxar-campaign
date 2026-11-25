@@ -70,7 +70,10 @@ export const createCampaignsRouter = ({ campaigns, memberships }) => {
         try {
             const name = normalizeCampaignName((req.body ?? {}).name);
             if (name.length < MIN_CAMPAIGN_NAME_LENGTH || name.length > MAX_CAMPAIGN_NAME_LENGTH) {
-                throw new HttpError(400, `Campaign name must be ${MIN_CAMPAIGN_NAME_LENGTH}-${MAX_CAMPAIGN_NAME_LENGTH} characters.`);
+                throw new HttpError(
+                    400,
+                    `Campaign name must be ${MIN_CAMPAIGN_NAME_LENGTH}-${MAX_CAMPAIGN_NAME_LENGTH} characters.`
+                );
             }
 
             const baseSlug = slugify(name);
@@ -132,9 +135,7 @@ export const createCampaignRouter = ({
             const campaignId = req.campaign.doc._id;
             const rows = await memberships.find({ campaignId }).toArray();
             const memberUsers =
-                rows.length === 0
-                    ? []
-                    : await users.find({ _id: { $in: rows.map((row) => row.userId) } }).toArray();
+                rows.length === 0 ? [] : await users.find({ _id: { $in: rows.map((row) => row.userId) } }).toArray();
             const byId = new Map(memberUsers.map((user) => [user._id, user]));
             const showEmail = req.campaign.role === 'dm';
 

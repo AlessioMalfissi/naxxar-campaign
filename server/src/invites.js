@@ -2,13 +2,7 @@ import { Router } from 'express';
 
 import { loadCampaignSummaries, toCampaignSummary } from './campaigns.js';
 import { HttpError } from './http-error.js';
-import {
-    createSession,
-    createSessionToken,
-    hashToken,
-    noStore,
-    setSessionCookie
-} from './sessions.js';
+import { createSession, createSessionToken, hashToken, noStore, setSessionCookie } from './sessions.js';
 import {
     createUser,
     findUserByEmail,
@@ -22,7 +16,6 @@ import {
 export const INVITE_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 const createInviteToken = () => createSessionToken().token;
-
 
 const loadInvite = async (invites, token) => {
     const tokenHash = hashToken(token);

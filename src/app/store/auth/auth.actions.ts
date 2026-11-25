@@ -1,12 +1,6 @@
 import { createAction, props } from '@ngrx/store';
 
-import {
-    IAuthResponse,
-    ICampaignSummary,
-    IInviteAuthResponse,
-    IPublicConfig,
-    ISessionResponse
-} from '@core/models';
+import { IAuthResponse, ICampaignSummary, IInviteAuthResponse, IPublicConfig, ISessionResponse } from '@core/models';
 import { createApiAction } from '../create-api-action';
 
 const SOURCE = 'Auth';

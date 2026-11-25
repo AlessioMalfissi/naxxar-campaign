@@ -18,12 +18,10 @@ export class CampaignApiService {
     }
 
     getCampaign(slug: string): Observable<ICampaignSummary> {
-        return this.http
-            .get<{ campaign: ICampaignSummary }>(`${CAMPAIGNS_URL}/${encodeURIComponent(slug)}`)
-            .pipe(
-                map((response) => response.campaign),
-                catchError(this.toFriendlyError('Campaign not found.'))
-            );
+        return this.http.get<{ campaign: ICampaignSummary }>(`${CAMPAIGNS_URL}/${encodeURIComponent(slug)}`).pipe(
+            map((response) => response.campaign),
+            catchError(this.toFriendlyError('Campaign not found.'))
+        );
     }
 
     createCampaign(name: string): Observable<ICampaignSummary> {

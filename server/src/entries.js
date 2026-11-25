@@ -49,6 +49,10 @@ export const stripDmBlocks = (body) => {
         output.push(line);
     }
 
+    if (insideDmBlock && output.length > 0 && output[output.length - 1] !== '') {
+        output.push('');
+    }
+
     return output.join('\n');
 };
 

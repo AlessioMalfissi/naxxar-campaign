@@ -81,7 +81,9 @@ export class CodexApiService {
             return throwError(() => new Error('Invalid entry id.'));
         }
 
-        return this.http.delete<void>(`${this.entriesUrl()}/${reference.section}/${reference.slug}`).pipe(map(() => id));
+        return this.http
+            .delete<void>(`${this.entriesUrl()}/${reference.section}/${reference.slug}`)
+            .pipe(map(() => id));
     }
 
     private entriesUrl(): string {

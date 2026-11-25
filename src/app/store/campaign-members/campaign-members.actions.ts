@@ -25,9 +25,6 @@ export const loadInvitePreview = createApiAction<{ token: string }, { preview: I
     'load invite preview'
 );
 
-export const acceptInvite = createApiAction<{ token: string }, { campaign: { slug: string } }>(
-    SOURCE,
-    'accept invite'
-);
+export const acceptInvite = createApiAction<{ token: string }, { campaign: { slug: string } }>(SOURCE, 'accept invite');
 
 export const membersCleared = createAction(`[${SOURCE}] cleared`);

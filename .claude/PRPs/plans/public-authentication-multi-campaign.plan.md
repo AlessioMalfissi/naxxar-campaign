@@ -116,27 +116,27 @@ A third story covers account recovery and onboarding:
 
 ## 4. Scope Decisions
 
-| Area | Decision |
-| --- | --- |
-| Tenancy | `campaign` is the tenant. Every content document gets `campaignId`. Content routes and WebSockets are campaign-scoped. |
-| Accounts | One user record per person. Users can belong to many campaigns with different roles. |
-| Registration | Invite-only. A valid invite token is the only way to create an account. There is no standalone registration page or open endpoint; `/register` redirects to `/login`. |
-| Invite registration | `POST /api/invites/:token/register` (email + password) and `POST /api/invites/:token/google` create an account only with a valid, unused invite. `/api/auth/google` is login-only and never creates an account. |
-| Campaign creation | Any authenticated user can create a campaign and becomes its single DM. |
-| Roles | `dm` and `player`, stored on membership. No co-DMs, role changes, or ownership transfer in this phase. |
-| Password auth | Email + password. Argon2id at OWASP-recommended parameters. |
-| Google auth | Google Identity Services ID token, verified server-side. Auto-link to an existing account only by verified email when `googleSub` is empty. |
-| Sessions | Opaque 32-byte token in an httpOnly `naxxar_session` cookie. Only the SHA-256 token hash is stored in `sessions`; 30-day expiry checked in code and by TTL index. |
-| Invites | DM-generated copy-link only. 7-day expiry, single use, token hash stored. No invite emails. |
-| Password reset | Email link through SMTP. Dev logs the link. Production requires SMTP configuration at startup. |
-| Authorization | Server middleware for auth, campaign membership, and DM-only writes. Players are read-only for all campaign content. |
-| DM-only content | Players cannot list or fetch `visibility: dm` entries, and `:::dm` blocks are stripped from entry bodies returned to players. |
-| Public IDs | Codex entry APIs continue to expose `section:slug`; storage uses `${campaignId}:${section}:${slug}`. Inventory keeps UUID ids. Purses and combat use campaign-composited internal `_id`s. |
-| Deterministic dev login | In-memory dev database seeds `dm@naxxar.local` / `app` and the `Naxxar` campaign. Production never enables this fallback. |
-| Client role modeling | `codex.dmPreview` is a DM-only rendering toggle. The existing `selectPlayerMode` selector becomes role-derived (`role === player || dmPreview`) to minimize template churn. |
-| Route reuse | A custom `RouteReuseStrategy` returns `false` when `campaignSlug` changes, recreating the shell and its WebSocket/lifecycle. |
-| CSRF | Same-origin deployment, no wildcard CORS, SameSite=Lax session cookie, and rejection of unsafe cross-origin requests using `Origin` / `Sec-Fetch-Site`. |
-| Deployment target | One Express instance. In-memory rate limits and in-process WebSocket rooms are acceptable for this phase and documented as scaling limits. |
+| Area                    | Decision                                                                                                                                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenancy                 | `campaign` is the tenant. Every content document gets `campaignId`. Content routes and WebSockets are campaign-scoped.                                                                                          |
+| Accounts                | One user record per person. Users can belong to many campaigns with different roles.                                                                                                                            |
+| Registration            | Invite-only. A valid invite token is the only way to create an account. There is no standalone registration page or open endpoint; `/register` redirects to `/login`.                                           |
+| Invite registration     | `POST /api/invites/:token/register` (email + password) and `POST /api/invites/:token/google` create an account only with a valid, unused invite. `/api/auth/google` is login-only and never creates an account. |
+| Campaign creation       | Any authenticated user can create a campaign and becomes its single DM.                                                                                                                                         |
+| Roles                   | `dm` and `player`, stored on membership. No co-DMs, role changes, or ownership transfer in this phase.                                                                                                          |
+| Password auth           | Email + password. Argon2id at OWASP-recommended parameters.                                                                                                                                                     |
+| Google auth             | Google Identity Services ID token, verified server-side. Auto-link to an existing account only by verified email when `googleSub` is empty.                                                                     |
+| Sessions                | Opaque 32-byte token in an httpOnly `naxxar_session` cookie. Only the SHA-256 token hash is stored in `sessions`; 30-day expiry checked in code and by TTL index.                                               |
+| Invites                 | DM-generated copy-link only. 7-day expiry, single use, token hash stored. No invite emails.                                                                                                                     |
+| Password reset          | Email link through SMTP. Dev logs the link. Production requires SMTP configuration at startup.                                                                                                                  |
+| Authorization           | Server middleware for auth, campaign membership, and DM-only writes. Players are read-only for all campaign content.                                                                                            |
+| DM-only content         | Players cannot list or fetch `visibility: dm` entries, and `:::dm` blocks are stripped from entry bodies returned to players.                                                                                   |
+| Public IDs              | Codex entry APIs continue to expose `section:slug`; storage uses `${campaignId}:${section}:${slug}`. Inventory keeps UUID ids. Purses and combat use campaign-composited internal `_id`s.                       |
+| Deterministic dev login | In-memory dev database seeds `dm@naxxar.local` / `app` and the `Naxxar` campaign. Production never enables this fallback.                                                                                       |
+| Client role modeling    | `codex.dmPreview` is a DM-only rendering toggle. The existing `selectPlayerMode` selector becomes role-derived (`role === player                                                                                |     | dmPreview`) to minimize template churn. |
+| Route reuse             | A custom `RouteReuseStrategy` returns `false` when `campaignSlug` changes, recreating the shell and its WebSocket/lifecycle.                                                                                    |
+| CSRF                    | Same-origin deployment, no wildcard CORS, SameSite=Lax session cookie, and rejection of unsafe cross-origin requests using `Origin` / `Sec-Fetch-Site`.                                                         |
+| Deployment target       | One Express instance. In-memory rate limits and in-process WebSocket rooms are acceptable for this phase and documented as scaling limits.                                                                      |
 
 ### Explicitly NOT building
 
@@ -198,32 +198,32 @@ limit, not solved in this phase.
 
 ### 5.2 Server module layout
 
-| File | Status | Responsibility |
-| --- | --- | --- |
-| `server/src/config.js` | rewrite | Parse `APP_ORIGIN`, `GOOGLE_CLIENT_ID`, `SMTP_URL`, `MAIL_FROM`, `TRUST_PROXY`, dev seed credentials. Remove `APP_PASSWORD` / `SESSION_SECRET`. |
-| `server/src/index.js` | rewrite | Fail-fast production checks, build Argon2/SMTP/Google services, wire collections, start HTTP + WebSocket. |
-| `server/src/db.js` | extend | Return `users`, `sessions`, `campaigns`, `memberships`, `invites`, `passwordResets`; create all indexes from 6.2. |
-| `server/src/in-memory-db.js` | extend | Seed the dev DM user, dev campaign, DM membership, plus campaign-scoped content. |
-| `server/src/passwords.js` | new | Argon2id hash/verify, dummy verify for unknown emails, password length policy. |
-| `server/src/sessions.js` | new | Token generation/hash, cookie set/clear, session lookup, revocation, `loadSession`, `requireAuth`, CSRF origin check. |
-| `server/src/users.js` | new | Email normalization, user lookup, public user shape, Google link helpers. |
-| `server/src/google.js` | new | Thin wrapper around `google-auth-library` `verifyIdToken`; injectable for tests. |
-| `server/src/mailer.js` | new | Nodemailer transport; dev logs reset links instead of sending. |
-| `server/src/auth.js` | rewrite | `/api/auth` router: login, google, logout, me, forgot-password, reset-password. |
-| `server/src/invites.js` | new | Public preview, invite-only registration/Google, existing-user accept, and DM create/list. |
-| `server/src/campaigns.js` | new | Campaign list/create and the campaign-scoped router composition. |
-| `server/src/campaign-access.js` | new | Resolve `campaignSlug`, load membership, `requireCampaignMember`, `requireCampaignDm`. |
-| `server/src/entries.js` | rewrite | Campaign-scoped entry CRUD, DM-entry filtering, `:::dm` stripping for players. |
-| `server/src/inventory.js` | rewrite | Campaign-scoped inventory CRUD. |
-| `server/src/purses.js` | rewrite | Campaign-scoped purses. |
-| `server/src/combat.js` | rewrite | Campaign-scoped encounter read/write and per-campaign `onSaved`. |
-| `server/src/combat-live.js` | rewrite | Campaign rooms, session + membership check on upgrade, per-campaign broadcast. |
-| `server/src/app.js` | rewrite | Remove `cors()`, mount config/auth/invites/campaigns, add CSRF and error handling. |
-| `server/src/in-memory-collection.js` | extend | Add `deleteMany`, `$in`, `$ne`, and `$exists` support needed by auth/campaign queries. |
-| `server/src/seed.js` | extend | Build entries for a supplied campaign id. |
-| `server/scripts/bootstrap.mjs` | new | Create users, campaigns, DM memberships; reset passwords for lockout recovery. |
-| `server/scripts/migrate-campaign-scope.mjs` | new | One-shot legacy-data migration (Section 11). |
-| `server/scripts/seed.mjs` | extend | Seed into a named campaign. |
+| File                                        | Status  | Responsibility                                                                                                                                  |
+| ------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server/src/config.js`                      | rewrite | Parse `APP_ORIGIN`, `GOOGLE_CLIENT_ID`, `SMTP_URL`, `MAIL_FROM`, `TRUST_PROXY`, dev seed credentials. Remove `APP_PASSWORD` / `SESSION_SECRET`. |
+| `server/src/index.js`                       | rewrite | Fail-fast production checks, build Argon2/SMTP/Google services, wire collections, start HTTP + WebSocket.                                       |
+| `server/src/db.js`                          | extend  | Return `users`, `sessions`, `campaigns`, `memberships`, `invites`, `passwordResets`; create all indexes from 6.2.                               |
+| `server/src/in-memory-db.js`                | extend  | Seed the dev DM user, dev campaign, DM membership, plus campaign-scoped content.                                                                |
+| `server/src/passwords.js`                   | new     | Argon2id hash/verify, dummy verify for unknown emails, password length policy.                                                                  |
+| `server/src/sessions.js`                    | new     | Token generation/hash, cookie set/clear, session lookup, revocation, `loadSession`, `requireAuth`, CSRF origin check.                           |
+| `server/src/users.js`                       | new     | Email normalization, user lookup, public user shape, Google link helpers.                                                                       |
+| `server/src/google.js`                      | new     | Thin wrapper around `google-auth-library` `verifyIdToken`; injectable for tests.                                                                |
+| `server/src/mailer.js`                      | new     | Nodemailer transport; dev logs reset links instead of sending.                                                                                  |
+| `server/src/auth.js`                        | rewrite | `/api/auth` router: login, google, logout, me, forgot-password, reset-password.                                                                 |
+| `server/src/invites.js`                     | new     | Public preview, invite-only registration/Google, existing-user accept, and DM create/list.                                                      |
+| `server/src/campaigns.js`                   | new     | Campaign list/create and the campaign-scoped router composition.                                                                                |
+| `server/src/campaign-access.js`             | new     | Resolve `campaignSlug`, load membership, `requireCampaignMember`, `requireCampaignDm`.                                                          |
+| `server/src/entries.js`                     | rewrite | Campaign-scoped entry CRUD, DM-entry filtering, `:::dm` stripping for players.                                                                  |
+| `server/src/inventory.js`                   | rewrite | Campaign-scoped inventory CRUD.                                                                                                                 |
+| `server/src/purses.js`                      | rewrite | Campaign-scoped purses.                                                                                                                         |
+| `server/src/combat.js`                      | rewrite | Campaign-scoped encounter read/write and per-campaign `onSaved`.                                                                                |
+| `server/src/combat-live.js`                 | rewrite | Campaign rooms, session + membership check on upgrade, per-campaign broadcast.                                                                  |
+| `server/src/app.js`                         | rewrite | Remove `cors()`, mount config/auth/invites/campaigns, add CSRF and error handling.                                                              |
+| `server/src/in-memory-collection.js`        | extend  | Add `deleteMany`, `$in`, `$ne`, and `$exists` support needed by auth/campaign queries.                                                          |
+| `server/src/seed.js`                        | extend  | Build entries for a supplied campaign id.                                                                                                       |
+| `server/scripts/bootstrap.mjs`              | new     | Create users, campaigns, DM memberships; reset passwords for lockout recovery.                                                                  |
+| `server/scripts/migrate-campaign-scope.mjs` | new     | One-shot legacy-data migration (Section 11).                                                                                                    |
+| `server/scripts/seed.mjs`                   | extend  | Seed into a named campaign.                                                                                                                     |
 
 ### 5.3 Request lifecycle
 
@@ -248,35 +248,35 @@ small `asyncHandler` wrapper introduced once and used consistently.
 
 ### 5.4 Client module layout
 
-| Area | Status | Responsibility |
-| --- | --- | --- |
-| `src/app/core/models/i-user.ts` | new | `IUser { id, email, displayName }`. |
-| `src/app/core/models/i-campaign.ts` | new | `ICampaignSummary { id, slug, name, role }`, `CampaignRole` union. |
-| `src/app/core/models/i-campaign-member.ts` | new | Member row for the members page. |
-| `src/app/core/models/i-invite.ts` | new | Invite metadata and create response. |
-| `src/app/core/models/i-public-config.ts` | new | `{ googleClientId: string \| null }`. |
-| `src/app/core/services/auth-api.service.ts` | rewrite | Typed auth calls plus Google credential exchange. |
-| `src/app/core/services/campaign-api.service.ts` | new | `GET/POST /api/campaigns`. |
-| `src/app/core/services/campaign-members-api.service.ts` | new | Members and invites for a campaign slug. |
-| `src/app/core/services/campaign-context.service.ts` | new | Holds the active campaign slug/id and builds campaign API URLs. |
-| `src/app/core/services/campaign-route-reuse.strategy.ts` | new | Returns `false` when `campaignSlug` changes. |
-| `src/app/core/guards/auth.guard.ts` | rewrite | Session-aware auth/guest guards with `returnUrl`; add `campaignMemberGuard`. |
-| `src/app/app.routes.ts` | rewrite | Campaign picker, campaign-scoped shell, invite/reset routes. |
-| `src/app/app.config.ts` | extend | Provide the route reuse strategy. |
-| `src/app/store/auth/*` | rewrite | Session/user/campaigns/config state, auth actions, effects, selectors, reducer, specs. |
-| `src/app/store/campaign-members/*` | new | Members/invites slice, actions, effects, reducer, selectors, specs. |
-| `src/app/features/auth/login.component.*` | rewrite | Email/password + Google button. |
-| `src/app/features/auth/forgot-password.component.*` | new | Request a reset link. |
-| `src/app/features/auth/reset-password.component.*` | new | Set a new password from a token. |
-| `src/app/features/invite/invite-accept.component.*` | new | Preview, register, and accept an invite. |
-| `src/app/features/campaigns/campaign-list.component.*` | new | Campaign cards + create dialog. |
-| `src/app/features/members/members.component.*` | new | Member list; DM invite creation and invite history. |
-| `src/app/features/shell/*` | extend | Campaign switcher, member link, campaign-scoped links. |
-| `src/app/features/entry-detail/*` | extend | Role-derived player view and campaign-scoped navigation. |
-| `src/app/features/section-list/*` | extend | Campaign-scoped navigation. |
-| `src/app/core/services/markdown-renderer.service.ts` | extend | Campaign-aware entity links. |
-| `src/app/core/utils/help-page.util.ts` | extend | Resolve help pages under `/campaigns/:slug/...`. |
-| `src/app/core/services/combat-live.service.ts` | extend | Campaign-scoped WebSocket URL. |
+| Area                                                     | Status  | Responsibility                                                                         |
+| -------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------- |
+| `src/app/core/models/i-user.ts`                          | new     | `IUser { id, email, displayName }`.                                                    |
+| `src/app/core/models/i-campaign.ts`                      | new     | `ICampaignSummary { id, slug, name, role }`, `CampaignRole` union.                     |
+| `src/app/core/models/i-campaign-member.ts`               | new     | Member row for the members page.                                                       |
+| `src/app/core/models/i-invite.ts`                        | new     | Invite metadata and create response.                                                   |
+| `src/app/core/models/i-public-config.ts`                 | new     | `{ googleClientId: string \| null }`.                                                  |
+| `src/app/core/services/auth-api.service.ts`              | rewrite | Typed auth calls plus Google credential exchange.                                      |
+| `src/app/core/services/campaign-api.service.ts`          | new     | `GET/POST /api/campaigns`.                                                             |
+| `src/app/core/services/campaign-members-api.service.ts`  | new     | Members and invites for a campaign slug.                                               |
+| `src/app/core/services/campaign-context.service.ts`      | new     | Holds the active campaign slug/id and builds campaign API URLs.                        |
+| `src/app/core/services/campaign-route-reuse.strategy.ts` | new     | Returns `false` when `campaignSlug` changes.                                           |
+| `src/app/core/guards/auth.guard.ts`                      | rewrite | Session-aware auth/guest guards with `returnUrl`; add `campaignMemberGuard`.           |
+| `src/app/app.routes.ts`                                  | rewrite | Campaign picker, campaign-scoped shell, invite/reset routes.                           |
+| `src/app/app.config.ts`                                  | extend  | Provide the route reuse strategy.                                                      |
+| `src/app/store/auth/*`                                   | rewrite | Session/user/campaigns/config state, auth actions, effects, selectors, reducer, specs. |
+| `src/app/store/campaign-members/*`                       | new     | Members/invites slice, actions, effects, reducer, selectors, specs.                    |
+| `src/app/features/auth/login.component.*`                | rewrite | Email/password + Google button.                                                        |
+| `src/app/features/auth/forgot-password.component.*`      | new     | Request a reset link.                                                                  |
+| `src/app/features/auth/reset-password.component.*`       | new     | Set a new password from a token.                                                       |
+| `src/app/features/invite/invite-accept.component.*`      | new     | Preview, register, and accept an invite.                                               |
+| `src/app/features/campaigns/campaign-list.component.*`   | new     | Campaign cards + create dialog.                                                        |
+| `src/app/features/members/members.component.*`           | new     | Member list; DM invite creation and invite history.                                    |
+| `src/app/features/shell/*`                               | extend  | Campaign switcher, member link, campaign-scoped links.                                 |
+| `src/app/features/entry-detail/*`                        | extend  | Role-derived player view and campaign-scoped navigation.                               |
+| `src/app/features/section-list/*`                        | extend  | Campaign-scoped navigation.                                                            |
+| `src/app/core/services/markdown-renderer.service.ts`     | extend  | Campaign-aware entity links.                                                           |
+| `src/app/core/utils/help-page.util.ts`                   | extend  | Resolve help pages under `/campaigns/:slug/...`.                                       |
+| `src/app/core/services/combat-live.service.ts`           | extend  | Campaign-scoped WebSocket URL.                                                         |
 
 ### 5.5 Invariants
 
@@ -393,23 +393,23 @@ Indexes: TTL `{ expiresAt: 1 }`; `{ userId: 1 }`.
 
 ### 6.7 Content collections
 
-| Collection | `_id` | Campaign fields | Other changes |
-| --- | --- | --- | --- |
-| `entries` | `${campaignId}:${section}:${slug}` | `campaignId` | Public id is `_id` with the `${campaignId}:` prefix removed. Index `{ campaignId: 1, section: 1, status: 1 }`, `{ campaignId: 1, tags: 1 }`. |
-| `inventory` | `randomUUID()` (unchanged) | `campaignId` | Index `{ campaignId: 1, name: 1 }`. Public `id` stays the UUID. |
-| `purses` | `${campaignId}:${owner}` | `campaignId`, `owner` | `toPublicPurse` returns `owner` and `gold`, not `_id`. |
-| `combat` | `${campaignId}:current` | `campaignId` | One encounter per campaign. `revision` remains per campaign. |
+| Collection  | `_id`                              | Campaign fields       | Other changes                                                                                                                                |
+| ----------- | ---------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `entries`   | `${campaignId}:${section}:${slug}` | `campaignId`          | Public id is `_id` with the `${campaignId}:` prefix removed. Index `{ campaignId: 1, section: 1, status: 1 }`, `{ campaignId: 1, tags: 1 }`. |
+| `inventory` | `randomUUID()` (unchanged)         | `campaignId`          | Index `{ campaignId: 1, name: 1 }`. Public `id` stays the UUID.                                                                              |
+| `purses`    | `${campaignId}:${owner}`           | `campaignId`, `owner` | `toPublicPurse` returns `owner` and `gold`, not `_id`.                                                                                       |
+| `combat`    | `${campaignId}:current`            | `campaignId`          | One encounter per campaign. `revision` remains per campaign.                                                                                 |
 
 ### 6.8 Public vs internal identifiers
 
-| Entity | Client-visible id | Stored `_id` | Where the mapping happens |
-| --- | --- | --- | --- |
-| Codex entry | `npcs:vaelith-corrun` | `<uuid>:npcs:vaelith-corrun` | `entries.js` `toPublicEntry` / `buildId` |
-| Inventory item | UUID | same UUID | unchanged |
-| Purse | owner (`party`, `players:...`) | `${campaignId}:${owner}` | `purses.js` |
-| Combat | none | `${campaignId}:current` | `combat.js` |
-| Campaign | slug | UUID | `campaigns.js` |
-| User | UUID | UUID | `users.js` |
+| Entity         | Client-visible id              | Stored `_id`                 | Where the mapping happens                |
+| -------------- | ------------------------------ | ---------------------------- | ---------------------------------------- |
+| Codex entry    | `npcs:vaelith-corrun`          | `<uuid>:npcs:vaelith-corrun` | `entries.js` `toPublicEntry` / `buildId` |
+| Inventory item | UUID                           | same UUID                    | unchanged                                |
+| Purse          | owner (`party`, `players:...`) | `${campaignId}:${owner}`     | `purses.js`                              |
+| Combat         | none                           | `${campaignId}:current`      | `combat.js`                              |
+| Campaign       | slug                           | UUID                         | `campaigns.js`                           |
+| User           | UUID                           | UUID                         | `users.js`                               |
 
 Keeping entry public ids campaign-relative means the Angular codex store, markdown links, inventory
 owners, and URL structure need no id migration inside a campaign.
@@ -423,38 +423,38 @@ All responses are JSON. Errors are `{ "error": "<message>" }`, matching the curr
 
 ### 7.1 Public endpoints
 
-| Method | Path | Behaviour |
-| --- | --- | --- |
-| `GET` | `/api/config` | `{ "googleClientId": "..." \| null }`. Cacheable for a short period. No secrets. |
-| `GET` | `/api/invites/:token` | Preview. `200 { campaignName, campaignSlug, expiresAt }`, `404` unknown, `410` used/expired. |
-| `POST` | `/api/invites/:token/register` | Body `{ displayName, email, password }`. Creates the user, consumes the invite, adds a `player` membership, sets the session cookie, returns `{ user, campaigns, campaign }`. `409` if the email already exists. |
-| `POST` | `/api/invites/:token/google` | Body `{ credential, displayName? }`. Verifies the Google token; logs in an existing matching user or creates a passwordless user, consumes the invite, adds a `player` membership, sets the cookie, returns `{ user, campaigns, campaign }`. |
+| Method | Path                           | Behaviour                                                                                                                                                                                                                                    |
+| ------ | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/config`                  | `{ "googleClientId": "..." \| null }`. Cacheable for a short period. No secrets.                                                                                                                                                             |
+| `GET`  | `/api/invites/:token`          | Preview. `200 { campaignName, campaignSlug, expiresAt }`, `404` unknown, `410` used/expired.                                                                                                                                                 |
+| `POST` | `/api/invites/:token/register` | Body `{ displayName, email, password }`. Creates the user, consumes the invite, adds a `player` membership, sets the session cookie, returns `{ user, campaigns, campaign }`. `409` if the email already exists.                             |
+| `POST` | `/api/invites/:token/google`   | Body `{ credential, displayName? }`. Verifies the Google token; logs in an existing matching user or creates a passwordless user, consumes the invite, adds a `player` membership, sets the cookie, returns `{ user, campaigns, campaign }`. |
 
 ### 7.2 Auth endpoints
 
-| Method | Path | Body | Success | Notes |
-| --- | --- | --- | --- | --- |
-| `POST` | `/api/auth/login` | `{ email, password }` | `200 { user, campaigns }` + cookie | Generic `401 "Incorrect email or password."`. Rate-limited. Dummy Argon2 verify for unknown emails. |
-| `POST` | `/api/auth/google` | `{ credential }` | `200 { user, campaigns }` + cookie | Verify ID token, require `email_verified`, then link/login. Login only; it never creates an account. Invite registration is `/api/invites/:token/google`. Returns `503` when Google is not configured. |
-| `POST` | `/api/auth/logout` | none | `200 { ok: true }` | Deletes the session document and clears the cookie. Always succeeds. |
-| `GET` | `/api/auth/me` | none | `200 { user: IUser \| null, campaigns: [] }` | Never `401`. The client treats `user === null` as signed out. |
-| `POST` | `/api/auth/forgot-password` | `{ email }` | `202 { ok: true }` | Always generic, even for unknown emails. Rate-limited. |
-| `POST` | `/api/auth/reset-password` | `{ token, password }` | `200 { ok: true }` | `400` invalid/expired token or weak password. Revokes every session for that user. |
+| Method | Path                        | Body                  | Success                                      | Notes                                                                                                                                                                                                  |
+| ------ | --------------------------- | --------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST` | `/api/auth/login`           | `{ email, password }` | `200 { user, campaigns }` + cookie           | Generic `401 "Incorrect email or password."`. Rate-limited. Dummy Argon2 verify for unknown emails.                                                                                                    |
+| `POST` | `/api/auth/google`          | `{ credential }`      | `200 { user, campaigns }` + cookie           | Verify ID token, require `email_verified`, then link/login. Login only; it never creates an account. Invite registration is `/api/invites/:token/google`. Returns `503` when Google is not configured. |
+| `POST` | `/api/auth/logout`          | none                  | `200 { ok: true }`                           | Deletes the session document and clears the cookie. Always succeeds.                                                                                                                                   |
+| `GET`  | `/api/auth/me`              | none                  | `200 { user: IUser \| null, campaigns: [] }` | Never `401`. The client treats `user === null` as signed out.                                                                                                                                          |
+| `POST` | `/api/auth/forgot-password` | `{ email }`           | `202 { ok: true }`                           | Always generic, even for unknown emails. Rate-limited.                                                                                                                                                 |
+| `POST` | `/api/auth/reset-password`  | `{ token, password }` | `200 { ok: true }`                           | `400` invalid/expired token or weak password. Revokes every session for that user.                                                                                                                     |
 
 `IUser` is `{ id, email, displayName }`. `campaigns` is the same array as `GET /api/campaigns` so the
 client needs only one round trip after login.
 
 ### 7.3 Campaign endpoints
 
-| Method | Path | Access | Behaviour |
-| --- | --- | --- | --- |
-| `GET` | `/api/campaigns` | authenticated | List the caller's memberships: `[{ id, slug, name, role }]`, sorted by name. |
-| `POST` | `/api/campaigns` | authenticated | Body `{ name }`. Creates the campaign and a `dm` membership for the caller. Slug is `slugify(name)`; on collision append `-2`, `-3`, ... Returns `201 { campaign }`. |
-| `GET` | `/api/campaigns/:campaignSlug` | member | `{ campaign: { id, slug, name, role } }`. Used by deep links; membership failure is `404`. |
-| `GET` | `/api/campaigns/:campaignSlug/members` | member | `{ members: [{ userId, displayName, role, joinedAt }] }`. `email` is included only when the caller is the DM. |
-| `POST` | `/api/campaigns/:campaignSlug/invites` | DM | Creates a 7-day single-use invite. Returns `201 { invite: { url, expiresAt } }` once. |
-| `GET` | `/api/campaigns/:campaignSlug/invites` | DM | `{ invites: [{ createdAt, expiresAt, usedAt, status }] }`. No token or URL. |
-| `POST` | `/api/invites/:token/accept` | authenticated existing user | Adds a `player` membership. Returns `{ campaign }`. Already a member: `200` and leaves the invite unused. New users register through the public invite endpoints in 7.1. |
+| Method | Path                                   | Access                      | Behaviour                                                                                                                                                                |
+| ------ | -------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET`  | `/api/campaigns`                       | authenticated               | List the caller's memberships: `[{ id, slug, name, role }]`, sorted by name.                                                                                             |
+| `POST` | `/api/campaigns`                       | authenticated               | Body `{ name }`. Creates the campaign and a `dm` membership for the caller. Slug is `slugify(name)`; on collision append `-2`, `-3`, ... Returns `201 { campaign }`.     |
+| `GET`  | `/api/campaigns/:campaignSlug`         | member                      | `{ campaign: { id, slug, name, role } }`. Used by deep links; membership failure is `404`.                                                                               |
+| `GET`  | `/api/campaigns/:campaignSlug/members` | member                      | `{ members: [{ userId, displayName, role, joinedAt }] }`. `email` is included only when the caller is the DM.                                                            |
+| `POST` | `/api/campaigns/:campaignSlug/invites` | DM                          | Creates a 7-day single-use invite. Returns `201 { invite: { url, expiresAt } }` once.                                                                                    |
+| `GET`  | `/api/campaigns/:campaignSlug/invites` | DM                          | `{ invites: [{ createdAt, expiresAt, usedAt, status }] }`. No token or URL.                                                                                              |
+| `POST` | `/api/invites/:token/accept`           | authenticated existing user | Adds a `player` membership. Returns `{ campaign }`. Already a member: `200` and leaves the invite unused. New users register through the public invite endpoints in 7.1. |
 
 ### 7.4 Campaign content endpoints
 
@@ -462,36 +462,36 @@ These replace the current top-level content routes. Every route is under
 `/api/campaigns/:campaignSlug` and requires membership. Reads are available to players and the DM;
 writes are DM-only.
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `GET` | `/entries` | Same filters as today. Players never see `visibility: dm` entries. |
-| `GET` | `/entries/:section/:slug` | Players get `404` for DM entries. DM blocks are stripped from `body` for players. |
-| `POST` | `/entries` | DM only. Slug uniqueness is per campaign + section. |
-| `PUT` | `/entries/:section/:slug` | DM only. |
-| `DELETE` | `/entries/:section/:slug` | DM only, idempotent. |
-| `GET` | `/inventory` | Member read. |
-| `POST` | `/inventory` | DM only. |
-| `PATCH` | `/inventory/:id` | DM only. Items from another campaign are `404`. |
-| `DELETE` | `/inventory/:id` | DM only, idempotent. |
-| `GET` | `/purses` | Member read. |
-| `PUT` | `/purses/:owner` | DM only. |
-| `GET` | `/combat` | Member read. |
-| `PUT` | `/combat` | DM only. |
-| `GET` | `/combat/live` | WebSocket upgrade, member only. |
+| Method   | Path                      | Notes                                                                             |
+| -------- | ------------------------- | --------------------------------------------------------------------------------- |
+| `GET`    | `/entries`                | Same filters as today. Players never see `visibility: dm` entries.                |
+| `GET`    | `/entries/:section/:slug` | Players get `404` for DM entries. DM blocks are stripped from `body` for players. |
+| `POST`   | `/entries`                | DM only. Slug uniqueness is per campaign + section.                               |
+| `PUT`    | `/entries/:section/:slug` | DM only.                                                                          |
+| `DELETE` | `/entries/:section/:slug` | DM only, idempotent.                                                              |
+| `GET`    | `/inventory`              | Member read.                                                                      |
+| `POST`   | `/inventory`              | DM only.                                                                          |
+| `PATCH`  | `/inventory/:id`          | DM only. Items from another campaign are `404`.                                   |
+| `DELETE` | `/inventory/:id`          | DM only, idempotent.                                                              |
+| `GET`    | `/purses`                 | Member read.                                                                      |
+| `PUT`    | `/purses/:owner`          | DM only.                                                                          |
+| `GET`    | `/combat`                 | Member read.                                                                      |
+| `PUT`    | `/combat`                 | DM only.                                                                          |
+| `GET`    | `/combat/live`            | WebSocket upgrade, member only.                                                   |
 
 ### 7.5 Error semantics
 
-| Status | Meaning |
-| --- | --- |
-| `400` | Validation failure, malformed body, weak password. |
-| `401` | No/expired session, bad credentials, invalid Google token. |
-| `403` | Signed in and a member, but not the DM for a write. |
-| `404` | Missing resource, **or** campaign not found, **or** campaign not joined. This deliberately hides campaign existence. |
-| `409` | Duplicate campaign slug after retries, an email that already has an account during invite registration, or a Google email collision with a different linked `googleSub`. |
-| `410` | Invite or reset token used/expired. |
-| `429` | Rate limit exceeded. |
-| `500` | Unexpected error; the existing middleware logs it and returns `"Something went wrong."` |
-| `503` | Google sign-in requested but not configured. |
+| Status | Meaning                                                                                                                                                                  |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `400`  | Validation failure, malformed body, weak password.                                                                                                                       |
+| `401`  | No/expired session, bad credentials, invalid Google token.                                                                                                               |
+| `403`  | Signed in and a member, but not the DM for a write.                                                                                                                      |
+| `404`  | Missing resource, **or** campaign not found, **or** campaign not joined. This deliberately hides campaign existence.                                                     |
+| `409`  | Duplicate campaign slug after retries, an email that already has an account during invite registration, or a Google email collision with a different linked `googleSub`. |
+| `410`  | Invite or reset token used/expired.                                                                                                                                      |
+| `429`  | Rate limit exceeded.                                                                                                                                                     |
+| `500`  | Unexpected error; the existing middleware logs it and returns `"Something went wrong."`                                                                                  |
+| `503`  | Google sign-in requested but not configured.                                                                                                                             |
 
 ### 7.6 Cookies, CSRF, and rate limits
 
@@ -527,26 +527,26 @@ writes are DM-only.
 
 ## 8. Authorization Matrix
 
-| Action | Anonymous | Player | DM | Notes |
-| --- | --- | --- | --- | --- |
-| View login/forgot/reset pages | yes | yes | yes | Guest-only guards redirect signed-in users. |
-| Preview invite | yes | yes | yes | Public, shows campaign name/slug and expiry only. |
-| Register via invite | yes, with valid token | yes, with valid token | yes, with valid token | Public by design; the UI offers it only when signed out, and the new session replaces any existing cookie. |
-| Register with Google via invite | yes, with valid token | yes, with valid token | yes, with valid token | Creates or links a passwordless user; the new session replaces any existing cookie. |
-| Accept invite as an existing user | no | yes | yes | Must sign in first; already-member is a no-op. |
-| List/create own campaigns | no | yes | yes | Any user can create a campaign and becomes its DM. |
-| Read campaign content | no | yes | yes | Entries, inventory, purses, combat, members. |
-| Read `visibility: dm` entry | no | **no** | yes | List filters it; detail returns `404`. |
-| Read `:::dm` markdown blocks | no | **no** | yes | Server strips them from `body`. |
-| Create/update/delete entries | no | no | yes | `403` for players. |
-| Create/update/delete inventory | no | no | yes | `403` for players. |
-| Update purses | no | no | yes | `403` for players. |
-| Read combat | no | yes | yes | Live WebSocket is member-only. |
-| Write combat | no | no | yes | `403` for players. |
-| List members | no | yes | yes | Email hidden from players. |
-| Create/list invites | no | no | yes | `403` for players. |
-| Create campaign | no | yes | yes | Creator receives the `dm` membership. |
-| Change roles / remove members | no | no | no | Explicitly out of scope. |
+| Action                            | Anonymous             | Player                | DM                    | Notes                                                                                                      |
+| --------------------------------- | --------------------- | --------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| View login/forgot/reset pages     | yes                   | yes                   | yes                   | Guest-only guards redirect signed-in users.                                                                |
+| Preview invite                    | yes                   | yes                   | yes                   | Public, shows campaign name/slug and expiry only.                                                          |
+| Register via invite               | yes, with valid token | yes, with valid token | yes, with valid token | Public by design; the UI offers it only when signed out, and the new session replaces any existing cookie. |
+| Register with Google via invite   | yes, with valid token | yes, with valid token | yes, with valid token | Creates or links a passwordless user; the new session replaces any existing cookie.                        |
+| Accept invite as an existing user | no                    | yes                   | yes                   | Must sign in first; already-member is a no-op.                                                             |
+| List/create own campaigns         | no                    | yes                   | yes                   | Any user can create a campaign and becomes its DM.                                                         |
+| Read campaign content             | no                    | yes                   | yes                   | Entries, inventory, purses, combat, members.                                                               |
+| Read `visibility: dm` entry       | no                    | **no**                | yes                   | List filters it; detail returns `404`.                                                                     |
+| Read `:::dm` markdown blocks      | no                    | **no**                | yes                   | Server strips them from `body`.                                                                            |
+| Create/update/delete entries      | no                    | no                    | yes                   | `403` for players.                                                                                         |
+| Create/update/delete inventory    | no                    | no                    | yes                   | `403` for players.                                                                                         |
+| Update purses                     | no                    | no                    | yes                   | `403` for players.                                                                                         |
+| Read combat                       | no                    | yes                   | yes                   | Live WebSocket is member-only.                                                                             |
+| Write combat                      | no                    | no                    | yes                   | `403` for players.                                                                                         |
+| List members                      | no                    | yes                   | yes                   | Email hidden from players.                                                                                 |
+| Create/list invites               | no                    | no                    | yes                   | `403` for players.                                                                                         |
+| Create campaign                   | no                    | yes                   | yes                   | Creator receives the `dm` membership.                                                                      |
+| Change roles / remove members     | no                    | no                    | no                    | Explicitly out of scope.                                                                                   |
 
 Client mirrors this matrix for presentation only. Every rule above is independently enforced by the
 server.
@@ -588,12 +588,12 @@ const rooms = new Map(); // campaignId -> Set<socket>
 
 ### 9.4 Failure behaviour
 
-| Situation | Client sees |
-| --- | --- |
-| Session expired | Socket closes; existing backoff reconnects, then `401` upgrades fail. After three failures the combat page prompts a refresh/login. |
-| Campaign switch | Old shell destroyed, old socket closed, new socket opened. |
-| DM edits encounter | Only that campaign's clients receive the new revision. |
-| Player tries to write | REST `PUT /combat` returns `403`; the socket never accepts writes. |
+| Situation             | Client sees                                                                                                                         |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Session expired       | Socket closes; existing backoff reconnects, then `401` upgrades fail. After three failures the combat page prompts a refresh/login. |
+| Campaign switch       | Old shell destroyed, old socket closed, new socket opened.                                                                          |
+| DM edits encounter    | Only that campaign's clients receive the new revision.                                                                              |
+| Player tries to write | REST `PUT /combat` returns `403`; the socket never accepts writes.                                                                  |
 
 ---
 
@@ -605,14 +605,14 @@ const rooms = new Map(); // campaignId -> Set<socket>
 
 ```ts
 export interface IAuthState {
-    user: IUser | null;
-    campaigns: ICampaignSummary[];
-    config: IPublicConfig;
-    activeCampaignSlug: string | null;
-    checked: boolean;
-    status: ApiCallStatus;
-    error: string | null;
-    errorStatus: number | null;
+  user: IUser | null;
+  campaigns: ICampaignSummary[];
+  config: IPublicConfig;
+  activeCampaignSlug: string | null;
+  checked: boolean;
+  status: ApiCallStatus;
+  error: string | null;
+  errorStatus: number | null;
 }
 ```
 
@@ -623,21 +623,21 @@ caught HTTP error, and every request start clears both.
 
 Actions (all through `createApiAction` where they call the API):
 
-| Action | Request | Success |
-| --- | --- | --- |
-| `checkSession` | `{}` | `{ user, campaigns }` |
-| `login` | `{ email, password }` | `{ user, campaigns }` |
-| `googleLogin` | `{ credential }` | `{ user, campaigns }` |
-| `registerViaInvite` | `{ token, displayName, email, password }` | `{ user, campaigns, campaign }` |
-| `googleRegisterViaInvite` | `{ token, credential, displayName? }` | `{ user, campaigns, campaign }` |
-| `logout` | `{}` | `{}` |
-| `loadConfig` | `{}` | `{ config }` |
-| `loadCampaigns` | `{}` | `{ campaigns }` |
-| `createCampaign` | `{ name }` | `{ campaign }` |
-| `forgotPassword` | `{ email }` | `{}` |
-| `resetPassword` | `{ token, password }` | `{}` |
-| `campaignActivated` | `{ slug }` | plain action, no API |
-| `sessionExpired` | `{}` | plain action, no API |
+| Action                    | Request                                   | Success                         |
+| ------------------------- | ----------------------------------------- | ------------------------------- |
+| `checkSession`            | `{}`                                      | `{ user, campaigns }`           |
+| `login`                   | `{ email, password }`                     | `{ user, campaigns }`           |
+| `googleLogin`             | `{ credential }`                          | `{ user, campaigns }`           |
+| `registerViaInvite`       | `{ token, displayName, email, password }` | `{ user, campaigns, campaign }` |
+| `googleRegisterViaInvite` | `{ token, credential, displayName? }`     | `{ user, campaigns, campaign }` |
+| `logout`                  | `{}`                                      | `{}`                            |
+| `loadConfig`              | `{}`                                      | `{ config }`                    |
+| `loadCampaigns`           | `{}`                                      | `{ campaigns }`                 |
+| `createCampaign`          | `{ name }`                                | `{ campaign }`                  |
+| `forgotPassword`          | `{ email }`                               | `{}`                            |
+| `resetPassword`           | `{ token, password }`                     | `{}`                            |
+| `campaignActivated`       | `{ slug }`                                | plain action, no API            |
+| `sessionExpired`          | `{}`                                      | plain action, no API            |
 
 Effects:
 
@@ -663,13 +663,13 @@ Effects:
 
 ```ts
 export interface ICampaignMembersState {
-    members: ICampaignMember[];
-    invites: ICampaignInvite[];
-    invitePreview: IInvitePreview | null;
-    createdInviteUrl: string | null;
-    status: ApiCallStatus;
-    error: string | null;
-    errorStatus: number | null;
+  members: ICampaignMember[];
+  invites: ICampaignInvite[];
+  invitePreview: IInvitePreview | null;
+  createdInviteUrl: string | null;
+  status: ApiCallStatus;
+  error: string | null;
+  errorStatus: number | null;
 }
 ```
 
@@ -686,31 +686,31 @@ before navigation. `campaignActivated`, `logoutSuccess`, and `sessionExpired` re
 
 ```ts
 export const APP_ROUTES: Routes = [
-    { path: 'login', canActivate: [guestGuard], loadComponent: LoginComponent },
-    { path: 'forgot-password', canActivate: [guestGuard], loadComponent: ForgotPasswordComponent },
-    { path: 'reset-password/:token', loadComponent: ResetPasswordComponent },
-    { path: 'invite/:token', loadComponent: InviteAcceptComponent },
-    { path: 'register', redirectTo: 'login', pathMatch: 'full' },
-    {
-        path: 'campaigns',
-        canActivate: [authGuard],
-        loadComponent: CampaignListComponent
-    },
-    {
-        path: 'campaigns/:campaignSlug',
-        canActivate: [authGuard, campaignMemberGuard],
-        loadComponent: CampaignShellComponent,
-        children: [
-            { path: '', redirectTo: 'npcs', pathMatch: 'full' },
-            { path: 'inventory', loadComponent: InventoryComponent },
-            { path: 'combat', loadComponent: CombatComponent },
-            { path: 'members', loadComponent: MembersComponent },
-            { path: ':section', loadComponent: SectionListComponent },
-            { path: ':section/:slug', loadComponent: EntryDetailComponent }
-        ]
-    },
-    { path: '', redirectTo: 'campaigns', pathMatch: 'full' },
-    { path: '**', redirectTo: 'campaigns' }
+  { path: 'login', canActivate: [guestGuard], loadComponent: LoginComponent },
+  { path: 'forgot-password', canActivate: [guestGuard], loadComponent: ForgotPasswordComponent },
+  { path: 'reset-password/:token', loadComponent: ResetPasswordComponent },
+  { path: 'invite/:token', loadComponent: InviteAcceptComponent },
+  { path: 'register', redirectTo: 'login', pathMatch: 'full' },
+  {
+    path: 'campaigns',
+    canActivate: [authGuard],
+    loadComponent: CampaignListComponent
+  },
+  {
+    path: 'campaigns/:campaignSlug',
+    canActivate: [authGuard, campaignMemberGuard],
+    loadComponent: CampaignShellComponent,
+    children: [
+      { path: '', redirectTo: 'npcs', pathMatch: 'full' },
+      { path: 'inventory', loadComponent: InventoryComponent },
+      { path: 'combat', loadComponent: CombatComponent },
+      { path: 'members', loadComponent: MembersComponent },
+      { path: ':section', loadComponent: SectionListComponent },
+      { path: ':section/:slug', loadComponent: EntryDetailComponent }
+    ]
+  },
+  { path: '', redirectTo: 'campaigns', pathMatch: 'full' },
+  { path: '**', redirectTo: 'campaigns' }
 ];
 ```
 
@@ -766,20 +766,20 @@ module-level campaign constant.
 
 ### 10.7 UX flows
 
-| Flow | Behaviour |
-| --- | --- |
-| First visit | `/login` with email/password, "Continue with Google" (only when `googleClientId` is set), and "Forgot password?". |
-| Login success | `returnUrl` if present; else the only campaign; else `/campaigns`. |
-| Campaign list | Cards with name and role badge; "New campaign" inline form; "Join with invite" explains that invites are links. |
-| Create campaign | Name -> server slug -> navigate into the new campaign as DM. |
-| Campaign switch | Header `mat-select` listing campaigns; switching goes to `/campaigns/:slug/npcs`; "All campaigns" goes to `/campaigns`. |
-| Invite link | Public preview shows campaign name and expiry. Signed out: tabs for "Create account" (display name, email, password) and "Continue with Google", plus a "Already have an account? Sign in" link. Signed in: "Join campaign". Already a member with a still-valid invite: "Open campaign". A used/expired invite shows the error, no form, and a campaigns link when signed in. |
-| DM invite panel | Create invite -> show the full URL once with a copy button and expiry; list prior invites with active/used/expired status. |
-| Forgot password | Email -> generic "If that email has an account, a reset link is on its way." |
-| Reset password | Token -> new password + confirm -> success -> `/login?reset=1`. |
-| Player session | Header shows a "Player view" badge; no create/edit/delete controls; combat read-only; members page hides invites. |
-| DM preview | DM can toggle player preview; the badge reads "Previewing as player" and a single click returns to DM controls. |
-| Session expiry | Any `401` clears the user and sends the next navigation to `/login` with the original URL. |
+| Flow            | Behaviour                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| First visit     | `/login` with email/password, "Continue with Google" (only when `googleClientId` is set), and "Forgot password?".                                                                                                                                                                                                                                                              |
+| Login success   | `returnUrl` if present; else the only campaign; else `/campaigns`.                                                                                                                                                                                                                                                                                                             |
+| Campaign list   | Cards with name and role badge; "New campaign" inline form; "Join with invite" explains that invites are links.                                                                                                                                                                                                                                                                |
+| Create campaign | Name -> server slug -> navigate into the new campaign as DM.                                                                                                                                                                                                                                                                                                                   |
+| Campaign switch | Header `mat-select` listing campaigns; switching goes to `/campaigns/:slug/npcs`; "All campaigns" goes to `/campaigns`.                                                                                                                                                                                                                                                        |
+| Invite link     | Public preview shows campaign name and expiry. Signed out: tabs for "Create account" (display name, email, password) and "Continue with Google", plus a "Already have an account? Sign in" link. Signed in: "Join campaign". Already a member with a still-valid invite: "Open campaign". A used/expired invite shows the error, no form, and a campaigns link when signed in. |
+| DM invite panel | Create invite -> show the full URL once with a copy button and expiry; list prior invites with active/used/expired status.                                                                                                                                                                                                                                                     |
+| Forgot password | Email -> generic "If that email has an account, a reset link is on its way."                                                                                                                                                                                                                                                                                                   |
+| Reset password  | Token -> new password + confirm -> success -> `/login?reset=1`.                                                                                                                                                                                                                                                                                                                |
+| Player session  | Header shows a "Player view" badge; no create/edit/delete controls; combat read-only; members page hides invites.                                                                                                                                                                                                                                                              |
+| DM preview      | DM can toggle player preview; the badge reads "Previewing as player" and a single click returns to DM controls.                                                                                                                                                                                                                                                                |
+| Session expiry  | Any `401` clears the user and sends the next navigation to `/login` with the original URL.                                                                                                                                                                                                                                                                                     |
 
 ### 10.8 Template and navigation updates
 
@@ -839,12 +839,12 @@ node server/scripts/bootstrap.mjs reset-password --email dm@example.com --passwo
 
 Inputs: `--campaign <slug>` and optional `--dry-run`.
 
-| Collection | Legacy shape | Migration |
-| --- | --- | --- |
-| `entries` | `_id: "section:slug"` | Insert `{ ...doc, _id: "${campaignId}:${oldId}", campaignId }`, then delete the old `_id` (`_id` is immutable in MongoDB, so replace-in-place is not possible). |
-| `inventory` | UUID `_id`, no `campaignId` | `replaceOne({ _id }, { ...doc, campaignId })`; the id is unchanged. |
-| `purses` | `_id: owner` | Insert `{ ...doc, _id: "${campaignId}:${owner}", campaignId, owner }`, then delete the old `_id`. |
-| `combat` | `_id: "current"` | Insert `{ ...doc, _id: "${campaignId}:current", campaignId }`, then delete the old `_id`. |
+| Collection  | Legacy shape                | Migration                                                                                                                                                       |
+| ----------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `entries`   | `_id: "section:slug"`       | Insert `{ ...doc, _id: "${campaignId}:${oldId}", campaignId }`, then delete the old `_id` (`_id` is immutable in MongoDB, so replace-in-place is not possible). |
+| `inventory` | UUID `_id`, no `campaignId` | `replaceOne({ _id }, { ...doc, campaignId })`; the id is unchanged.                                                                                             |
+| `purses`    | `_id: owner`                | Insert `{ ...doc, _id: "${campaignId}:${owner}", campaignId, owner }`, then delete the old `_id`.                                                               |
+| `combat`    | `_id: "current"`            | Insert `{ ...doc, _id: "${campaignId}:current", campaignId }`, then delete the old `_id`.                                                                       |
 
 Rules:
 
@@ -909,51 +909,51 @@ the fast test path while a small number of integration tests exercise the real p
 
 ### 12.1 Read before starting
 
-| File | Why |
-| --- | --- |
-| `.claude/PRPs/plans/public-authentication-multi-campaign.plan.md` | This plan; keep it open. |
-| `server/src/app.js` | Current dependency injection, mounts, 404 and error middleware. |
-| `server/src/auth.js` | The shared-password implementation being replaced. |
-| `server/src/index.js` | Startup, config validation, WebSocket attach. |
-| `server/src/config.js` | Current env parsing. |
-| `server/src/db.js` | Collection construction and index creation. |
-| `server/src/entries.js` | Id mapping, filtering, CRUD validation. |
-| `server/src/inventory.js`, `purses.js`, `combat.js` | Document shapes and normalization rules. |
-| `server/src/combat-live.js` | Upgrade handling, heartbeat, broadcast. |
-| `server/src/in-memory-collection.js`, `in-memory-db.js` | Fake collection capabilities and dev seed. |
-| `server/src/seed.js`, `server/scripts/seed.mjs` | Seed document construction. |
-| `server/test/auth.test.mjs`, `entries.test.mjs`, `combat-live.test.mjs` | Test harness patterns. |
-| `server/README.md` | Endpoint, env, and deployment docs to update. |
-| `server/.env.example` | Environment template to replace. |
-| `src/app/store/auth/*` | Current auth slice to rewrite. |
-| `src/app/core/guards/auth.guard.ts` | Session-wait pattern and redirects. |
-| `src/app/app.routes.ts` | Current route tree. |
-| `src/app/features/auth/login.component.ts` | Current single-password form. |
-| `src/app/features/shell/*` | Header, sidebar, shell lifecycle, hardcoded links. |
-| `src/app/features/entry-detail/entry-detail.component.ts` | Player-mode gating and navigation. |
-| `src/app/core/services/markdown-renderer.service.ts` | Entity links and DM block rendering. |
-| `src/app/core/utils/help-page.util.ts` | URL-to-help-page mapping. |
-| `src/app/core/services/combat-live.service.ts` | WebSocket URL and reconnect behaviour. |
-| `README.md` | Conventions, commands, and layout. |
+| File                                                                    | Why                                                             |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `.claude/PRPs/plans/public-authentication-multi-campaign.plan.md`       | This plan; keep it open.                                        |
+| `server/src/app.js`                                                     | Current dependency injection, mounts, 404 and error middleware. |
+| `server/src/auth.js`                                                    | The shared-password implementation being replaced.              |
+| `server/src/index.js`                                                   | Startup, config validation, WebSocket attach.                   |
+| `server/src/config.js`                                                  | Current env parsing.                                            |
+| `server/src/db.js`                                                      | Collection construction and index creation.                     |
+| `server/src/entries.js`                                                 | Id mapping, filtering, CRUD validation.                         |
+| `server/src/inventory.js`, `purses.js`, `combat.js`                     | Document shapes and normalization rules.                        |
+| `server/src/combat-live.js`                                             | Upgrade handling, heartbeat, broadcast.                         |
+| `server/src/in-memory-collection.js`, `in-memory-db.js`                 | Fake collection capabilities and dev seed.                      |
+| `server/src/seed.js`, `server/scripts/seed.mjs`                         | Seed document construction.                                     |
+| `server/test/auth.test.mjs`, `entries.test.mjs`, `combat-live.test.mjs` | Test harness patterns.                                          |
+| `server/README.md`                                                      | Endpoint, env, and deployment docs to update.                   |
+| `server/.env.example`                                                   | Environment template to replace.                                |
+| `src/app/store/auth/*`                                                  | Current auth slice to rewrite.                                  |
+| `src/app/core/guards/auth.guard.ts`                                     | Session-wait pattern and redirects.                             |
+| `src/app/app.routes.ts`                                                 | Current route tree.                                             |
+| `src/app/features/auth/login.component.ts`                              | Current single-password form.                                   |
+| `src/app/features/shell/*`                                              | Header, sidebar, shell lifecycle, hardcoded links.              |
+| `src/app/features/entry-detail/entry-detail.component.ts`               | Player-mode gating and navigation.                              |
+| `src/app/core/services/markdown-renderer.service.ts`                    | Entity links and DM block rendering.                            |
+| `src/app/core/utils/help-page.util.ts`                                  | URL-to-help-page mapping.                                       |
+| `src/app/core/services/combat-live.service.ts`                          | WebSocket URL and reconnect behaviour.                          |
+| `README.md`                                                             | Conventions, commands, and layout.                              |
 
 ### 12.2 External documentation
 
-| Topic | Reference |
-| --- | --- |
-| Google ID token verification | https://developers.google.com/identity/gsi/web/guides/verify-google-id-token |
-| `google-auth-library` `verifyIdToken` | https://github.com/googleapis/google-auth-library-nodejs#verify-id-tokens |
-| Google Identity Services button | https://developers.google.com/identity/gsi/web/guides/display-button |
-| OWASP password storage | https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html |
-| OWASP session management | https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html |
-| OWASP CSRF prevention | https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html |
-| `argon2` Node package | https://github.com/ranisalt/node-argon2 |
-| `express-rate-limit` | https://express-rate-limit.mintlify.app/ |
-| Nodemailer SMTP transport | https://nodemailer.com/smtp/ |
-| MongoDB TTL indexes | https://www.mongodb.com/docs/manual/core/index-ttl/ |
-| Express `Router({ mergeParams })` | https://expressjs.com/en/4x/api.html#router |
-| Angular `RouteReuseStrategy` | https://angular.dev/api/router/RouteReuseStrategy |
-| NgRx selectors composing features | https://ngrx.io/guide/store/selectors |
-| MDN `Set-Cookie` / `SameSite` | https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie |
+| Topic                                 | Reference                                                                                             |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Google ID token verification          | https://developers.google.com/identity/gsi/web/guides/verify-google-id-token                          |
+| `google-auth-library` `verifyIdToken` | https://github.com/googleapis/google-auth-library-nodejs#verify-id-tokens                             |
+| Google Identity Services button       | https://developers.google.com/identity/gsi/web/guides/display-button                                  |
+| OWASP password storage                | https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html                      |
+| OWASP session management              | https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html                    |
+| OWASP CSRF prevention                 | https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html |
+| `argon2` Node package                 | https://github.com/ranisalt/node-argon2                                                               |
+| `express-rate-limit`                  | https://express-rate-limit.mintlify.app/                                                              |
+| Nodemailer SMTP transport             | https://nodemailer.com/smtp/                                                                          |
+| MongoDB TTL indexes                   | https://www.mongodb.com/docs/manual/core/index-ttl/                                                   |
+| Express `Router({ mergeParams })`     | https://expressjs.com/en/4x/api.html#router                                                           |
+| Angular `RouteReuseStrategy`          | https://angular.dev/api/router/RouteReuseStrategy                                                     |
+| NgRx selectors composing features     | https://ngrx.io/guide/store/selectors                                                                 |
+| MDN `Set-Cookie` / `SameSite`         | https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie                                  |
 
 ### 12.3 Decisions to re-confirm during implementation
 
@@ -1024,6 +1024,7 @@ Current: entry creation validates section/title then normalizes tags, fields, an
 (`server/src/combat.js:75-130`).
 
 Apply: reuse these exact helpers. Add only campaign-specific concerns:
+
 - entry id = `${campaignId}:${section}:${slug}`;
 - duplicate check scoped to `{ _id: newId }`;
 - list filter always includes `campaignId`, plus `visibility: { $ne: 'dm' }` for players;
@@ -1045,6 +1046,7 @@ re-parses cookies for WebSockets (`server/src/auth.js:85-87`), and `requireAuth`
 (`server/src/auth.js:89-96`).
 
 Apply: replace the signature check with `loadSession`:
+
 1. read cookie,
 2. hash token,
 3. `sessions.findOne({ _id: hash })`,
@@ -1062,6 +1064,7 @@ and `deleteOne` (`server/src/in-memory-collection.js:20-63`). Matching supports 
 `$all` only (`server/src/in-memory-collection.js:3-18`).
 
 Apply before writing queries:
+
 - add `$in`, `$ne`, and `$exists` to `matches`;
 - add `deleteMany(filter)` for session and reset-token revocation;
 - keep `replaceOne(filter, doc, { upsert })` semantics exact, because invite single-use relies on
@@ -1087,9 +1090,9 @@ Apply: keep the selector name but compose it with the auth role:
 
 ```ts
 export const selectPlayerMode = createSelector(
-    selectCodexState,
-    selectActiveRole,
-    (codex, role) => role === 'player' || codex.dmPreview
+  selectCodexState,
+  selectActiveRole,
+  (codex, role) => role === 'player' || codex.dmPreview
 );
 ```
 
@@ -1133,6 +1136,7 @@ an agent to persist cookies (`44-54`), and start a real HTTP server for WebSocke
 (`server/test/combat-live.test.mjs:32-59`).
 
 Apply:
+
 - helper `buildApp({ users, campaigns, memberships, ... })` returns the app plus the fake collections;
 - helper `createUser` inserts an Argon2 hash once per suite (or uses a fake password service);
 - login helper returns an agent with a valid cookie;
@@ -1146,6 +1150,7 @@ Current conventions: arrange-act-assert, Jest, `overrideComponent` for children,
 (README lines 203-205). Store tests use `provideMockStore` and effect tests use `provideMockActions`.
 
 Apply:
+
 - reducer tests cover `campaignActivated` resets in every campaign-scoped slice;
 - selector tests cover `selectPlayerMode` for `dm`, `player`, and `dmPreview`;
 - guard tests cover return URLs, missing campaign membership, and the checked/not-checked wait;
@@ -1158,103 +1163,103 @@ Apply:
 
 ### 14.1 Server
 
-| File | Change |
-| --- | --- |
-| `server/package.json` | Add `argon2`, `google-auth-library`, `express-rate-limit`, `nodemailer`; remove `cors`. Add `bootstrap` and `migrate` scripts. |
-| `server/.env.example` | Replace `APP_PASSWORD` / `SESSION_SECRET` with `APP_ORIGIN`, `GOOGLE_CLIENT_ID`, `SMTP_URL`, `MAIL_FROM`, `TRUST_PROXY`, dev DM variables. |
-| `server/src/config.js` | Parse the new environment; derive `cookieSecure`; expose `nodeEnv`. |
-| `server/src/index.js` | Fail fast in production without `APP_ORIGIN`, SMTP config, or (if enabled) Google config; wire all services and collections. |
-| `server/src/db.js` | Create and return the six identity collections; add all indexes from 6.1-6.7. |
-| `server/src/passwords.js` | New. Argon2id options, `hashPassword`, `verifyPassword`, `verifyDummy`, password policy. |
-| `server/src/sessions.js` | New. Token generation, hash, cookie helpers, `resolveSession`, `loadSession`, `requireAuth`, `revokeUserSessions`, `originCheck`. |
-| `server/src/users.js` | New. `normalizeEmail`, `findUserByEmail`, `toPublicUser`, `createUser`, `setGoogleSub`. |
-| `server/src/google.js` | New. `createGoogleVerifier({ clientId })` returning `{ verify(credential) }`. |
-| `server/src/mailer.js` | New. `createMailer({ smtpUrl, mailFrom, appOrigin, nodeEnv })` with `sendPasswordReset`. |
-| `server/src/auth.js` | Rewrite. Login, Google, logout, me, forgot-password, reset-password. |
-| `server/src/invites.js` | New. Public preview, invite-only registration plus Google registration, existing-user accept, DM create/list. |
-| `server/src/campaigns.js` | New. List/create plus `createCampaignRouter`. |
-| `server/src/campaign-access.js` | New. `loadCampaignAccess`, `requireCampaignMember`, `requireCampaignDm`. |
-| `server/src/entries.js` | Rewrite for campaign ids, scoped queries, player filtering, DM-block stripping. |
-| `server/src/inventory.js` | Rewrite for campaign-scoped ids and queries. |
-| `server/src/purses.js` | Rewrite for composite ids and scoped queries. |
-| `server/src/combat.js` | Rewrite for `${campaignId}:current` and per-campaign publish. |
-| `server/src/combat-live.js` | Rewrite for campaign rooms and async session/membership upgrade checks. |
-| `server/src/app.js` | Rewrite mounts, remove `cors()`, add origin check, pass services, keep error middleware. |
-| `server/src/in-memory-collection.js` | Add `$in`, `$ne`, `$exists`, `deleteMany`; keep replace/upsert semantics exact. |
-| `server/src/in-memory-db.js` | Seed dev user, campaign, membership, and campaign-scoped content. |
-| `server/src/seed.js` | `buildSeedEntries(campaignId)` and composite ids. |
-| `server/scripts/seed.mjs` | Resolve a campaign, then seed into it. |
-| `server/scripts/bootstrap.mjs` | New. User, campaign, and password-reset operator commands. |
-| `server/scripts/migrate-campaign-scope.mjs` | New. Dry-run-capable legacy data migration. |
-| `server/README.md` | Rewrite auth, endpoints, environment, migration, and WebSocket sections. |
-| `server/test/auth.test.mjs` | Rewrite for email/password, sessions, me, logout, rate limits. |
-| `server/test/google-auth.test.mjs` | New. Verified, unverified, unknown, collision cases. |
-| `server/test/password-reset.test.mjs` | New. Generic response, token use, expiry, session revocation. |
-| `server/test/campaigns.test.mjs` | New. List/create/membership enforcement. |
-| `server/test/invites.test.mjs` | New. Preview, password/Google registration, accept, single use, expiry, role assignment, collisions, races. |
-| `server/test/members.test.mjs` | New. DM sees emails, players do not. |
-| `server/test/entries.test.mjs` | Rewrite for campaign scope and player filtering. |
-| `server/test/inventory.test.mjs` | Rewrite for campaign scope. |
-| `server/test/purses.test.mjs` | Rewrite for composite ids. |
-| `server/test/combat.test.mjs` | Rewrite for per-campaign encounters. |
-| `server/test/combat-live.test.mjs` | Rewrite for campaign-scoped upgrade and room isolation. |
-| `server/test/helpers.mjs` | New. Shared app/user/campaign/login builders. |
+| File                                        | Change                                                                                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `server/package.json`                       | Add `argon2`, `google-auth-library`, `express-rate-limit`, `nodemailer`; remove `cors`. Add `bootstrap` and `migrate` scripts.             |
+| `server/.env.example`                       | Replace `APP_PASSWORD` / `SESSION_SECRET` with `APP_ORIGIN`, `GOOGLE_CLIENT_ID`, `SMTP_URL`, `MAIL_FROM`, `TRUST_PROXY`, dev DM variables. |
+| `server/src/config.js`                      | Parse the new environment; derive `cookieSecure`; expose `nodeEnv`.                                                                        |
+| `server/src/index.js`                       | Fail fast in production without `APP_ORIGIN`, SMTP config, or (if enabled) Google config; wire all services and collections.               |
+| `server/src/db.js`                          | Create and return the six identity collections; add all indexes from 6.1-6.7.                                                              |
+| `server/src/passwords.js`                   | New. Argon2id options, `hashPassword`, `verifyPassword`, `verifyDummy`, password policy.                                                   |
+| `server/src/sessions.js`                    | New. Token generation, hash, cookie helpers, `resolveSession`, `loadSession`, `requireAuth`, `revokeUserSessions`, `originCheck`.          |
+| `server/src/users.js`                       | New. `normalizeEmail`, `findUserByEmail`, `toPublicUser`, `createUser`, `setGoogleSub`.                                                    |
+| `server/src/google.js`                      | New. `createGoogleVerifier({ clientId })` returning `{ verify(credential) }`.                                                              |
+| `server/src/mailer.js`                      | New. `createMailer({ smtpUrl, mailFrom, appOrigin, nodeEnv })` with `sendPasswordReset`.                                                   |
+| `server/src/auth.js`                        | Rewrite. Login, Google, logout, me, forgot-password, reset-password.                                                                       |
+| `server/src/invites.js`                     | New. Public preview, invite-only registration plus Google registration, existing-user accept, DM create/list.                              |
+| `server/src/campaigns.js`                   | New. List/create plus `createCampaignRouter`.                                                                                              |
+| `server/src/campaign-access.js`             | New. `loadCampaignAccess`, `requireCampaignMember`, `requireCampaignDm`.                                                                   |
+| `server/src/entries.js`                     | Rewrite for campaign ids, scoped queries, player filtering, DM-block stripping.                                                            |
+| `server/src/inventory.js`                   | Rewrite for campaign-scoped ids and queries.                                                                                               |
+| `server/src/purses.js`                      | Rewrite for composite ids and scoped queries.                                                                                              |
+| `server/src/combat.js`                      | Rewrite for `${campaignId}:current` and per-campaign publish.                                                                              |
+| `server/src/combat-live.js`                 | Rewrite for campaign rooms and async session/membership upgrade checks.                                                                    |
+| `server/src/app.js`                         | Rewrite mounts, remove `cors()`, add origin check, pass services, keep error middleware.                                                   |
+| `server/src/in-memory-collection.js`        | Add `$in`, `$ne`, `$exists`, `deleteMany`; keep replace/upsert semantics exact.                                                            |
+| `server/src/in-memory-db.js`                | Seed dev user, campaign, membership, and campaign-scoped content.                                                                          |
+| `server/src/seed.js`                        | `buildSeedEntries(campaignId)` and composite ids.                                                                                          |
+| `server/scripts/seed.mjs`                   | Resolve a campaign, then seed into it.                                                                                                     |
+| `server/scripts/bootstrap.mjs`              | New. User, campaign, and password-reset operator commands.                                                                                 |
+| `server/scripts/migrate-campaign-scope.mjs` | New. Dry-run-capable legacy data migration.                                                                                                |
+| `server/README.md`                          | Rewrite auth, endpoints, environment, migration, and WebSocket sections.                                                                   |
+| `server/test/auth.test.mjs`                 | Rewrite for email/password, sessions, me, logout, rate limits.                                                                             |
+| `server/test/google-auth.test.mjs`          | New. Verified, unverified, unknown, collision cases.                                                                                       |
+| `server/test/password-reset.test.mjs`       | New. Generic response, token use, expiry, session revocation.                                                                              |
+| `server/test/campaigns.test.mjs`            | New. List/create/membership enforcement.                                                                                                   |
+| `server/test/invites.test.mjs`              | New. Preview, password/Google registration, accept, single use, expiry, role assignment, collisions, races.                                |
+| `server/test/members.test.mjs`              | New. DM sees emails, players do not.                                                                                                       |
+| `server/test/entries.test.mjs`              | Rewrite for campaign scope and player filtering.                                                                                           |
+| `server/test/inventory.test.mjs`            | Rewrite for campaign scope.                                                                                                                |
+| `server/test/purses.test.mjs`               | Rewrite for composite ids.                                                                                                                 |
+| `server/test/combat.test.mjs`               | Rewrite for per-campaign encounters.                                                                                                       |
+| `server/test/combat-live.test.mjs`          | Rewrite for campaign-scoped upgrade and room isolation.                                                                                    |
+| `server/test/helpers.mjs`                   | New. Shared app/user/campaign/login builders.                                                                                              |
 
 ### 14.2 Client
 
-| File | Change |
-| --- | --- |
-| `src/app/core/models/i-user.ts` | New. `IUser`. |
-| `src/app/core/models/i-campaign.ts` | New. `CampaignRole`, `ICampaignSummary`, `ICampaignDetail`. |
-| `src/app/core/models/i-campaign-member.ts` | New. `ICampaignMember`. |
-| `src/app/core/models/i-invite.ts` | New. `IInvitePreview`, `ICampaignInvite`, `ICreateInviteResult`. |
-| `src/app/core/models/i-public-config.ts` | New. `IPublicConfig`. |
-| `src/app/core/models/index.ts` | Export the new models. |
-| `src/app/core/services/auth-api.service.ts` | Rewrite for login, Google login, invite registration/Google registration, logout, me, forgot/reset. |
-| `src/app/core/services/campaign-api.service.ts` | New. List/create/detail. |
-| `src/app/core/services/campaign-members-api.service.ts` | New. Members and invites. |
-| `src/app/core/services/campaign-context.service.ts` | New. Active slug/campaign/role and base URL. |
-| `src/app/core/services/auth.interceptor.ts` | New. Dispatch `sessionExpired` on non-auth `401`. |
-| `src/app/core/services/campaign-route-reuse.strategy.ts` | New. Recreate the shell on slug change. |
-| `src/app/core/services/codex-api.service.ts` | Build URLs from `CampaignContextService`; keep the public path names. |
-| `src/app/core/services/inventory-api.service.ts` | Same campaign prefix. |
-| `src/app/core/services/purse-api.service.ts` | Same campaign prefix. |
-| `src/app/core/services/combat-api.service.ts` | Same campaign prefix. |
-| `src/app/core/services/combat-live.service.ts` | `connect(slug)` and campaign-scoped URL. |
-| `src/app/core/services/markdown-renderer.service.ts` | Campaign-aware entity links. |
-| `src/app/core/guards/auth.guard.ts` | Auth/guest/campaign-member guards with return URLs. |
-| `src/app/core/utils/help-page.util.ts` | New URL shape and members page. |
-| `src/app/app.routes.ts` | New route tree from 10.3. |
-| `src/app/app.config.ts` | Provide the reuse strategy and auth interceptor. |
-| `src/app/store/auth/auth.state.ts` | New state shape. |
-| `src/app/store/auth/auth.actions.ts` | New actions from 10.1. |
-| `src/app/store/auth/auth.reducer.ts` | Handle all auth actions and reset on logout/expiry. |
-| `src/app/store/auth/auth.effects.ts` | Login/Google/config/campaigns/reset/navigation. |
-| `src/app/store/auth/auth.selectors.ts` | User/campaigns/config/role selectors; `authenticated` derived. |
-| `src/app/store/auth/*.spec.ts` | Rewrite for the new shape. |
-| `src/app/store/campaign-members/*` | New state/actions/reducer/effects/selectors and specs. |
-| `src/app/store/codex/codex.state.ts` | `dmPreview` replaces `playerMode`; add campaign reset handling. |
-| `src/app/store/codex/codex.actions.ts` | `dmPreviewToggled`, campaign reset, slug-free payloads. |
-| `src/app/store/codex/codex.reducer.ts` | Reset content on `campaignActivated`; keep UI preferences. |
-| `src/app/store/codex/codex.selectors.ts` | `selectPlayerMode` composes auth role + preview. |
-| `src/app/store/inventory/*` | Reset on campaign change; API calls use context. |
-| `src/app/store/combat/*` | Reset on campaign change; pass slug to live service. |
-| `src/app/store/purses/*` | Reset on campaign change. |
-| `src/app/store/editor/*` | Reset on campaign change. |
-| `src/app/features/auth/login.component.ts/html/scss/spec.ts` | Email/password + Google + forgot link + return URL. |
-| `src/app/features/auth/forgot-password.component.*` | New. |
-| `src/app/features/auth/reset-password.component.*` | New. |
-| `src/app/features/invite/invite-accept.component.*` | New. Preview, signed-out registration (password or Google), signed-in accept, and already-member states. |
-| `src/app/features/campaigns/campaign-list.component.*` | New. |
-| `src/app/features/members/members.component.*` | New. |
-| `src/app/features/shell/campaign-shell.component.ts` | Activate the campaign, clear context on destroy. |
-| `src/app/features/shell/codex-header.component.ts/html` | Campaign name, switcher, scoped search navigation, role badge. |
-| `src/app/features/shell/codex-sidebar.component.ts/html` | Campaign-scoped links, members entry, active checks. |
-| `src/app/features/entry-detail/entry-detail.component.ts/html` | Role-derived player view, scoped navigation, DM-only controls. |
-| `src/app/features/section-list/section-list.component.ts` | Scoped navigation. |
-| `src/app/features/combat/combat.component.ts/html` | Read-only for players; DM controls hidden. |
-| `src/app/features/inventory/inventory.component.ts/html` | DM-only edit controls. |
-| `README.md` | New routes, auth flow, dev credentials, migration notes. |
+| File                                                           | Change                                                                                                   |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/app/core/models/i-user.ts`                                | New. `IUser`.                                                                                            |
+| `src/app/core/models/i-campaign.ts`                            | New. `CampaignRole`, `ICampaignSummary`, `ICampaignDetail`.                                              |
+| `src/app/core/models/i-campaign-member.ts`                     | New. `ICampaignMember`.                                                                                  |
+| `src/app/core/models/i-invite.ts`                              | New. `IInvitePreview`, `ICampaignInvite`, `ICreateInviteResult`.                                         |
+| `src/app/core/models/i-public-config.ts`                       | New. `IPublicConfig`.                                                                                    |
+| `src/app/core/models/index.ts`                                 | Export the new models.                                                                                   |
+| `src/app/core/services/auth-api.service.ts`                    | Rewrite for login, Google login, invite registration/Google registration, logout, me, forgot/reset.      |
+| `src/app/core/services/campaign-api.service.ts`                | New. List/create/detail.                                                                                 |
+| `src/app/core/services/campaign-members-api.service.ts`        | New. Members and invites.                                                                                |
+| `src/app/core/services/campaign-context.service.ts`            | New. Active slug/campaign/role and base URL.                                                             |
+| `src/app/core/services/auth.interceptor.ts`                    | New. Dispatch `sessionExpired` on non-auth `401`.                                                        |
+| `src/app/core/services/campaign-route-reuse.strategy.ts`       | New. Recreate the shell on slug change.                                                                  |
+| `src/app/core/services/codex-api.service.ts`                   | Build URLs from `CampaignContextService`; keep the public path names.                                    |
+| `src/app/core/services/inventory-api.service.ts`               | Same campaign prefix.                                                                                    |
+| `src/app/core/services/purse-api.service.ts`                   | Same campaign prefix.                                                                                    |
+| `src/app/core/services/combat-api.service.ts`                  | Same campaign prefix.                                                                                    |
+| `src/app/core/services/combat-live.service.ts`                 | `connect(slug)` and campaign-scoped URL.                                                                 |
+| `src/app/core/services/markdown-renderer.service.ts`           | Campaign-aware entity links.                                                                             |
+| `src/app/core/guards/auth.guard.ts`                            | Auth/guest/campaign-member guards with return URLs.                                                      |
+| `src/app/core/utils/help-page.util.ts`                         | New URL shape and members page.                                                                          |
+| `src/app/app.routes.ts`                                        | New route tree from 10.3.                                                                                |
+| `src/app/app.config.ts`                                        | Provide the reuse strategy and auth interceptor.                                                         |
+| `src/app/store/auth/auth.state.ts`                             | New state shape.                                                                                         |
+| `src/app/store/auth/auth.actions.ts`                           | New actions from 10.1.                                                                                   |
+| `src/app/store/auth/auth.reducer.ts`                           | Handle all auth actions and reset on logout/expiry.                                                      |
+| `src/app/store/auth/auth.effects.ts`                           | Login/Google/config/campaigns/reset/navigation.                                                          |
+| `src/app/store/auth/auth.selectors.ts`                         | User/campaigns/config/role selectors; `authenticated` derived.                                           |
+| `src/app/store/auth/*.spec.ts`                                 | Rewrite for the new shape.                                                                               |
+| `src/app/store/campaign-members/*`                             | New state/actions/reducer/effects/selectors and specs.                                                   |
+| `src/app/store/codex/codex.state.ts`                           | `dmPreview` replaces `playerMode`; add campaign reset handling.                                          |
+| `src/app/store/codex/codex.actions.ts`                         | `dmPreviewToggled`, campaign reset, slug-free payloads.                                                  |
+| `src/app/store/codex/codex.reducer.ts`                         | Reset content on `campaignActivated`; keep UI preferences.                                               |
+| `src/app/store/codex/codex.selectors.ts`                       | `selectPlayerMode` composes auth role + preview.                                                         |
+| `src/app/store/inventory/*`                                    | Reset on campaign change; API calls use context.                                                         |
+| `src/app/store/combat/*`                                       | Reset on campaign change; pass slug to live service.                                                     |
+| `src/app/store/purses/*`                                       | Reset on campaign change.                                                                                |
+| `src/app/store/editor/*`                                       | Reset on campaign change.                                                                                |
+| `src/app/features/auth/login.component.ts/html/scss/spec.ts`   | Email/password + Google + forgot link + return URL.                                                      |
+| `src/app/features/auth/forgot-password.component.*`            | New.                                                                                                     |
+| `src/app/features/auth/reset-password.component.*`             | New.                                                                                                     |
+| `src/app/features/invite/invite-accept.component.*`            | New. Preview, signed-out registration (password or Google), signed-in accept, and already-member states. |
+| `src/app/features/campaigns/campaign-list.component.*`         | New.                                                                                                     |
+| `src/app/features/members/members.component.*`                 | New.                                                                                                     |
+| `src/app/features/shell/campaign-shell.component.ts`           | Activate the campaign, clear context on destroy.                                                         |
+| `src/app/features/shell/codex-header.component.ts/html`        | Campaign name, switcher, scoped search navigation, role badge.                                           |
+| `src/app/features/shell/codex-sidebar.component.ts/html`       | Campaign-scoped links, members entry, active checks.                                                     |
+| `src/app/features/entry-detail/entry-detail.component.ts/html` | Role-derived player view, scoped navigation, DM-only controls.                                           |
+| `src/app/features/section-list/section-list.component.ts`      | Scoped navigation.                                                                                       |
+| `src/app/features/combat/combat.component.ts/html`             | Read-only for players; DM controls hidden.                                                               |
+| `src/app/features/inventory/inventory.component.ts/html`       | DM-only edit controls.                                                                                   |
+| `README.md`                                                    | New routes, auth flow, dev credentials, migration notes.                                                 |
 
 ---
 
@@ -1399,7 +1404,7 @@ non-functional only inside a branch, never in a deploy.
         - existing with `googleSub === null` -> link and use that user;
         - existing with a different `googleSub` -> `409`;
         - missing -> create a user with `passwordHash: null`, `googleSub`, the verified email, and `displayName` from the body, Google's `name`, or the email local part.
-        For a new user, consume the invite before the insert. For an existing user who is not yet a member, consume the invite before the membership upsert. If the user is already a member, return `200` without consuming. Then create a session, set the cookie, and return `{ user, campaigns, campaign }`.
+          For a new user, consume the invite before the insert. For an existing user who is not yet a member, consume the invite before the membership upsert. If the user is already a member, return `200` without consuming. Then create a session, set the cookie, and return `{ user, campaigns, campaign }`.
       - `POST /accept` (authenticated existing user): already a member -> `200` without consuming; otherwise consume the invite, upsert the membership, and return `{ campaign }`.
     - `createCampaignInvitesRouter({ invites, memberships, config })` for DM `GET`/`POST` inside the campaign router.
   - Token: 32 random bytes base64url; store the SHA-256 hash as `_id`; 7-day expiry.
@@ -1753,23 +1758,23 @@ All API tests use `node:test`, `node:assert/strict`, `supertest`, and `createFak
 MongoDB is required. A small number of tests exercise the real Argon2 module; the rest inject a fast
 fake so the suite stays quick.
 
-| Area | File | Required cases |
-| --- | --- | --- |
-| Passwords | `server/test/passwords.test.mjs` | Round trip, wrong password, malformed hash, policy boundaries, unique salts. |
-| Sessions | `server/test/sessions.test.mjs` | Token/hash, cookie flags, expired session, tampered cookie, revocation, origin check. |
-| Auth | `server/test/auth.test.mjs` | Login success/failure, unknown email parity, `/me` anonymous and signed in, logout deletes the row, cookie cleared. |
-| Google | `server/test/google-auth.test.mjs` | Fake verifier success, unverified email, unknown email rejected (no account creation), auto-link, link collision, verifier exception. |
-| Password reset | `server/test/password-reset.test.mjs` | Generic 202, token creation, successful reset, reuse, expiry, weak password, all sessions revoked. |
-| Campaigns | `server/test/campaigns.test.mjs` | List own only, create assigns DM, slug collision, non-member 404, player write 403, detail response. |
-| Invites | `server/test/invites.test.mjs` | Preview states, DM-only create/list, player 403, password registration creates a session and player membership, Google registration creates a passwordless user, duplicate email 409 leaves the invite unused, Google existing-user link, existing-member Google link leaves the invite unused, existing-user accept, idempotent already-member, single use, expiry, parallel-registration race. |
-| Members | `server/test/members.test.mjs` | Roster, DM sees email, player does not, cross-campaign isolation. |
-| Entries | `server/test/entries.test.mjs` | Same slug in two campaigns, DM entry hidden from player list, player detail 404, DM blocks stripped, DM still sees, duplicate 409, cross-campaign 404. |
-| Inventory | `server/test/inventory.test.mjs` | Read/write isolation, player 403, no `campaignId` leak, cross-campaign patch 404. |
-| Purses | `server/test/purses.test.mjs` | Independent gold per campaign, player 403, public shape. |
-| Combat | `server/test/combat.test.mjs` | Independent revisions, player 403, empty default per campaign. |
-| Combat live | `server/test/combat-live.test.mjs` | Initial snapshot, per-campaign room isolation, 401/404 upgrades, unknown path, reconnect snapshot. |
-| App/config | `server/test/app.test.mjs` | Production fail-fast, public config, CSRF, 404/error shapes, static fallback. |
-| Scripts | `server/test/scripts.test.mjs` | Migration idempotence and dry run; bootstrap user/campaign/reset; seed resolution. |
+| Area           | File                                  | Required cases                                                                                                                                                                                                                                                                                                                                                                                   |
+| -------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Passwords      | `server/test/passwords.test.mjs`      | Round trip, wrong password, malformed hash, policy boundaries, unique salts.                                                                                                                                                                                                                                                                                                                     |
+| Sessions       | `server/test/sessions.test.mjs`       | Token/hash, cookie flags, expired session, tampered cookie, revocation, origin check.                                                                                                                                                                                                                                                                                                            |
+| Auth           | `server/test/auth.test.mjs`           | Login success/failure, unknown email parity, `/me` anonymous and signed in, logout deletes the row, cookie cleared.                                                                                                                                                                                                                                                                              |
+| Google         | `server/test/google-auth.test.mjs`    | Fake verifier success, unverified email, unknown email rejected (no account creation), auto-link, link collision, verifier exception.                                                                                                                                                                                                                                                            |
+| Password reset | `server/test/password-reset.test.mjs` | Generic 202, token creation, successful reset, reuse, expiry, weak password, all sessions revoked.                                                                                                                                                                                                                                                                                               |
+| Campaigns      | `server/test/campaigns.test.mjs`      | List own only, create assigns DM, slug collision, non-member 404, player write 403, detail response.                                                                                                                                                                                                                                                                                             |
+| Invites        | `server/test/invites.test.mjs`        | Preview states, DM-only create/list, player 403, password registration creates a session and player membership, Google registration creates a passwordless user, duplicate email 409 leaves the invite unused, Google existing-user link, existing-member Google link leaves the invite unused, existing-user accept, idempotent already-member, single use, expiry, parallel-registration race. |
+| Members        | `server/test/members.test.mjs`        | Roster, DM sees email, player does not, cross-campaign isolation.                                                                                                                                                                                                                                                                                                                                |
+| Entries        | `server/test/entries.test.mjs`        | Same slug in two campaigns, DM entry hidden from player list, player detail 404, DM blocks stripped, DM still sees, duplicate 409, cross-campaign 404.                                                                                                                                                                                                                                           |
+| Inventory      | `server/test/inventory.test.mjs`      | Read/write isolation, player 403, no `campaignId` leak, cross-campaign patch 404.                                                                                                                                                                                                                                                                                                                |
+| Purses         | `server/test/purses.test.mjs`         | Independent gold per campaign, player 403, public shape.                                                                                                                                                                                                                                                                                                                                         |
+| Combat         | `server/test/combat.test.mjs`         | Independent revisions, player 403, empty default per campaign.                                                                                                                                                                                                                                                                                                                                   |
+| Combat live    | `server/test/combat-live.test.mjs`    | Initial snapshot, per-campaign room isolation, 401/404 upgrades, unknown path, reconnect snapshot.                                                                                                                                                                                                                                                                                               |
+| App/config     | `server/test/app.test.mjs`            | Production fail-fast, public config, CSRF, 404/error shapes, static fallback.                                                                                                                                                                                                                                                                                                                    |
+| Scripts        | `server/test/scripts.test.mjs`        | Migration idempotence and dry run; bootstrap user/campaign/reset; seed resolution.                                                                                                                                                                                                                                                                                                               |
 
 Specific security regressions that must exist as named tests:
 
@@ -1788,26 +1793,26 @@ Specific security regressions that must exist as named tests:
 
 ### 16.2 Client test matrix
 
-| Area | Spec | Required cases |
-| --- | --- | --- |
-| Auth reducer | `auth.reducer.spec.ts` | Initial, checkSession, login, google, invite registration, logout, sessionExpired, campaignActivated. |
-| Auth selectors | `auth.selectors.spec.ts` | `authenticated`, user, campaigns, active campaign, active role. |
-| Auth effects | `auth.effects.spec.ts` | API mapping, returnUrl navigation, registration navigation, one-campaign shortcut, create campaign navigation, config load, reset navigation. |
-| Campaign members | `campaign-members.*.spec.ts` | Load, create invite URL, preview states, accept, reset on campaign change. |
-| Guards | `auth.guard.spec.ts` | Checked wait, anonymous redirect with returnUrl, guest redirect, missing campaign, member pass. |
-| Reuse strategy | `campaign-route-reuse.strategy.spec.ts` | Same slug true, different slug false, different route config false. |
-| Interceptor | `auth.interceptor.spec.ts` | 401 on content dispatches expiry, auth/invite-registration endpoints ignored, other errors pass. |
-| API services | `*-api.service.spec.ts` | Exact campaign-scoped URLs for two slugs, error mapping, no module-level constant. |
-| Player mode | `codex.selectors.spec.ts` | DM, player, DM preview combinations. |
-| Login | `login.component.spec.ts` | Invalid form, dispatch, Google visibility, reset notice, returnUrl. |
-| Forgot/reset | `forgot-password.component.spec.ts`, `reset-password.component.spec.ts` | Validation, generic success, token pass-through, mismatch. |
-| Invite | `invite-accept.component.spec.ts` | Preview states, signed-out registration form, Google registration visibility, 409 sign-in path, signed-in accept then refresh then navigate. |
-| Campaign list | `campaign-list.component.spec.ts` | Empty, cards, create, pending, role badge. |
-| Members | `members.component.spec.ts` | DM panel/email column, player restrictions, copy-once URL. |
-| Shell | `campaign-shell.component.spec.ts` | Slug activation, loads, context clear, switch. |
-| Navigation | `codex-header/sidebar/section-list/entry-detail` specs | All built routes include the campaign slug. |
-| Markdown/help | `markdown-renderer.service.spec.ts`, `help-page.util.spec.ts` | Slug-aware entity link, DM blocks, members page, new URL shape. |
-| Live combat | `combat-live.service.spec.ts` | URL contains the slug, reconnect, close on unsubscribe. |
+| Area             | Spec                                                                    | Required cases                                                                                                                                |
+| ---------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth reducer     | `auth.reducer.spec.ts`                                                  | Initial, checkSession, login, google, invite registration, logout, sessionExpired, campaignActivated.                                         |
+| Auth selectors   | `auth.selectors.spec.ts`                                                | `authenticated`, user, campaigns, active campaign, active role.                                                                               |
+| Auth effects     | `auth.effects.spec.ts`                                                  | API mapping, returnUrl navigation, registration navigation, one-campaign shortcut, create campaign navigation, config load, reset navigation. |
+| Campaign members | `campaign-members.*.spec.ts`                                            | Load, create invite URL, preview states, accept, reset on campaign change.                                                                    |
+| Guards           | `auth.guard.spec.ts`                                                    | Checked wait, anonymous redirect with returnUrl, guest redirect, missing campaign, member pass.                                               |
+| Reuse strategy   | `campaign-route-reuse.strategy.spec.ts`                                 | Same slug true, different slug false, different route config false.                                                                           |
+| Interceptor      | `auth.interceptor.spec.ts`                                              | 401 on content dispatches expiry, auth/invite-registration endpoints ignored, other errors pass.                                              |
+| API services     | `*-api.service.spec.ts`                                                 | Exact campaign-scoped URLs for two slugs, error mapping, no module-level constant.                                                            |
+| Player mode      | `codex.selectors.spec.ts`                                               | DM, player, DM preview combinations.                                                                                                          |
+| Login            | `login.component.spec.ts`                                               | Invalid form, dispatch, Google visibility, reset notice, returnUrl.                                                                           |
+| Forgot/reset     | `forgot-password.component.spec.ts`, `reset-password.component.spec.ts` | Validation, generic success, token pass-through, mismatch.                                                                                    |
+| Invite           | `invite-accept.component.spec.ts`                                       | Preview states, signed-out registration form, Google registration visibility, 409 sign-in path, signed-in accept then refresh then navigate.  |
+| Campaign list    | `campaign-list.component.spec.ts`                                       | Empty, cards, create, pending, role badge.                                                                                                    |
+| Members          | `members.component.spec.ts`                                             | DM panel/email column, player restrictions, copy-once URL.                                                                                    |
+| Shell            | `campaign-shell.component.spec.ts`                                      | Slug activation, loads, context clear, switch.                                                                                                |
+| Navigation       | `codex-header/sidebar/section-list/entry-detail` specs                  | All built routes include the campaign slug.                                                                                                   |
+| Markdown/help    | `markdown-renderer.service.spec.ts`, `help-page.util.spec.ts`           | Slug-aware entity link, DM blocks, members page, new URL shape.                                                                               |
+| Live combat      | `combat-live.service.spec.ts`                                           | URL contains the slug, reconnect, close on unsubscribe.                                                                                       |
 
 ### 16.3 Manual end-to-end script
 
@@ -1966,12 +1971,12 @@ generic message.
 ### Client UX
 
 - [ ] `/login`, `/register` (redirects to login), `/forgot-password`, `/reset-password/:token`,
-  `/invite/:token`, `/campaigns`, and the campaign-scoped shell routes all render and are bookmarkable.
+      `/invite/:token`, `/campaigns`, and the campaign-scoped shell routes all render and are bookmarkable.
 - [ ] `returnUrl` survives the login round trip and rejects external URLs.
 - [ ] Switching campaigns destroys and recreates the shell, its data, and its WebSocket.
 - [ ] No stale campaign data flashes after a switch.
 - [ ] Header search, sidebar links, entry links, markdown entity links, and help topics all use the
-  active campaign slug.
+      active campaign slug.
 - [ ] The app still works at tablet and phone widths.
 
 ### Quality gates
@@ -1987,23 +1992,23 @@ generic message.
 
 ## 19. Risks and Mitigations
 
-| # | Risk | Impact | Likelihood | Mitigation | Detection |
-| --- | --- | --- | --- | --- | --- |
-| 1 | A missed `campaignId` filter leaks another campaign's content. | Critical | Medium | Centralize scoping in the campaign router and helpers; never query content collections without a campaign filter; add cross-campaign tests for every collection. | Named isolation tests; code review grep for `find(` in content routers. |
-| 2 | A player receives DM-only content through a summary, detail, or markdown body. | Critical | Medium | Filter `visibility` at the query level; 404 on detail; strip `:::dm` server-side; test list and detail bodies byte-for-byte. | `player never receives...` tests; manual private-window check. |
-| 3 | Session cookie is dropped or sent insecurely after deploy. | High | Medium | Derive `secure` from `APP_ORIGIN`; same-origin deployment; `SameSite=Lax`; test over HTTPS; document proxy TLS termination. | Production smoke check of `Set-Cookie`; login test on the deployed origin. |
-| 4 | Google sign-in fails due to an unauthorized origin or wrong client id. | Medium | Medium | Expose `googleClientId` through `/api/config`; document authorized origins; hide the button when unset; return a clear but non-sensitive error. | Manual Google login on the deployed origin. |
-| 5 | SMTP is misconfigured, so password reset is unusable and users are locked out. | High | Medium | Fail fast in production without SMTP; dev logs the link; bootstrap CLI can reset a password and revoke sessions. | Startup check; operator runbook; manual reset test. |
-| 6 | An invite link is lost because only the hash is stored. | Medium | Medium | Show the URL once with a copy button and a selectable fallback; explain that a new invite is required. | UX copy review; manual test. |
-| 7 | The shell is reused across campaigns, leaving the old WebSocket and data active. | High | Medium | `CampaignRouteReuseStrategy`; reset reducers on `campaignActivated`; close the socket in shell teardown. | Guard/reuse tests; manual two-tab check. |
-| 8 | Migration is run without a backup or is not idempotent. | Critical | Low | `--dry-run`; insert-then-delete because `_id` is immutable; skip documents with `campaignId`; back up first. | Script tests; dry-run count review. |
-| 9 | In-memory fake and MongoDB diverge on a new operator. | Medium | Medium | Extend `matches` with tests; keep `replaceOne` semantics exact; run a real-Mongo smoke test before migration. | Fake unit tests; one staging Mongo run. |
-| 10 | Argon2 memory cost exhausts the single process under a login burst. | Medium | Low | Rate-limit login/Google; 19 MiB per concurrent hash; document the single-instance limit; monitor memory. | Load test with the rate limiter enabled. |
-| 11 | `TRUST_PROXY` is wrong, so rate limits key on the proxy IP. | Medium | Medium | Default to false; document the exact hop count; set it only behind a known proxy. | Rate-limit test with forwarded headers. |
-| 12 | Client role gating is mistaken for authorization. | Critical | Low | Server enforces every rule; client only hides controls; tests assert 403/404 directly against the API. | API tests; security review. |
-| 13 | User data remains in client stores after logout or account switch. | High | Medium | Reset auth, codex, inventory, combat, purses, editor, and campaign-members on logout/expiry/campaign change. | Reducer tests; manual account-switch check. |
-| 14 | Scope creep adds co-DMs, member removal, or email invites mid-implementation. | Medium | Medium | Keep Section 4's NOT-building list visible in every PR; defer to a follow-up plan. | PR review against the plan. |
-| 15 | No rollback path to the shared-password build. | High | Low | Keep the change on a branch until the migration is verified; back up the database; the old code cannot read new documents, so rollback is restore-from-backup, not a code revert. | Deployment checklist. |
+| #   | Risk                                                                             | Impact   | Likelihood | Mitigation                                                                                                                                                                        | Detection                                                                  |
+| --- | -------------------------------------------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 1   | A missed `campaignId` filter leaks another campaign's content.                   | Critical | Medium     | Centralize scoping in the campaign router and helpers; never query content collections without a campaign filter; add cross-campaign tests for every collection.                  | Named isolation tests; code review grep for `find(` in content routers.    |
+| 2   | A player receives DM-only content through a summary, detail, or markdown body.   | Critical | Medium     | Filter `visibility` at the query level; 404 on detail; strip `:::dm` server-side; test list and detail bodies byte-for-byte.                                                      | `player never receives...` tests; manual private-window check.             |
+| 3   | Session cookie is dropped or sent insecurely after deploy.                       | High     | Medium     | Derive `secure` from `APP_ORIGIN`; same-origin deployment; `SameSite=Lax`; test over HTTPS; document proxy TLS termination.                                                       | Production smoke check of `Set-Cookie`; login test on the deployed origin. |
+| 4   | Google sign-in fails due to an unauthorized origin or wrong client id.           | Medium   | Medium     | Expose `googleClientId` through `/api/config`; document authorized origins; hide the button when unset; return a clear but non-sensitive error.                                   | Manual Google login on the deployed origin.                                |
+| 5   | SMTP is misconfigured, so password reset is unusable and users are locked out.   | High     | Medium     | Fail fast in production without SMTP; dev logs the link; bootstrap CLI can reset a password and revoke sessions.                                                                  | Startup check; operator runbook; manual reset test.                        |
+| 6   | An invite link is lost because only the hash is stored.                          | Medium   | Medium     | Show the URL once with a copy button and a selectable fallback; explain that a new invite is required.                                                                            | UX copy review; manual test.                                               |
+| 7   | The shell is reused across campaigns, leaving the old WebSocket and data active. | High     | Medium     | `CampaignRouteReuseStrategy`; reset reducers on `campaignActivated`; close the socket in shell teardown.                                                                          | Guard/reuse tests; manual two-tab check.                                   |
+| 8   | Migration is run without a backup or is not idempotent.                          | Critical | Low        | `--dry-run`; insert-then-delete because `_id` is immutable; skip documents with `campaignId`; back up first.                                                                      | Script tests; dry-run count review.                                        |
+| 9   | In-memory fake and MongoDB diverge on a new operator.                            | Medium   | Medium     | Extend `matches` with tests; keep `replaceOne` semantics exact; run a real-Mongo smoke test before migration.                                                                     | Fake unit tests; one staging Mongo run.                                    |
+| 10  | Argon2 memory cost exhausts the single process under a login burst.              | Medium   | Low        | Rate-limit login/Google; 19 MiB per concurrent hash; document the single-instance limit; monitor memory.                                                                          | Load test with the rate limiter enabled.                                   |
+| 11  | `TRUST_PROXY` is wrong, so rate limits key on the proxy IP.                      | Medium   | Medium     | Default to false; document the exact hop count; set it only behind a known proxy.                                                                                                 | Rate-limit test with forwarded headers.                                    |
+| 12  | Client role gating is mistaken for authorization.                                | Critical | Low        | Server enforces every rule; client only hides controls; tests assert 403/404 directly against the API.                                                                            | API tests; security review.                                                |
+| 13  | User data remains in client stores after logout or account switch.               | High     | Medium     | Reset auth, codex, inventory, combat, purses, editor, and campaign-members on logout/expiry/campaign change.                                                                      | Reducer tests; manual account-switch check.                                |
+| 14  | Scope creep adds co-DMs, member removal, or email invites mid-implementation.    | Medium   | Medium     | Keep Section 4's NOT-building list visible in every PR; defer to a follow-up plan.                                                                                                | PR review against the plan.                                                |
+| 15  | No rollback path to the shared-password build.                                   | High     | Low        | Keep the change on a branch until the migration is verified; back up the database; the old code cannot read new documents, so rollback is restore-from-backup, not a code revert. | Deployment checklist.                                                      |
 
 ### Rollback policy
 
@@ -2068,4 +2073,3 @@ Residual uncertainty:
 - The migration has been dry-run and then executed against a backed-up database.
 - The old shared-password code and `cors` dependency are gone.
 - The docs describe the invite-once behaviour, the single-instance limits, and the rollback policy.
-

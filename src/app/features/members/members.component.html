@@ -19,19 +19,15 @@
                 Everyone with access to this campaign.
             }
         </p>
-        <cdx-data-table
-            [columns]="columns()"
-            [rows]="rows()"
-            emptyMessage="No members yet."
-        />
+        <cdx-data-table [columns]="columns()" [rows]="rows()" emptyMessage="No members yet." />
     </section>
 
     @if (isDm()) {
         <section class="cdx-members-section" data-help="members-invites">
             <h2 class="cdx-members-section-title">Invite players</h2>
             <p class="cdx-members-section-hint">
-                Each link can be used once and expires after seven days. Copy it straight away — the full link is
-                only shown when it is created.
+                Each link can be used once and expires after seven days. Copy it straight away — the full link is only
+                shown when it is created.
             </p>
 
             <button mat-flat-button type="button" class="cdx-members-invite-button" (click)="createInvite()">
@@ -64,11 +60,7 @@
             }
 
             <h3 class="cdx-members-subsection-title">Previous invites</h3>
-            <cdx-data-table
-                [columns]="inviteColumns"
-                [rows]="inviteRows()"
-                emptyMessage="No invites created yet."
-            />
+            <cdx-data-table [columns]="inviteColumns" [rows]="inviteRows()" emptyMessage="No invites created yet." />
         </section>
     }
 </div>

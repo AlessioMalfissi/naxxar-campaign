@@ -141,5 +141,4 @@ describe('editorReducer', () => {
         // Assert
         expect(state).toEqual(INITIAL_EDITOR_STATE);
     });
-
 });

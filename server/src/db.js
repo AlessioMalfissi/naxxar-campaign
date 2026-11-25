@@ -8,7 +8,10 @@ export const connectToMongo = async ({ uri, dbName }) => {
 
     const users = db.collection('users');
     await users.createIndex({ emailNormalized: 1 }, { unique: true });
-    await users.createIndex({ googleSub: 1 }, { unique: true, partialFilterExpression: { googleSub: { $type: 'string' } } });
+    await users.createIndex(
+        { googleSub: 1 },
+        { unique: true, partialFilterExpression: { googleSub: { $type: 'string' } } }
+    );
 
     const sessions = db.collection('sessions');
     await sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });

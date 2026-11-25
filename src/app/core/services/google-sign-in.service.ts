@@ -10,10 +10,7 @@ interface IGoogleCredentialResponse {
 interface IGoogleIdentity {
     accounts: {
         id: {
-            initialize(options: {
-                client_id: string;
-                callback: (response: IGoogleCredentialResponse) => void;
-            }): void;
+            initialize(options: { client_id: string; callback: (response: IGoogleCredentialResponse) => void }): void;
             renderButton(
                 parent: HTMLElement,
                 options: { theme?: string; size?: string; text?: string; width?: number }

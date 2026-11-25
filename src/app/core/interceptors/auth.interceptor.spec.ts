@@ -30,9 +30,7 @@ describe('authInterceptor', () => {
         const next = jest.fn().mockReturnValue(of(response));
 
         // Act
-        const result = await firstValueFrom(
-            TestBed.runInInjectionContext(() => authInterceptor(req, next))
-        );
+        const result = await firstValueFrom(TestBed.runInInjectionContext(() => authInterceptor(req, next)));
 
         // Assert
         expect(result).toBe(response);

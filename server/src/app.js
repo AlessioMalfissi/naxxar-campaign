@@ -10,14 +10,7 @@ import { loadSession, originCheck, requireAuth } from './sessions.js';
 
 export const createApp = (
     { users, sessions, campaigns, memberships, invites, passwordResets, entries, inventory, purses, combat },
-    {
-        config,
-        passwords,
-        google = null,
-        mailer = null,
-        combatLive = null,
-        rateLimiters = passThroughRateLimiters
-    } = {}
+    { config, passwords, google = null, mailer = null, combatLive = null, rateLimiters = passThroughRateLimiters } = {}
 ) => {
     if (config === undefined || config === null || typeof config.appOrigin !== 'string') {
         throw new Error('createApp requires a config with an appOrigin.');

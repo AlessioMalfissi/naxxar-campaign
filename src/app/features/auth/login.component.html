@@ -4,20 +4,12 @@
         <p class="cdx-login-subtitle">Sign in to your campaigns.</p>
 
         @if (resetNotice) {
-            <p class="cdx-login-notice" role="status">
-                Your password has been changed. Sign in with the new password.
-            </p>
+            <p class="cdx-login-notice" role="status">Your password has been changed. Sign in with the new password.</p>
         }
 
         <mat-form-field appearance="outline" class="cdx-login-field" subscriptSizing="dynamic">
             <mat-label>Email</mat-label>
-            <input
-                matInput
-                type="email"
-                autocomplete="email"
-                [formControl]="emailControl"
-                aria-label="Email"
-            />
+            <input matInput type="email" autocomplete="email" [formControl]="emailControl" aria-label="Email" />
             @if (emailControl.touched && emailControl.invalid) {
                 <mat-error>Enter a valid email address.</mat-error>
             }

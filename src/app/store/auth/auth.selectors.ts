@@ -19,8 +19,9 @@ export const selectActiveCampaign = createSelector(
         state.campaigns.find((campaign) => campaign.slug === state.activeCampaignSlug) ?? null
 );
 
-export const selectActiveRole = createSelector(selectActiveCampaign, (campaign): CampaignRole | null =>
-    campaign?.role ?? null
+export const selectActiveRole = createSelector(
+    selectActiveCampaign,
+    (campaign): CampaignRole | null => campaign?.role ?? null
 );
 
 export const selectHasCampaigns = createSelector(selectCampaigns, (campaigns) => campaigns.length > 0);
@@ -35,7 +36,4 @@ export const selectAuthErrorStatus = createSelector(selectAuthState, (state) => 
 
 export const selectAuthStatus = createSelector(selectAuthState, (state) => state.status);
 
-export const selectAuthPending = createSelector(
-    selectAuthState,
-    (state) => state.status === ApiCallStatus.Pending
-);
+export const selectAuthPending = createSelector(selectAuthState, (state) => state.status === ApiCallStatus.Pending);

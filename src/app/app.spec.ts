@@ -30,7 +30,7 @@ describe('AppComponent', () => {
 });
 
 describe('APP_ROUTES', () => {
-    it('should send the bare path to the NPCs section', () => {
+    it('should send the bare path to the campaign picker', () => {
         // Arrange
         const root = findRoute(APP_ROUTES, '');
 
@@ -38,11 +38,11 @@ describe('APP_ROUTES', () => {
         const redirect = root?.redirectTo;
 
         // Assert
-        expect(redirect).toBe('campaign/npcs');
+        expect(redirect).toBe('campaigns');
         expect(root?.pathMatch).toBe('full');
     });
 
-    it('should send an unknown path to the NPCs section', () => {
+    it('should send an unknown path to the campaign picker', () => {
         // Arrange
         const wildcard = findRoute(APP_ROUTES, '**');
 
@@ -50,23 +50,29 @@ describe('APP_ROUTES', () => {
         const redirect = wildcard?.redirectTo;
 
         // Assert
-        expect(redirect).toBe('campaign/npcs');
+        expect(redirect).toBe('campaigns');
     });
 
-    it('should lazily load the shell and both campaign children', async () => {
+    it('should lazily load the campaign shell and its children', async () => {
         // Arrange
-        const campaign = findRoute(APP_ROUTES, 'campaign');
+        const campaign = findRoute(APP_ROUTES, 'campaigns/:campaignSlug');
         const children = campaign?.children ?? [];
 
         // Act
         const shell = await campaign?.loadComponent?.();
         const list = await findRoute(children, ':section')?.loadComponent?.();
         const detail = await findRoute(children, ':section/:slug')?.loadComponent?.();
+        const inventory = await findRoute(children, 'inventory')?.loadComponent?.();
+        const combat = await findRoute(children, 'combat')?.loadComponent?.();
+        const members = await findRoute(children, 'members')?.loadComponent?.();
 
         // Assert
         expect(shell?.name).toBe('CampaignShellComponent');
         expect(list?.name).toBe('SectionListComponent');
         expect(detail?.name).toBe('EntryDetailComponent');
+        expect(inventory?.name).toBe('InventoryComponent');
+        expect(combat?.name).toBe('CombatComponent');
+        expect(members?.name).toBe('MembersComponent');
     });
 });
 

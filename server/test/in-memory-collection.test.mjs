@@ -12,7 +12,10 @@ test('filters with $in', async () => {
     const collection = createFakeCollection(docs);
     const rows = await collection.find({ role: { $in: ['dm'] } }).toArray();
 
-    assert.deepEqual(rows.map((row) => row._id), ['a']);
+    assert.deepEqual(
+        rows.map((row) => row._id),
+        ['a']
+    );
     assert.deepEqual(await collection.find({ role: { $in: ['dm', 'player'] } }).toArray(), docs);
 });
 
@@ -20,17 +23,24 @@ test('filters with $ne, including documents missing the field', async () => {
     const collection = createFakeCollection(docs);
     const rows = await collection.find({ role: { $ne: 'dm' } }).toArray();
 
-    assert.deepEqual(rows.map((row) => row._id), ['b']);
+    assert.deepEqual(
+        rows.map((row) => row._id),
+        ['b']
+    );
     assert.deepEqual(await collection.find({ usedAt: { $ne: null } }).toArray(), []);
 });
 
 test('filters with $exists true and false', async () => {
     const collection = createFakeCollection(docs);
 
-    assert.deepEqual((await collection.find({ optional: { $exists: true } }).toArray()).map((row) => row._id), ['a']);
-    assert.deepEqual((await collection.find({ optional: { $exists: false } }).toArray()).map((row) => row._id), [
-        'b'
-    ]);
+    assert.deepEqual(
+        (await collection.find({ optional: { $exists: true } }).toArray()).map((row) => row._id),
+        ['a']
+    );
+    assert.deepEqual(
+        (await collection.find({ optional: { $exists: false } }).toArray()).map((row) => row._id),
+        ['b']
+    );
 });
 
 test('deleteMany removes every matching document', async () => {
@@ -46,5 +56,8 @@ test('deleteMany leaves non-matching documents alone', async () => {
     const result = await collection.deleteMany({ _id: 'a' });
 
     assert.equal(result.deletedCount, 1);
-    assert.deepEqual(collection.dump().map((row) => row._id), ['b']);
+    assert.deepEqual(
+        collection.dump().map((row) => row._id),
+        ['b']
+    );
 });

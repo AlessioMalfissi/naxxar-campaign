@@ -113,9 +113,7 @@ test('a player can read content but writes get a 403', async () => {
     await context.entries.insertOne(makeEntry(campaign._id, 'npcs', 'vaelith', { visibility: 'revealed' }));
 
     const playerAgent = request.agent(context.app);
-    await playerAgent
-        .post('/api/auth/login')
-        .send({ email: 'player@example.com', password: 'password123' });
+    await playerAgent.post('/api/auth/login').send({ email: 'player@example.com', password: 'password123' });
 
     const read = await playerAgent.get(campaignPath(campaign, '/entries/npcs/vaelith'));
     assert.equal(read.status, 200);

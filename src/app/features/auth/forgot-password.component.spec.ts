@@ -17,11 +17,11 @@ describe('ForgotPasswordComponent', () => {
             imports: [ForgotPasswordComponent, NoopAnimationsModule],
             providers: [
                 provideMockStore({ initialState: {} }),
+                provideRouter([]),
                 {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap({ returnUrl: '/campaigns' }) } }
-                },
-                provideRouter([])
+                }
             ]
         }).compileComponents();
 
@@ -40,9 +40,7 @@ describe('ForgotPasswordComponent', () => {
         component['submit']();
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            AuthActions.forgotPassword.request({ email: 'dm@naxxar.local' })
-        );
+        expect(dispatchSpy).toHaveBeenCalledWith(AuthActions.forgotPassword.request({ email: 'dm@naxxar.local' }));
     });
 
     it('should show the neutral confirmation after submitting', () => {

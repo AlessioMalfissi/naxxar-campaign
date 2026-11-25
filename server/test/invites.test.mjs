@@ -107,10 +107,7 @@ test('invite status reports used and expired', async () => {
     const { agent } = await login(context.app);
 
     const listed = await agent.get(campaignPath(context.campaign, '/invites'));
-    assert.deepEqual(
-        listed.body.invites.map((invite) => invite.status),
-        ['expired', 'used']
-    );
+    assert.deepEqual(listed.body.invites.map((invite) => invite.status).sort(), ['expired', 'used']);
 });
 
 test('password registration creates an account, a player membership, and a session', async () => {
@@ -157,11 +154,13 @@ test('registration validates the display name, email and password before consumi
     const base = `/api/invites/${token}/register`;
 
     assert.equal(
-        (await request(context.app).post(base).send({ displayName: '', email: 'a@b.co', password: 'password123' })).status,
+        (await request(context.app).post(base).send({ displayName: '', email: 'a@b.co', password: 'password123' }))
+            .status,
         400
     );
     assert.equal(
-        (await request(context.app).post(base).send({ displayName: 'A', email: 'nope', password: 'password123' })).status,
+        (await request(context.app).post(base).send({ displayName: 'A', email: 'nope', password: 'password123' }))
+            .status,
         400
     );
     assert.equal(

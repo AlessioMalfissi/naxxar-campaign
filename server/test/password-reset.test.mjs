@@ -85,9 +85,7 @@ test('a reset token cannot be used twice', async () => {
     const token = tokenFrom(sent[0]);
 
     await request(app).post('/api/auth/reset-password').send({ token, password: 'brand-new-password' });
-    const second = await request(app)
-        .post('/api/auth/reset-password')
-        .send({ token, password: 'another-password' });
+    const second = await request(app).post('/api/auth/reset-password').send({ token, password: 'another-password' });
 
     assert.equal(second.status, 400);
 });

@@ -9,7 +9,7 @@ import { connectToMongo } from '../src/db.js';
 
 const readFlag = (name) => {
     const index = process.argv.indexOf(`--${name}`);
-    return index === -1 ? null : process.argv[index + 1] ?? null;
+    return index === -1 ? null : (process.argv[index + 1] ?? null);
 };
 
 const hasFlag = (name) => process.argv.includes(`--${name}`);
@@ -45,7 +45,9 @@ const migrateCollection = async ({ collection, campaignId, buildId, label, dryRu
         migrated += 1;
     }
 
-    console.log(`${label}: scanned ${docs.length}, migrated ${migrated}, skipped ${skipped}${dryRun ? ' (dry run)' : ''}`);
+    console.log(
+        `${label}: scanned ${docs.length}, migrated ${migrated}, skipped ${skipped}${dryRun ? ' (dry run)' : ''}`
+    );
 };
 
 const run = async () => {

@@ -13,14 +13,7 @@ import {
     revokeUserSessions,
     setSessionCookie
 } from './sessions.js';
-import {
-    findUserByEmail,
-    isValidEmail,
-    normalizeEmail,
-    setGoogleSub,
-    setPasswordHash,
-    toPublicUser
-} from './users.js';
+import { findUserByEmail, isValidEmail, normalizeEmail, setGoogleSub, setPasswordHash, toPublicUser } from './users.js';
 
 export const PASSWORD_RESET_DURATION_MS = 60 * 60 * 1000;
 

@@ -2,8 +2,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 
 import { readEncounter } from './combat.js';
 
-export const combatLivePath = (campaignSlug) =>
-    `/api/campaigns/${encodeURIComponent(campaignSlug)}/combat/live`;
+export const combatLivePath = (campaignSlug) => `/api/campaigns/${encodeURIComponent(campaignSlug)}/combat/live`;
 
 const COMBAT_LIVE_PATTERN = /^\/api\/campaigns\/([^/]+)\/combat\/live$/;
 

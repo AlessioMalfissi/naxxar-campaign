@@ -57,7 +57,7 @@ describe('InviteAcceptComponent', () => {
         store.overrideSelector(selectAuthChecked, overrides.checked ?? true);
         store.overrideSelector(selectAuthenticated, overrides.authenticated ?? false);
         store.overrideSelector(selectCampaigns, overrides.campaigns ?? []);
-        store.overrideSelector(selectInvitePreview, overrides.preview ?? PREVIEW);
+        store.overrideSelector(selectInvitePreview, overrides.preview === undefined ? PREVIEW : overrides.preview);
         store.overrideSelector(selectCampaignMembersStatus, overrides.previewStatus ?? ApiCallStatus.Success);
         store.overrideSelector(selectCampaignMembersError, overrides.previewError ?? null);
         store.overrideSelector(selectCampaignMembersErrorStatus, overrides.previewErrorStatus ?? null);
@@ -74,11 +74,11 @@ describe('InviteAcceptComponent', () => {
             imports: [InviteAcceptComponent, NoopAnimationsModule],
             providers: [
                 provideMockStore({ initialState: {} }),
+                provideRouter([]),
                 {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { paramMap: convertToParamMap({ token: 'invite-token' }) } }
                 },
-                provideRouter([]),
                 { provide: GoogleSignInService, useValue: googleSignIn }
             ]
         }).compileComponents();
@@ -245,5 +245,29 @@ describe('InviteAcceptComponent', () => {
 
         // Assert
         expect(component['acceptError']()).toBe('Only invited players can join.');
+    });
+
+    it('should show Google registration when the server configures it', async () => {
+        // Arrange / Act
+        await create({ googleClientId: 'client-id' });
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('.cdx-invite-google')).not.toBeNull();
+        expect(googleSignIn.renderButton).toHaveBeenCalledWith(
+            expect.any(HTMLElement),
+            'client-id',
+            expect.any(Function)
+        );
+    });
+
+    it('should hide Google registration when the server has no client id', async () => {
+        // Arrange / Act
+        await create({ googleClientId: null });
+
+        // Assert
+        expect(fixture.nativeElement.querySelector('.cdx-invite-google')).toBeNull();
+        expect(googleSignIn.renderButton).not.toHaveBeenCalled();
     });
 });

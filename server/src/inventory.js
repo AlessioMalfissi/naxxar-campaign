@@ -37,10 +37,7 @@ export const createInventoryRouter = (collection) => {
 
     router.get('/', async (req, res, next) => {
         try {
-            const docs = await collection
-                .find({ campaignId: req.campaign.doc._id })
-                .sort({ name: 1 })
-                .toArray();
+            const docs = await collection.find({ campaignId: req.campaign.doc._id }).sort({ name: 1 }).toArray();
             res.json(docs.map(toPublicItem));
         } catch (error) {
             next(error);

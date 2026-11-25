@@ -10,7 +10,7 @@ import { normalizeEmail } from '../src/users.js';
 
 const readFlag = (name) => {
     const index = process.argv.indexOf(`--${name}`);
-    return index === -1 ? null : process.argv[index + 1] ?? null;
+    return index === -1 ? null : (process.argv[index + 1] ?? null);
 };
 
 const readPassword = () => {
@@ -164,9 +164,7 @@ const run = async () => {
             return;
         }
 
-        throw new Error(
-            'Usage: bootstrap.mjs user|campaign|reset-password --flags... (see server/README.md)'
-        );
+        throw new Error('Usage: bootstrap.mjs user|campaign|reset-password --flags... (see server/README.md)');
     } finally {
         await db.client.close();
     }

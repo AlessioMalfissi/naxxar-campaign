@@ -53,9 +53,7 @@ test('POST /api/auth/login sets a session cookie and returns the user and campai
         email: 'dm@example.com',
         displayName: 'Dungeon Master'
     });
-    assert.deepEqual(response.body.campaigns, [
-        { id: campaign._id, slug: 'naxxar', name: 'Naxxar', role: 'dm' }
-    ]);
+    assert.deepEqual(response.body.campaigns, [{ id: campaign._id, slug: 'naxxar', name: 'Naxxar', role: 'dm' }]);
     assert.match(response.headers['set-cookie'][0], /naxxar_session=/);
     assert.match(response.headers['set-cookie'][0], /HttpOnly/);
     assert.match(response.headers['set-cookie'][0], /SameSite=Lax/);
@@ -95,9 +93,7 @@ test('GET /api/auth/me reflects the signed-in user', async () => {
     const response = await agent.get('/api/auth/me');
     assert.equal(response.status, 200);
     assert.equal(response.body.user.id, user._id);
-    assert.deepEqual(response.body.campaigns, [
-        { id: campaign._id, slug: 'naxxar', name: 'Naxxar', role: 'dm' }
-    ]);
+    assert.deepEqual(response.body.campaigns, [{ id: campaign._id, slug: 'naxxar', name: 'Naxxar', role: 'dm' }]);
 });
 
 test('a tampered session cookie is treated as anonymous', async () => {

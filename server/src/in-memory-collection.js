@@ -20,6 +20,9 @@ const matches = (doc, filter) =>
                 return condition.$in.includes(value);
             }
             if ('$ne' in condition) {
+                if (condition.$ne === null) {
+                    return hasField(doc, key) && value !== null;
+                }
                 return value !== condition.$ne;
             }
             if ('$exists' in condition) {

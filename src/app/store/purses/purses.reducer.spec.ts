@@ -109,5 +109,4 @@ describe('pursesReducer', () => {
         // Assert
         expect(state).toEqual(INITIAL_PURSES_STATE);
     });
-
 });

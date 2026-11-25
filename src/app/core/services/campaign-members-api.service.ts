@@ -36,9 +36,9 @@ export class CampaignMembersApiService {
     }
 
     loadInvitePreview(token: string): Observable<IInvitePreview> {
-        return this.http.get<IInvitePreview>(`${INVITES_URL}/${encodeURIComponent(token)}`).pipe(
-            catchError(this.toFriendlyError("This invite link isn't valid."))
-        );
+        return this.http
+            .get<IInvitePreview>(`${INVITES_URL}/${encodeURIComponent(token)}`)
+            .pipe(catchError(this.toFriendlyError("This invite link isn't valid.")));
     }
 
     acceptInvite(token: string): Observable<{ campaign: { slug: string } }> {

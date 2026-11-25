@@ -19,8 +19,8 @@ describe('LoginComponent', () => {
             imports: [LoginComponent, NoopAnimationsModule],
             providers: [
                 provideMockStore({ initialState: {} }),
-                { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
                 provideRouter([]),
+                { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
                 { provide: GoogleSignInService, useValue: googleSignIn }
             ]
         }).compileComponents();
@@ -160,5 +160,15 @@ describe('LoginComponent', () => {
         // Assert
         const error: HTMLElement = fixture.nativeElement.querySelector('.cdx-login-error');
         expect(error.textContent).toContain('Google sign-in is unavailable.');
+    });
+
+    it('should keep the returnUrl on the forgot-password link', async () => {
+        // Arrange / Act
+        await configure({ returnUrl: '/campaigns/naxxar/npcs' });
+
+        // Assert
+        const link: HTMLAnchorElement = fixture.nativeElement.querySelector('.cdx-login-link');
+        expect(link.getAttribute('href')).toContain('/forgot-password');
+        expect(link.getAttribute('href')).toContain('returnUrl=%2Fcampaigns%2Fnaxxar%2Fnpcs');
     });
 });

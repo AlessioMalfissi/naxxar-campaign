@@ -188,9 +188,7 @@ describe('CampaignMembersEffects', () => {
         actions$.next(CampaignMembersActions.acceptInvite.request({ token: 'token' }));
 
         // Act
-        actions$.next(
-            AuthActions.loadCampaigns.failure({ error: "Couldn't load your campaigns.", status: 500 })
-        );
+        actions$.next(AuthActions.loadCampaigns.failure({ error: "Couldn't load your campaigns.", status: 500 }));
         const result = await resultPromise;
 
         // Assert

@@ -1,11 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-    ActivatedRouteSnapshot,
-    convertToParamMap,
-    Router,
-    RouterStateSnapshot,
-    UrlTree
-} from '@angular/router';
+import { ActivatedRouteSnapshot, convertToParamMap, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Observable } from 'rxjs';
 
@@ -21,8 +15,7 @@ describe('auth guards', () => {
     let store: MockStore;
     let router: { parseUrl: jest.Mock };
 
-    const state = (url = '/campaigns/naxxar/npcs'): RouterStateSnapshot =>
-        ({ url }) as RouterStateSnapshot;
+    const state = (url = '/campaigns/naxxar/npcs'): RouterStateSnapshot => ({ url }) as RouterStateSnapshot;
 
     const route = (slug: string | null): ActivatedRouteSnapshot =>
         ({
@@ -34,9 +27,7 @@ describe('auth guards', () => {
         snapshot = route('naxxar'),
         routerState = state()
     ): Observable<boolean | UrlTree> =>
-        TestBed.runInInjectionContext(
-            () => guard(snapshot, routerState) as Observable<boolean | UrlTree>
-        );
+        TestBed.runInInjectionContext(() => guard(snapshot, routerState) as Observable<boolean | UrlTree>);
 
     const first = (source: Observable<boolean | UrlTree>): Promise<boolean | UrlTree> =>
         new Promise((resolve) => source.subscribe(resolve));
@@ -74,9 +65,7 @@ describe('auth guards', () => {
         const result = await first(run(authGuard, route('naxxar'), state('/campaigns/naxxar/npcs')));
 
         // Assert
-        expect(router.parseUrl).toHaveBeenCalledWith(
-            '/login?returnUrl=%2Fcampaigns%2Fnaxxar%2Fnpcs'
-        );
+        expect(router.parseUrl).toHaveBeenCalledWith('/login?returnUrl=%2Fcampaigns%2Fnaxxar%2Fnpcs');
         expect(result).toEqual({ url: '/login?returnUrl=%2Fcampaigns%2Fnaxxar%2Fnpcs' });
     });
 

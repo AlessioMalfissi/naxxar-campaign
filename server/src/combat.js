@@ -176,7 +176,10 @@ export const createCombatRouter = (collection, { onSaved = () => undefined, queu
             assertCampaignDm(req);
             const campaignId = req.campaign.doc._id;
             const normalized = normalizeEncounter(req.body ?? {});
-            const saved = await queueFor(queues, campaignId)(async () => {
+            const saved = await queueFor(
+                queues,
+                campaignId
+            )(async () => {
                 const current = await readEncounter(collection, campaignId);
                 const encounter = {
                     _id: encounterId(campaignId),

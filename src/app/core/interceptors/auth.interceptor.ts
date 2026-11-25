@@ -9,8 +9,7 @@ import * as AuthActions from '@store/auth/auth.actions';
 // not an expired session. Keep it out of the global handler as well.
 const PUBLIC_INVITE_PATTERN = /^\/api\/invites\/[^/]+\/(register|google)(?:[?#]|$)/;
 
-const isAuthUrl = (url: string): boolean =>
-    url.startsWith('/api/auth') || PUBLIC_INVITE_PATTERN.test(url);
+const isAuthUrl = (url: string): boolean => url.startsWith('/api/auth') || PUBLIC_INVITE_PATTERN.test(url);
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const store = inject(Store);

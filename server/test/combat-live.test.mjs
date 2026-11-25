@@ -151,10 +151,7 @@ test('a non-member gets a 404, as does an unknown campaign', async (t) => {
         }),
         404
     );
-    assert.equal(
-        await rejectionStatus(`${fixture.url}/api/entries`, { Cookie: fixture.dmCookie }),
-        404
-    );
+    assert.equal(await rejectionStatus(`${fixture.url}/api/entries`, { Cookie: fixture.dmCookie }), 404);
 });
 
 test('the socket sends that campaign’s current encounter on connect', async (t) => {

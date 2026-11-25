@@ -98,14 +98,13 @@ describe('CampaignListComponent', () => {
         component['create']();
 
         // Assert
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            AuthActions.createCampaign.request({ name: 'Tomb of Annihilation' })
-        );
+        expect(dispatchSpy).toHaveBeenCalledWith(AuthActions.createCampaign.request({ name: 'Tomb of Annihilation' }));
     });
 
     it('should refuse a campaign name shorter than two characters', async () => {
         // Arrange
         await create();
+        dispatchSpy.mockClear();
         component['nameControl'].setValue(' a ');
 
         // Act

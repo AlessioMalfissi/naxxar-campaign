@@ -11,14 +11,19 @@ import { CombatApiService } from './combat-api.service';
 describe('CombatApiService', () => {
     let service: CombatApiService;
     let httpMock: HttpTestingController;
+    let campaignSlug = 'naxxar';
 
     beforeEach(() => {
         // Arrange
+        campaignSlug = 'naxxar';
         TestBed.configureTestingModule({
             providers: [
                 provideHttpClient(),
                 provideHttpClientTesting(),
-                { provide: CampaignContextService, useValue: { baseUrl: () => '/api/campaigns/naxxar' } }
+                {
+                    provide: CampaignContextService,
+                    useValue: { baseUrl: () => `/api/campaigns/${campaignSlug}` }
+                }
             ]
         });
         service = TestBed.inject(CombatApiService);
@@ -81,5 +86,18 @@ describe('CombatApiService', () => {
 
         // Assert
         expect(error!.message).toBe("Couldn't save the combat tracker. Retry.");
+    });
+
+    it('should read the campaign slug for every request', () => {
+        // Arrange
+        campaignSlug = 'other';
+
+        // Act
+        service.loadEncounter().subscribe();
+        const request = httpMock.expectOne(`/api/campaigns/other/combat`);
+
+        // Assert
+        expect(request.request.method).toBe('GET');
+        request.flush(buildEncounter());
     });
 });

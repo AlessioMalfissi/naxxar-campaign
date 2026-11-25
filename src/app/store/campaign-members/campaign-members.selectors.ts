@@ -3,9 +3,7 @@ import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { ApiCallStatus } from '@core/models';
 import { CAMPAIGN_MEMBERS_FEATURE_KEY, ICampaignMembersState } from './campaign-members.state';
 
-export const selectCampaignMembersState = createFeatureSelector<ICampaignMembersState>(
-    CAMPAIGN_MEMBERS_FEATURE_KEY
-);
+export const selectCampaignMembersState = createFeatureSelector<ICampaignMembersState>(CAMPAIGN_MEMBERS_FEATURE_KEY);
 
 export const selectMembers = createSelector(selectCampaignMembersState, (state) => state.members);
 
@@ -13,10 +11,7 @@ export const selectInvites = createSelector(selectCampaignMembersState, (state) 
 
 export const selectInvitePreview = createSelector(selectCampaignMembersState, (state) => state.invitePreview);
 
-export const selectCreatedInviteUrl = createSelector(
-    selectCampaignMembersState,
-    (state) => state.createdInviteUrl
-);
+export const selectCreatedInviteUrl = createSelector(selectCampaignMembersState, (state) => state.createdInviteUrl);
 
 export const selectCreatedInviteExpiresAt = createSelector(
     selectCampaignMembersState,

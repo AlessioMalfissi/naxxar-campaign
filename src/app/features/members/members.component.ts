@@ -48,8 +48,7 @@ export class MembersComponent implements OnInit {
     private readonly document = inject(DOCUMENT);
     private readonly destroyRef = inject(DestroyRef);
 
-    protected readonly slug =
-        this.route.snapshot.paramMap.get('campaignSlug') ?? this.campaignContext.slug() ?? '';
+    protected readonly slug = this.route.snapshot.paramMap.get('campaignSlug') ?? this.campaignContext.slug() ?? '';
     protected readonly campaign = toSignal(this.store.select(selectActiveCampaign), { initialValue: null });
     protected readonly role = toSignal(this.store.select(selectActiveRole), { initialValue: null });
     protected readonly isDm = computed(() => this.role() === 'dm');

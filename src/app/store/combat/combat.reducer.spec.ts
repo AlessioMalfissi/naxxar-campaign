@@ -391,5 +391,4 @@ describe('combatReducer', () => {
         // Assert
         expect(state).toEqual(INITIAL_COMBAT_STATE);
     });
-
 });

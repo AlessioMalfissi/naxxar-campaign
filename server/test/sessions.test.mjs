@@ -67,10 +67,7 @@ test('an expired session is rejected even before the TTL monitor runs', async ()
         { ...session, expiresAt: new Date(Date.now() - 1000).toISOString() }
     );
 
-    const resolved = await resolveSession(
-        { headers: { cookie: `naxxar_session=${token}` } },
-        { sessions, users }
-    );
+    const resolved = await resolveSession({ headers: { cookie: `naxxar_session=${token}` } }, { sessions, users });
     assert.equal(resolved, null);
 });
 
@@ -88,13 +85,9 @@ test('revokeUserSessions deletes every session for one user only', async () => {
 
 const runOriginCheck = (headers, method = 'POST') => {
     let outcome = null;
-    originCheck('https://app.example.com')(
-        { method, headers },
-        {},
-        (error) => {
-            outcome = error ?? 'next';
-        }
-    );
+    originCheck('https://app.example.com')({ method, headers }, {}, (error) => {
+        outcome = error ?? 'next';
+    });
     return outcome;
 };
 

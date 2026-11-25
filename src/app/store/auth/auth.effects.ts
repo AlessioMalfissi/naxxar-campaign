@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { Store } from '@ngrx/store';
 import { catchError, map, mergeMap, of, switchMap, tap } from 'rxjs';
 
 import { toApiError } from '@core/errors/api-error';
@@ -17,7 +16,6 @@ const campaignUrl = (slug: string): string => `/campaigns/${encodeURIComponent(s
 @Injectable()
 export class AuthEffects {
     private readonly actions$ = inject(Actions);
-    private readonly store = inject(Store);
     private readonly authApi = inject(AuthApiService);
     private readonly campaignApi = inject(CampaignApiService);
     private readonly router = inject(Router);
@@ -128,9 +126,7 @@ export class AuthEffects {
                     map((config) => AuthActions.loadConfig.success({ config })),
                     catchError((error: unknown) => {
                         const apiError = toApiError(error, "Couldn't load the app configuration.");
-                        return of(
-                            AuthActions.loadConfig.failure({ error: apiError.message, status: apiError.status })
-                        );
+                        return of(AuthActions.loadConfig.failure({ error: apiError.message, status: apiError.status }));
                     })
                 )
             )

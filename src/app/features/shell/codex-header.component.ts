@@ -16,19 +16,9 @@ import { debounceTime, map, startWith } from 'rxjs';
 import { ICodexEntrySummary } from '@core/models';
 import { CampaignContextService } from '@core/services/campaign-context.service';
 import * as AuthActions from '@store/auth/auth.actions';
-import {
-    selectActiveCampaign,
-    selectActiveRole,
-    selectCampaigns,
-    selectUser
-} from '@store/auth/auth.selectors';
+import { selectActiveCampaign, selectActiveRole, selectCampaigns, selectUser } from '@store/auth/auth.selectors';
 import * as CodexActions from '@store/codex/codex.actions';
-import {
-    selectDmPreview,
-    selectHelpOpen,
-    selectPlayerMode,
-    selectVisibleEntries
-} from '@store/codex/codex.selectors';
+import { selectDmPreview, selectHelpOpen, selectPlayerMode, selectVisibleEntries } from '@store/codex/codex.selectors';
 
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;

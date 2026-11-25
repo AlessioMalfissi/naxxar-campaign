@@ -7,7 +7,7 @@ import { normalizeEmail } from '../src/users.js';
 
 const readFlag = (name) => {
     const index = process.argv.indexOf(`--${name}`);
-    return index === -1 ? null : process.argv[index + 1] ?? null;
+    return index === -1 ? null : (process.argv[index + 1] ?? null);
 };
 
 const seed = async () => {
@@ -26,8 +26,7 @@ const seed = async () => {
             campaign = await campaigns.findOne({ slug });
         } else if (dmEmail !== null) {
             const user = await users.findOne({ emailNormalized: normalizeEmail(dmEmail) });
-            const membership =
-                user === null ? null : await memberships.findOne({ userId: user._id, role: 'dm' });
+            const membership = user === null ? null : await memberships.findOne({ userId: user._id, role: 'dm' });
             if (membership !== null) {
                 campaign = await campaigns.findOne({ _id: membership.campaignId });
             }

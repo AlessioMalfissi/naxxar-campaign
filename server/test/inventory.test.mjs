@@ -68,9 +68,7 @@ test('POST creates an item scoped to the campaign with the usual defaults', asyn
     const context = await buildFixture();
     const agent = await loginAs(context.app, 'dm@example.com');
 
-    const response = await agent
-        .post(campaignPath(context.campaign, '/inventory'))
-        .send({ name: 'Torch' });
+    const response = await agent.post(campaignPath(context.campaign, '/inventory')).send({ name: 'Torch' });
 
     assert.equal(response.status, 201);
     assert.equal(response.body.name, 'Torch');
@@ -106,10 +104,7 @@ test('POST rejects an empty name', async () => {
     const context = await buildFixture();
     const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(
-        (await agent.post(campaignPath(context.campaign, '/inventory')).send({ name: '   ' })).status,
-        400
-    );
+    assert.equal((await agent.post(campaignPath(context.campaign, '/inventory')).send({ name: '   ' })).status, 400);
 });
 
 test('PATCH updates an item in the same campaign and 404s across campaigns', async () => {

@@ -51,9 +51,10 @@ test('PUT upserts a campaign-composited purse and floors fractional gold', async
 
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, { owner: 'players:tessaly-oakhand', gold: 12 });
-    assert.deepEqual(context.purses.dump().map((purse) => purse._id), [
-        `${context.campaign._id}:players:tessaly-oakhand`
-    ]);
+    assert.deepEqual(
+        context.purses.dump().map((purse) => purse._id),
+        [`${context.campaign._id}:players:tessaly-oakhand`]
+    );
 });
 
 test('the same owner in two campaigns has independent gold', async () => {
@@ -63,26 +64,16 @@ test('the same owner in two campaigns has independent gold', async () => {
     await agent.put(campaignPath(context.campaign, '/purses/party')).send({ gold: 10 });
     await agent.put(campaignPath(context.other, '/purses/party')).send({ gold: 50 });
 
-    assert.deepEqual((await agent.get(campaignPath(context.campaign, '/purses'))).body, [
-        { owner: 'party', gold: 10 }
-    ]);
-    assert.deepEqual((await agent.get(campaignPath(context.other, '/purses'))).body, [
-        { owner: 'party', gold: 50 }
-    ]);
+    assert.deepEqual((await agent.get(campaignPath(context.campaign, '/purses'))).body, [{ owner: 'party', gold: 10 }]);
+    assert.deepEqual((await agent.get(campaignPath(context.other, '/purses'))).body, [{ owner: 'party', gold: 50 }]);
 });
 
 test('PUT rejects a negative or non-numeric gold value', async () => {
     const context = await buildFixture();
     const agent = await loginAs(context.app, 'dm@example.com');
 
-    assert.equal(
-        (await agent.put(campaignPath(context.campaign, '/purses/party')).send({ gold: -5 })).status,
-        400
-    );
-    assert.equal(
-        (await agent.put(campaignPath(context.campaign, '/purses/party')).send({ gold: 'lots' })).status,
-        400
-    );
+    assert.equal((await agent.put(campaignPath(context.campaign, '/purses/party')).send({ gold: -5 })).status, 400);
+    assert.equal((await agent.put(campaignPath(context.campaign, '/purses/party')).send({ gold: 'lots' })).status, 400);
 });
 
 test('players can read purses but cannot change them', async () => {
@@ -90,8 +81,5 @@ test('players can read purses but cannot change them', async () => {
     const agent = await loginAs(context.app, 'player@example.com');
 
     assert.equal((await agent.get(campaignPath(context.campaign, '/purses'))).status, 200);
-    assert.equal(
-        (await agent.put(campaignPath(context.campaign, '/purses/party')).send({ gold: 100 })).status,
-        403
-    );
+    assert.equal((await agent.put(campaignPath(context.campaign, '/purses/party')).send({ gold: 100 })).status, 403);
 });
