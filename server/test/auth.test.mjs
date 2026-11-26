@@ -59,6 +59,35 @@ test('POST /api/auth/login sets a session cookie and returns the user and campai
     assert.match(response.headers['set-cookie'][0], /SameSite=Lax/);
 });
 
+test('a super admin auth payload includes the flag and every campaign as DM', async () => {
+    const context = buildApp();
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    const superAdmin = await addUser(context.users, {
+        email: 'admin@example.com',
+        displayName: 'Super Admin',
+        isSuperAdmin: true
+    });
+    const alpha = await addCampaign(context.campaigns, context.memberships, { slug: 'alpha', name: 'Alpha', dm });
+    const zeta = await addCampaign(context.campaigns, context.memberships, { slug: 'zeta', name: 'Zeta', dm });
+
+    const response = await request(context.app).post('/api/auth/login').send({
+        email: 'admin@example.com',
+        password: 'password123'
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.user, {
+        id: superAdmin._id,
+        email: 'admin@example.com',
+        displayName: 'Super Admin',
+        isSuperAdmin: true
+    });
+    assert.deepEqual(response.body.campaigns, [
+        { id: alpha._id, slug: 'alpha', name: 'Alpha', role: 'dm' },
+        { id: zeta._id, slug: 'zeta', name: 'Zeta', role: 'dm' }
+    ]);
+});
+
 test('a wrong password and an unknown email return the same 401 body', async () => {
     const { app } = await setup();
 

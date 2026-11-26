@@ -228,6 +228,24 @@ describe('CodexHeaderComponent', () => {
         expect(badge.textContent).toContain('Player view');
     });
 
+    it('should show a super admin badge when the account is a super admin', () => {
+        // Arrange
+        store.overrideSelector(selectUser, {
+            id: 'user-1',
+            email: 'admin@naxxar.local',
+            displayName: 'Super Admin',
+            isSuperAdmin: true
+        });
+        store.refreshState();
+
+        // Act
+        fixture.detectChanges();
+
+        // Assert
+        const badge: HTMLElement = fixture.nativeElement.querySelector('.cdx-header-badge');
+        expect(badge.textContent).toContain('Super admin');
+    });
+
     it('should keep the autocomplete field blank when a result is picked', () => {
         // Arrange
         const display = component['displayEmpty']();

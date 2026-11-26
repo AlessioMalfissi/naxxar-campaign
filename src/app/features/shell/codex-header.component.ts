@@ -61,6 +61,7 @@ export class CodexHeaderComponent {
     protected readonly campaignName = computed(() => this.activeCampaign()?.name ?? 'Campaign');
     protected readonly activeSlug = computed(() => this.activeCampaign()?.slug ?? null);
     protected readonly isDm = computed(() => this.role() === 'dm');
+    protected readonly isSuperAdmin = computed(() => this.user()?.isSuperAdmin === true);
     protected readonly initials = computed(() => {
         const name = this.user()?.displayName.trim() ?? '';
         if (name === '') {

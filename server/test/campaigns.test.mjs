@@ -59,6 +59,56 @@ test('GET /api/campaigns lists only the caller’s campaigns sorted by name', as
     );
 });
 
+test('GET /api/campaigns lists every campaign as DM for a super admin', async () => {
+    const context = buildApp();
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    await addUser(context.users, {
+        email: 'admin@example.com',
+        displayName: 'Super Admin',
+        isSuperAdmin: true
+    });
+    const alpha = await addCampaign(context.campaigns, context.memberships, { slug: 'alpha', name: 'Alpha', dm });
+    const zeta = await addCampaign(context.campaigns, context.memberships, { slug: 'zeta', name: 'Zeta', dm });
+
+    const { agent } = await login(context.app, { email: 'admin@example.com' });
+    const response = await agent.get('/api/campaigns');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body, [
+        { id: alpha._id, slug: 'alpha', name: 'Alpha', role: 'dm' },
+        { id: zeta._id, slug: 'zeta', name: 'Zeta', role: 'dm' }
+    ]);
+});
+
+test('a super admin can read and write a campaign they have not joined', async () => {
+    const context = buildApp();
+    const dm = await addUser(context.users, { email: 'dm@example.com' });
+    await addUser(context.users, {
+        email: 'admin@example.com',
+        displayName: 'Super Admin',
+        isSuperAdmin: true
+    });
+    const campaign = await addCampaign(context.campaigns, context.memberships, { dm });
+
+    const { agent } = await login(context.app, { email: 'admin@example.com' });
+
+    const detail = await agent.get(campaignPath(campaign));
+    assert.equal(detail.status, 200);
+    assert.equal(detail.body.campaign.role, 'dm');
+
+    const members = await agent.get(campaignPath(campaign, '/members'));
+    assert.equal(members.status, 200);
+    assert.deepEqual(
+        members.body.members.map((member) => member.email),
+        ['dm@example.com']
+    );
+
+    const write = await agent.post(campaignPath(campaign, '/entries')).send({ section: 'npcs', title: 'A New NPC' });
+    assert.equal(write.status, 201);
+    assert.equal(write.body.campaignId, undefined);
+    assert.equal(write.body.title, 'A New NPC');
+});
+
 test('GET /api/campaigns without a session is a 401', async () => {
     const { app } = buildApp();
     const response = await request(app).get('/api/campaigns');

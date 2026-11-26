@@ -1,7 +1,7 @@
 <div class="cdx-campaigns">
     <header class="cdx-campaigns-header">
         <div>
-            <h1 class="cdx-campaigns-title">Your campaigns</h1>
+            <h1 class="cdx-campaigns-title">{{ isSuperAdmin() ? 'All campaigns' : 'Your campaigns' }}</h1>
             <p class="cdx-campaigns-subtitle">
                 Signed in as {{ user()?.displayName }}
                 @if (!guest() && user()?.email) {
@@ -25,6 +25,12 @@
         </p>
     }
 
+    @if (isSuperAdmin()) {
+        <p class="cdx-campaigns-admin" role="status">
+            Super admin: you can open and edit every campaign on this deployment.
+        </p>
+    }
+
     @if (campaigns().length === 0) {
         <section class="cdx-campaigns-empty">
             <h2>No campaigns yet</h2>
@@ -40,7 +46,7 @@
                     <div class="cdx-campaign-card-head">
                         <h2 class="cdx-campaign-name">{{ campaign.name }}</h2>
                         <span class="cdx-campaign-role" [class.cdx-campaign-role-dm]="campaign.role === 'dm'">
-                            {{ roleLabel(campaign.role) }}
+                            {{ isSuperAdmin() ? 'Super admin' : roleLabel(campaign.role) }}
                         </span>
                     </div>
                     <p class="cdx-campaign-slug">/campaigns/{{ campaign.slug }}</p>

@@ -36,6 +36,8 @@
         >
             Previewing as player
         </button>
+    } @else if (isSuperAdmin()) {
+        <span class="cdx-header-badge" matTooltip="You can open and edit every campaign">Super admin</span>
     }
 
     <span class="cdx-header-spacer"></span>

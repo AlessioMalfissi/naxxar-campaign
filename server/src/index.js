@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import { createApp } from './app.js';
+import { resolveCampaignAccess } from './campaign-access.js';
 import { createCombatLive } from './combat-live.js';
 import { loadConfig, validateProductionConfig } from './config.js';
 import { connectToMongo } from './db.js';
@@ -51,17 +52,16 @@ const start = async () => {
                 return { status: 401, reason: 'Unauthorized' };
             }
 
-            const campaign = await db.campaigns.findOne({ slug: campaignSlug });
-            if (campaign === null) {
+            const access = await resolveCampaignAccess(
+                { campaigns: db.campaigns, memberships: db.memberships },
+                auth.user,
+                campaignSlug
+            );
+            if (access === null) {
                 return { status: 404, reason: 'Not Found' };
             }
 
-            const membership = await db.memberships.findOne({ _id: `${campaign._id}:${auth.user._id}` });
-            if (membership === null) {
-                return { status: 404, reason: 'Not Found' };
-            }
-
-            return { campaignId: campaign._id };
+            return { campaignId: access.doc._id };
         }
     });
 

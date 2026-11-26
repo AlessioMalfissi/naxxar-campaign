@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,6 +28,7 @@ export class CampaignListComponent implements OnInit {
 
     protected readonly guest = this.guestMode.isGuest;
     protected readonly user = toSignal(this.store.select(selectUser), { initialValue: null });
+    protected readonly isSuperAdmin = computed(() => this.user()?.isSuperAdmin === true);
     protected readonly campaigns = toSignal(this.store.select(selectCampaigns), { initialValue: [] });
     protected readonly pending = toSignal(this.store.select(selectAuthPending), { initialValue: false });
     protected readonly error = toSignal(this.store.select(selectAuthError), { initialValue: null });

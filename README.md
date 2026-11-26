@@ -47,6 +47,10 @@ pnpm --dir server run bootstrap -- user \
 pnpm --dir server run bootstrap -- campaign \
   --slug naxxar --name Naxxar --dm-email dm@example.com
 pnpm run server:seed -- --campaign naxxar
+
+# Optional: a personal deployment-wide super admin with full DM access to every campaign.
+pnpm --dir server run bootstrap -- superadmin \
+  --email you@example.com --name "Your Name" --password "change-me-now"
 ```
 
 `ng serve` proxies `/api/*` (including the combat websocket) to `http://localhost:3000`; see
@@ -79,10 +83,13 @@ after seven days and are single-use.
 - **Forgot password** emails a one-hour reset link. In development, without `SMTP_URL`, the link is
   printed to the server console instead.
 - The campaign picker at `/campaigns` lists the signed-in user's campaigns. A user with exactly one
-  campaign lands directly in it after login.
+  campaign lands directly in it after login. A super admin sees every campaign and is shown an
+  **All campaigns** view.
 - `dm` accounts can create, edit and delete campaign content, manage members and invites, and use the
   DM preview of the player view. `player` accounts can read everything except `dm`-only entries and
-  blocks, and cannot change campaign content. The API enforces this on every write.
+  blocks, and cannot change campaign content. The API enforces this on every write. A deployment-wide
+  **super admin** (created with `bootstrap superadmin`) gets full DM access to every campaign,
+  including campaigns the account has not joined.
 - **Members** is at `/campaigns/:campaignSlug/members`. Only a DM can open invite management there;
   players see the roster without email addresses.
 
@@ -229,13 +236,13 @@ src/app/
 server/
 ├── src/                   Express app, auth/sessions, MongoDB access, routes (see server/README.md)
 ├── seed-data/codex/       sample entries as markdown, seeded into MongoDB
-├── scripts/               seed, bootstrap (users/campaigns/passwords) and legacy migration
+├── scripts/               seed, bootstrap (users/campaigns/super admins/passwords) and legacy migration
 └── test/                  route specs, run against an in-memory fake collection
 ```
 
 Public routes are `/login`, `/forgot-password`, `/reset-password/:token`, `/invite/:token` and
-`/campaigns`. Everything under `/campaigns/:campaignSlug` requires a session and a membership:
-`npcs`, `players`, `places`, `organizations`, `story`, `rules`, `inventory`, `combat` and `members`.
+`/campaigns`. Everything under `/campaigns/:campaignSlug` requires a session and campaign access
+(membership, or the super-admin flag): `npcs`, `players`, `places`, `organizations`, `story`, `rules`, `inventory`, `combat` and `members`.
 `/campaigns/:campaignSlug/:section` lists a section and `/:section/:slug` opens an entry. All are
 bookmarkable and restore the correct tab, sidebar selection and campaign.
 

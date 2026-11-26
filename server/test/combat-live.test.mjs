@@ -5,6 +5,7 @@ import request from 'supertest';
 import { WebSocket } from 'ws';
 
 import { combatLivePath, createCombatLive } from '../src/combat-live.js';
+import { resolveCampaignAccess } from '../src/campaign-access.js';
 import { encounterId } from '../src/combat.js';
 import { resolveSession } from '../src/sessions.js';
 import { addCampaign, addUser, buildApp, campaignPath } from './helpers.mjs';
@@ -40,17 +41,12 @@ const buildFixture = async () => {
                             return { status: 401, reason: 'Unauthorized' };
                         }
 
-                        const campaign = await collections.campaigns.findOne({ slug });
-                        if (campaign === null) {
-                            return { status: 404, reason: 'Not Found' };
-                        }
-
-                        const membership = await collections.memberships.findOne({
-                            _id: `${campaign._id}:${auth.user._id}`
-                        });
-                        return membership === null
-                            ? { status: 404, reason: 'Not Found' }
-                            : { campaignId: campaign._id };
+                        const access = await resolveCampaignAccess(
+                            { campaigns: collections.campaigns, memberships: collections.memberships },
+                            auth.user,
+                            slug
+                        );
+                        return access === null ? { status: 404, reason: 'Not Found' } : { campaignId: access.doc._id };
                     }
                 })
         }
@@ -58,6 +54,11 @@ const buildFixture = async () => {
 
     const dm = await addUser(context.users, { email: 'dm@example.com' });
     const player = await addUser(context.users, { email: 'player@example.com', displayName: 'Player' });
+    const superAdmin = await addUser(context.users, {
+        email: 'admin@example.com',
+        displayName: 'Super Admin',
+        isSuperAdmin: true
+    });
     const campaign = await addCampaign(context.campaigns, context.memberships, { dm, players: [player] });
     const other = await addCampaign(context.campaigns, context.memberships, { slug: 'other', name: 'Other', dm });
 
@@ -78,6 +79,7 @@ const buildFixture = async () => {
         url: `ws://127.0.0.1:${port}`,
         dmCookie: await login('dm@example.com'),
         playerCookie: await login('player@example.com'),
+        superAdminCookie: await login('admin@example.com'),
         campaign,
         other
     };
@@ -152,6 +154,19 @@ test('a non-member gets a 404, as does an unknown campaign', async (t) => {
         404
     );
     assert.equal(await rejectionStatus(`${fixture.url}/api/entries`, { Cookie: fixture.dmCookie }), 404);
+});
+
+test('a super admin can open the live socket for a campaign they have not joined', async (t) => {
+    const fixture = withServer(await buildFixture(), t);
+    const { socket, next } = await connect(`${fixture.url}${combatLivePath('other')}`, {
+        Cookie: fixture.superAdminCookie
+    });
+    t.after(() => socket.terminate());
+
+    assert.deepEqual(await next(), {
+        type: 'encounter',
+        encounter: { revision: 0, round: 0, turnId: null, combatants: [] }
+    });
 });
 
 test('the socket sends that campaign’s current encounter on connect', async (t) => {

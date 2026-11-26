@@ -22,7 +22,8 @@ describe('CampaignListComponent', () => {
     const create = async (
         campaigns: ICampaignSummary[] = [NAXXAR, OTHER],
         pending = false,
-        error: string | null = null
+        error: string | null = null,
+        user: IUser = USER
     ): Promise<void> => {
         await TestBed.configureTestingModule({
             imports: [CampaignListComponent, NoopAnimationsModule],
@@ -30,7 +31,7 @@ describe('CampaignListComponent', () => {
         }).compileComponents();
 
         store = TestBed.inject(MockStore);
-        store.overrideSelector(selectUser, USER);
+        store.overrideSelector(selectUser, user);
         store.overrideSelector(selectCampaigns, campaigns);
         store.overrideSelector(selectAuthPending, pending);
         store.overrideSelector(selectAuthError, error);
@@ -67,6 +68,17 @@ describe('CampaignListComponent', () => {
         expect(cards.length).toBe(2);
         expect(fixture.nativeElement.textContent).toContain('Dungeon Master');
         expect(fixture.nativeElement.textContent).toContain('Player');
+    });
+
+    it('should explain super admin access and list all campaigns', async () => {
+        // Arrange / Act
+        await create([NAXXAR, OTHER], false, null, { ...USER, isSuperAdmin: true });
+
+        // Assert
+        const notice: HTMLElement = fixture.nativeElement.querySelector('.cdx-campaigns-admin');
+        expect(notice.textContent).toContain('Super admin');
+        expect(fixture.nativeElement.querySelector('.cdx-campaigns-title').textContent).toContain('All campaigns');
+        expect(fixture.nativeElement.querySelector('.cdx-campaign-role').textContent).toContain('Super admin');
     });
 
     it('should show the empty state when there are no campaigns', async () => {

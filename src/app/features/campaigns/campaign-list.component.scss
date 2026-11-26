@@ -44,7 +44,8 @@
     font-size: 12px;
 }
 
-.cdx-campaigns-demo {
+.cdx-campaigns-demo,
+.cdx-campaigns-admin {
     margin: 0 0 16px;
     padding: 10px 12px;
     border: 1px solid var(--cdx-border);
@@ -53,6 +54,10 @@
     color: var(--cdx-primary-text);
     font-size: 12px;
     line-height: 1.5;
+}
+
+.cdx-campaigns-admin {
+    border-color: var(--cdx-primary-text);
 }
 
 .cdx-campaign-grid {

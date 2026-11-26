@@ -104,6 +104,56 @@ const run = async () => {
             return;
         }
 
+        if (command === 'superadmin') {
+            const email = requireFlag('email');
+            const name = readFlag('name');
+            const password = readPassword();
+            if (password !== null && !isValidPassword(password)) {
+                throw new Error('Password must be 8-128 characters.');
+            }
+
+            const existing = await db.users.findOne({ emailNormalized: normalizeEmail(email) });
+            const now = new Date().toISOString();
+
+            if (existing === null) {
+                if (name === null || name.trim() === '') {
+                    throw new Error(
+                        `No user exists for ${email}. Pass --name (and optionally --password) to create it.`
+                    );
+                }
+
+                await db.users.insertOne({
+                    _id: randomUUID(),
+                    email: email.trim(),
+                    emailNormalized: normalizeEmail(email),
+                    displayName: name.trim(),
+                    passwordHash: password === null ? null : await hashPassword(password),
+                    googleSub: null,
+                    isSuperAdmin: true,
+                    createdAt: now,
+                    updatedAt: now
+                });
+                console.log(`Created super admin ${email}.`);
+                return;
+            }
+
+            const updated = {
+                ...existing,
+                isSuperAdmin: true,
+                displayName: name === null || name.trim() === '' ? existing.displayName : name.trim(),
+                passwordHash: password === null ? existing.passwordHash : await hashPassword(password),
+                updatedAt: now
+            };
+            await db.users.replaceOne({ _id: existing._id }, updated);
+            if (password !== null) {
+                await db.sessions.deleteMany({ userId: existing._id });
+                console.log(`Promoted ${email} to super admin and revoked its sessions.`);
+            } else {
+                console.log(`Promoted ${email} to super admin.`);
+            }
+            return;
+        }
+
         if (command === 'campaign') {
             const slug = slugify(requireFlag('slug'));
             const name = requireFlag('name');
@@ -164,7 +214,9 @@ const run = async () => {
             return;
         }
 
-        throw new Error('Usage: bootstrap.mjs user|campaign|reset-password --flags... (see server/README.md)');
+        throw new Error(
+            'Usage: bootstrap.mjs user|superadmin|campaign|reset-password --flags... (see server/README.md)'
+        );
     } finally {
         await db.client.close();
     }

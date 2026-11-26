@@ -23,9 +23,7 @@ export const toCampaignSummary = (campaign, role) => ({
 export const loadCampaignSummaries = async (user, { memberships, campaigns }) => {
     if (user.isSuperAdmin === true) {
         const docs = await campaigns.find({}).toArray();
-        return docs
-            .map((campaign) => toCampaignSummary(campaign, 'dm'))
-            .sort((a, b) => a.name.localeCompare(b.name));
+        return docs.map((campaign) => toCampaignSummary(campaign, 'dm')).sort((a, b) => a.name.localeCompare(b.name));
     }
 
     const rows = await memberships.find({ userId: user._id }).toArray();

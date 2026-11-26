@@ -98,6 +98,25 @@ test('a player cannot create or list invites', async () => {
     assert.equal((await agent.get(base)).status, 403);
 });
 
+test('a super admin can create and list invites for a campaign they have not joined', async () => {
+    const context = await buildFixture();
+    await addUser(context.users, {
+        email: 'admin@example.com',
+        displayName: 'Super Admin',
+        isSuperAdmin: true
+    });
+    const { agent } = await login(context.app, { email: 'admin@example.com' });
+    const base = campaignPath(context.campaign, '/invites');
+
+    const created = await agent.post(base);
+    assert.equal(created.status, 201);
+    assert.match(created.body.invite.url, /\/invite\/[A-Za-z0-9_-]{43}$/);
+
+    const listed = await agent.get(base);
+    assert.equal(listed.status, 200);
+    assert.equal(listed.body.invites.length, 1);
+});
+
 test('invite status reports used and expired', async () => {
     const context = await buildFixture();
     await insertInvite(context.invites, context.campaign._id, { usedAt: '2026-01-01T00:00:00.000Z' });

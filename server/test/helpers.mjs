@@ -69,7 +69,13 @@ export const buildApp = ({ collections: overrides = {}, services = {}, config = 
 
 export const addUser = async (
     users,
-    { email = 'dm@example.com', displayName = 'Dungeon Master', password = 'password123', googleSub = null } = {}
+    {
+        email = 'dm@example.com',
+        displayName = 'Dungeon Master',
+        password = 'password123',
+        googleSub = null,
+        isSuperAdmin = false
+    } = {}
 ) => {
     const now = new Date().toISOString();
     const user = {
@@ -79,6 +85,7 @@ export const addUser = async (
         displayName,
         passwordHash: password === null ? null : `fake:${password}`,
         googleSub,
+        ...(isSuperAdmin ? { isSuperAdmin: true } : {}),
         createdAt: now,
         updatedAt: now
     };

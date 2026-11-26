@@ -3,18 +3,18 @@
 Express + MongoDB API for the Naxxar campaign dashboard. Accounts, campaigns and campaign content all
 live in MongoDB:
 
-| Collection        | Contents                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------- |
-| `users`           | One document per account: email, display name, Argon2id hash, Google sub              |
-| `sessions`        | Opaque session tokens, stored as SHA-256 hashes with an expiry                        |
-| `campaigns`       | Campaign name and URL slug                                                            |
-| `memberships`     | `{ campaignId, userId, role }`, `_id` is `${campaignId}:${userId}`                    |
-| `invites`         | Single-use invite tokens, stored hashed, with a seven-day expiry                      |
-| `password_resets` | Single-use reset tokens, stored hashed, with a one-hour expiry                        |
-| `entries`         | Codex entries, shaped like `ICodexEntry`, `_id` is `${campaignId}:${section}:${slug}` |
-| `inventory`       | Items, shaped like `IInventoryItem`, `_id` stays a UUID                               |
-| `purses`          | Gold by owner, shaped like `IPurse`, `_id` is `${campaignId}:${owner}`                |
-| `combat`          | One encounter per campaign, `_id` is `${campaignId}:current`                          |
+| Collection        | Contents                                                                                            |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `users`           | One document per account: email, display name, Argon2id hash, Google sub, optional super-admin flag |
+| `sessions`        | Opaque session tokens, stored as SHA-256 hashes with an expiry                                      |
+| `campaigns`       | Campaign name and URL slug                                                                          |
+| `memberships`     | `{ campaignId, userId, role }`, `_id` is `${campaignId}:${userId}`                                  |
+| `invites`         | Single-use invite tokens, stored hashed, with a seven-day expiry                                    |
+| `password_resets` | Single-use reset tokens, stored hashed, with a one-hour expiry                                      |
+| `entries`         | Codex entries, shaped like `ICodexEntry`, `_id` is `${campaignId}:${section}:${slug}`               |
+| `inventory`       | Items, shaped like `IInventoryItem`, `_id` stays a UUID                                             |
+| `purses`          | Gold by owner, shaped like `IPurse`, `_id` is `${campaignId}:${owner}`                              |
+| `combat`          | One encounter per campaign, `_id` is `${campaignId}:current`                                        |
 
 The interfaces are in `../src/app/core/models/`.
 
@@ -52,6 +52,23 @@ pnpm --dir server run seed -- --campaign naxxar
 Passwords can also come from `BOOTSTRAP_PASSWORD` instead of `--password`. `bootstrap user` without a
 password creates an account that can only sign in with Google. `bootstrap campaign` promotes an existing
 user to DM; there is deliberately no public way to become the first DM.
+
+For a personal account that can inspect and manage every campaign, create or promote a deployment-wide
+super admin:
+
+```bash
+# Create a new super admin account (or pass an existing email to promote it).
+pnpm --dir server run bootstrap -- superadmin \
+  --email you@example.com --name "Your Name" --password "change-me-now"
+
+# Promote an existing account without changing its name or password (unless one is supplied).
+pnpm --dir server run bootstrap -- superadmin --email you@example.com
+```
+
+A super admin resolves to an effective `dm` role in every campaign, including campaigns they have not
+joined. That is full read/write access: DM-only entries, members and email addresses, invites, inventory,
+purses, combat, and the live combat socket. Treat the account as production infrastructure, not a
+normal DM account.
 
 After that, everyone else joins through invites created by a DM in the app's **Members** page - never
 through a public registration form.
@@ -111,8 +128,9 @@ not the email exists. A valid request stores a hashed, single-use, one-hour toke
 | `POST` | `/api/auth/forgot-password` | Body `{ email }`. Always `202`; emails a reset link if the account exists.                          |
 | `POST` | `/api/auth/reset-password`  | Body `{ token, password }`. Password must be 8-128 characters. Revokes the user's sessions.         |
 
-Auth payloads use `{ user: { id, email, displayName }, campaigns: [{ id, slug, name, role }] }`.
-Invite registration adds the joined campaign as `campaign`.
+Auth payloads use `{ user: { id, email, displayName, isSuperAdmin? }, campaigns: [{ id, slug, name, role }] }`.
+`isSuperAdmin` is present only for super-admin accounts. Invite registration adds the joined campaign as
+`campaign`.
 
 ## Invites and campaigns
 
@@ -122,16 +140,17 @@ Invite registration adds the joined campaign as `campaign`.
 | `POST` | `/api/invites/:token/register`         | Public. Body `{ displayName, email, password }`. Creates the account and a `player` membership, then signs in.                  |
 | `POST` | `/api/invites/:token/google`           | Public. Body `{ credential, displayName? }`. Creates or links a Google account and a `player` membership.                       |
 | `POST` | `/api/invites/:token/accept`           | Session required. Adds the signed-in user to the campaign as `player`.                                                          |
-| `GET`  | `/api/campaigns`                       | Campaigns the current user belongs to, sorted by name.                                                                          |
+| `GET`  | `/api/campaigns`                       | Campaigns the current user belongs to, sorted by name. Super admins get every campaign as `dm`.                                 |
 | `POST` | `/api/campaigns`                       | Body `{ name }`. Creates a campaign and makes the caller its `dm`. Name is 2-80 characters; slug is generated.                  |
 | `GET`  | `/api/campaigns/:campaignSlug`         | `{ campaign }` for a member. `404` for a non-member, so campaign existence is not disclosed.                                    |
 | `GET`  | `/api/campaigns/:campaignSlug/members` | Roster. Email addresses are included only for the campaign DM.                                                                  |
 | `GET`  | `/api/campaigns/:campaignSlug/invites` | DM only. `{ invites: [{ createdAt, expiresAt, usedAt, status }] }`, newest first.                                               |
 | `POST` | `/api/campaigns/:campaignSlug/invites` | DM only. Creates a seven-day, single-use invite. Returns `{ invite: { url, expiresAt } }` once - the URL is never listed again. |
 
-Every campaign route runs a membership check first. A missing campaign and a campaign the user has not
+Every campaign route runs an access check first. A missing campaign and a campaign the user has not
 joined both return `404 Campaign not found.`; a member whose role is too low gets
-`403 Only the DM can change campaign content.`
+`403 Only the DM can change campaign content.` An account with `isSuperAdmin: true` bypasses the
+membership lookup and resolves to an effective `dm` role in every campaign.
 
 Invites and password-reset tokens are stored hashed. Losing the database does not leak usable tokens,
 and a used or expired token cannot be replayed.
@@ -161,22 +180,27 @@ server-side, so a client cannot address another campaign's data by changing an i
 
 ### Role matrix
 
-| Capability                                | `dm` | `player` |
-| ----------------------------------------- | ---- | -------- |
-| List/open joined campaigns                | yes  | yes      |
-| Read entries, inventory, purses, combat   | yes  | yes      |
-| Read `visibility: dm` entries / DM blocks | yes  | no       |
-| Create/edit/delete entries                | yes  | no       |
-| Create/update/delete inventory and purses | yes  | no       |
-| Start/update/end combat                   | yes  | no       |
-| Open the live combat socket               | yes  | yes      |
-| See member email addresses                | yes  | no       |
-| Create/list campaign invites              | yes  | no       |
-| Create a new campaign                     | yes  | yes      |
-| Use the DM preview of the player view     | yes  | n/a      |
+| Capability                                | `dm` | `player` | super admin |
+| ----------------------------------------- | ---- | -------- | ----------- |
+| List/open joined campaigns                | yes  | yes      | all         |
+| Read entries, inventory, purses, combat   | yes  | yes      | yes         |
+| Read `visibility: dm` entries / DM blocks | yes  | no       | yes         |
+| Create/edit/delete entries                | yes  | no       | yes         |
+| Create/update/delete inventory and purses | yes  | no       | yes         |
+| Start/update/end combat                   | yes  | no       | yes         |
+| Open the live combat socket               | yes  | yes      | yes         |
+| See member email addresses                | yes  | no       | yes         |
+| Create/list campaign invites              | yes  | no       | yes         |
+| Create a new campaign                     | yes  | yes      | yes         |
+| Use the DM preview of the player view     | yes  | n/a      | yes         |
 
 Players are read-only by role, not by hiding buttons: every write above is rejected by the API with
 `403`.
+
+`isSuperAdmin` is a flag on the user document, set only by `bootstrap superadmin` - no public route can
+grant it. Super admins do not appear in a campaign roster unless they also join it, but every campaign
+resolves to an effective `dm` role for them. To revoke access, unset the flag in MongoDB; the next
+request from that account sees normal membership rules again.
 
 ### Filtering `GET /api/campaigns/:slug/entries`
 
@@ -238,9 +262,9 @@ nullable non-negative integers `hp`, `maxHp` and `ac` (players only; always `nul
 zero or more, and a `turnId` that does not match a combatant is stored as `null`.
 
 `GET /api/campaigns/:campaignSlug/combat/live` upgrades to a WebSocket that keeps every open tracker for
-that campaign in sync. The upgrade needs the session cookie and a membership; without them it returns
-`401` or `404`. On connect the server sends the current encounter, then the encounter saved by every
-`PUT`, in revision order:
+that campaign in sync. The upgrade needs the session cookie and campaign access (a membership, or the
+super-admin flag); without them it returns `401` or `404`. On connect the server sends the current
+encounter, then the encounter saved by every `PUT`, in revision order:
 
 ```json
 { "type": "encounter", "encounter": { "revision": 8, "round": 1, "turnId": "goblin-1", "combatants": [] } }
@@ -268,7 +292,12 @@ its broadcast can arrive in either order. Behind a reverse proxy, forward WebSoc
   Possession of the link is the authorization, so share it privately.
 - **Authorization.** Every campaign route loads the membership from the database before touching
   content. Ids embed the campaign id, but handlers still filter by `campaignId`, so guessing another
-  campaign's id is not enough.
+  campaign's id is not enough. A user with `isSuperAdmin: true` deliberately bypasses that membership
+  check and gets DM access to every campaign.
+- **Super admin.** The flag is set only by `bootstrap superadmin` and cannot be granted through the API.
+  It is full write access across the deployment, including member email addresses and invite creation.
+  Keep the credentials separate from normal campaign accounts and unset the flag if the account is no
+  longer needed.
 - **Secrets.** MongoDB credentials live only in `MONGODB_URI`; SMTP credentials only in `SMTP_URL`.
   Google verifies the ID token against `GOOGLE_CLIENT_ID`. The server never stores Google access tokens.
 - **Production fail-fast.** `NODE_ENV=production` refuses to start without `APP_ORIGIN` and `SMTP_URL`,
@@ -314,7 +343,8 @@ pnpm --dir server run seed -- --dm-email dm@example.com   # or pick that user's 
 2. Run `pnpm install && pnpm run build`, then start the API with `pnpm run server` (or `npm start` in
    `server/`). One process serves both the API and the SPA.
 3. Create the first account and campaign with `bootstrap user` and `bootstrap campaign`. Confirm the API
-   starts without the dev in-memory user.
+   starts without the dev in-memory user. If you need a personal deployment-wide account, create it with
+   `bootstrap superadmin` (see above) and keep its credentials separate from campaign DMs.
 4. Forward `/api/*` and WebSocket upgrades for `/api/campaigns/*/combat/live` to the Node process.
 5. Back up MongoDB. The reset-token and session collections expire through TTL indexes, but campaigns,
    memberships and content do not.
@@ -353,7 +383,7 @@ server/
 │   └── users.js            user lookup/creation and public user shape
 ├── seed-data/codex/        sample entries as markdown, one folder per section
 ├── scripts/
-│   ├── bootstrap.mjs       users, campaigns, password resets
+│   ├── bootstrap.mjs       users, super admins, campaigns, password resets
 │   ├── dev-env.mjs         dev defaults for PORT and the in-memory database
 │   ├── migrate-campaign-scope.mjs  legacy data migration
 │   └── seed.mjs            upserts seed-data/codex into one campaign
